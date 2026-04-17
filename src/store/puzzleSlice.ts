@@ -1,5 +1,5 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
-import type { Difficulty, GamePhase, PuzzlePiece } from '../types/puzzle';
+import type { Difficulty, GamePhase, InProgressGameState, PuzzlePiece } from '../types/puzzle';
 
 type PuzzleState = {
   phase: GamePhase;
@@ -24,12 +24,16 @@ type PuzzleState = {
   // Game state
   startTime: number | null;
   elapsedMs: number;
+  isPaused: boolean;
+  pausedAt: number | null;
+  pauseOffset: number;
   showImagePreview: boolean;
-  currentGameId: string | null;
+  gameId: string | null;
+  configId: string | null;
 };
 
 const initialState: PuzzleState = {
-  phase: 'upload',
+  phase: 'home',
   difficulty: 'normal',
   imageDataUrl: null,
   cropRegion: null,
@@ -48,8 +52,12 @@ const initialState: PuzzleState = {
   rows: 0,
   startTime: null,
   elapsedMs: 0,
+  isPaused: false,
+  pausedAt: null,
+  pauseOffset: 0,
   showImagePreview: false,
-  currentGameId: null,
+  gameId: null,
+  configId: null,
 };
 
 const puzzleSlice = createSlice({
@@ -239,12 +247,86 @@ const puzzleSlice = createSlice({
       state.phase = 'complete';
     },
 
+    pauseGame(state) {
+      if (state.isPaused) return;
+      state.isPaused = true;
+      state.pausedAt = Date.now();
+    },
+
+    resumeGame(state) {
+      if (!state.isPaused) return;
+      if (state.pausedAt !== null) {
+        state.pauseOffset += Date.now() - state.pausedAt;
+      }
+      state.isPaused = false;
+      state.pausedAt = null;
+    },
+
+    restoreGame(
+      state,
+      action: PayloadAction<{
+        pieces: PuzzlePiece[];
+        savedState: InProgressGameState;
+        referenceDataUrl: string;
+        difficulty: Difficulty;
+        cols: number;
+        rows: number;
+        gameId: string;
+        configId: string | null;
+      }>
+    ) {
+      const { pieces, savedState, referenceDataUrl, difficulty, cols, rows, gameId, configId } = action.payload;
+      state.pieces = pieces.map((p) => {
+        const saved = savedState.pieces.find((s) => s.id === p.id);
+        return saved
+          ? { ...p, currentPosition: saved.currentPosition, isSnapped: saved.isSnapped, groupId: saved.groupId }
+          : p;
+      });
+      state.groups = savedState.groups;
+      state.pieceGroup = savedState.pieceGroup;
+      state.nextGroupId = savedState.nextGroupId;
+      // 用 elapsedAtSave 重建計時器，確保恢復後顯示正確的已用時間
+      const now = Date.now();
+      state.startTime = now - savedState.elapsedAtSave;
+      state.pauseOffset = 0;
+      state.isPaused = true;
+      state.pausedAt = now;
+      state.boardH = savedState.boardH;
+      state.pieceW = savedState.pieceW;
+      state.pieceH = savedState.pieceH;
+      state.puzzleOffsetX = savedState.puzzleOffsetX;
+      state.puzzleOffsetY = savedState.puzzleOffsetY;
+      state.referenceDataUrl = referenceDataUrl;
+      state.difficulty = difficulty;
+      state.cols = cols;
+      state.rows = rows;
+      state.gameId = gameId;
+      state.configId = configId;
+      state.elapsedMs = 0;
+      state.draggingGroupId = null;
+      state.showImagePreview = false;
+      state.phase = 'playing';
+    },
+
     toggleImagePreview(state) {
       state.showImagePreview = !state.showImagePreview;
     },
 
-    setCurrentGameId(state, action: PayloadAction<string>) {
-      state.currentGameId = action.payload;
+    goToUpload(state) {
+      state.phase = 'upload';
+    },
+
+    goToHome(state) {
+      state.phase = 'home';
+      state.imageDataUrl = null;
+    },
+
+    setGameId(state, action: PayloadAction<string>) {
+      state.gameId = action.payload;
+    },
+
+    setConfigId(state, action: PayloadAction<string | null>) {
+      state.configId = action.payload;
     },
 
     resetGame() {
@@ -269,8 +351,14 @@ export const {
   snapGroupToBoard,
   backToConfig,
   setComplete,
+  pauseGame,
+  resumeGame,
+  restoreGame,
   toggleImagePreview,
-  setCurrentGameId,
+  goToUpload,
+  goToHome,
+  setGameId,
+  setConfigId,
   resetGame,
 } = puzzleSlice.actions;
 

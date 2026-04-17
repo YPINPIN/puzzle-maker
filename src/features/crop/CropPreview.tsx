@@ -1,7 +1,7 @@
 import { useRef, useEffect, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from '../../store';
-import { setPieces, startGame, backToConfig, setReferenceImage, setCurrentGameId } from '../../store/puzzleSlice';
+import { setPieces, startGame, backToConfig, setReferenceImage, setGameId, setConfigId } from '../../store/puzzleSlice';
 import { generatePieces } from '../../lib/pieceFactory';
 import { TOOLBAR_HEIGHT } from '../../lib/constants';
 import { saveRecord } from '../../lib/records';
@@ -323,9 +323,9 @@ export default function CropPreview({ canvasMapRef, pathMapRef }: Props) {
     );
     const croppedImageDataUrl = replayCanvas.toDataURL('image/jpeg', 0.75);
 
-    const gameId = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    const configId = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     saveRecord({
-      id: gameId,
+      id: configId,
       createdAt: Date.now(),
       difficulty,
       cols,
@@ -335,7 +335,8 @@ export default function CropPreview({ canvasMapRef, pathMapRef }: Props) {
       isCompleted: false,
       bestTimeMs: 0,
     });
-    dispatch(setCurrentGameId(gameId));
+    dispatch(setConfigId(configId));
+    dispatch(setGameId(crypto.randomUUID()));
 
     const viewH = window.innerHeight - TOOLBAR_HEIGHT;
     const viewW = window.innerWidth;
@@ -368,7 +369,7 @@ export default function CropPreview({ canvasMapRef, pathMapRef }: Props) {
   }, [imageDataUrl, cols, rows, difficulty, canvasMapRef, pathMapRef, dispatch]);
 
   return (
-    <div className="flex flex-col w-screen h-screen bg-black">
+    <div className="flex flex-col w-full h-full bg-black">
       {/* 頂部 toolbar（非 fixed，不擋圖片） */}
       <div className="flex items-center justify-between px-4 py-3 bg-black/80 backdrop-blur-sm flex-shrink-0">
         <button

@@ -1,23 +1,12 @@
-import { useRef, useState, useCallback, type DragEvent, type ChangeEvent } from 'react';
+import { useRef, useState, type DragEvent, type ChangeEvent } from 'react';
 import { useDispatch } from 'react-redux';
 import type { AppDispatch } from '../../store';
-import { setImage, setReferenceImage, setPieces, setCurrentGameId, startGame } from '../../store/puzzleSlice';
-import { generatePieces } from '../../lib/pieceFactory';
-import { TOOLBAR_HEIGHT } from '../../lib/constants';
-import type { PuzzleRecord } from '../../lib/records';
-import RecordsModal from './RecordsModal';
+import { setImage, goToHome } from '../../store/puzzleSlice';
 
-type Props = {
-  canvasMapRef: React.RefObject<Map<number, HTMLCanvasElement>>;
-  pathMapRef: React.RefObject<Map<number, Path2D>>;
-};
-
-export default function ImageUpload({ canvasMapRef, pathMapRef }: Props) {
+export default function ImageUpload() {
   const dispatch = useDispatch<AppDispatch>();
   const inputRef = useRef<HTMLInputElement>(null);
   const [isDragOver, setIsDragOver] = useState(false);
-  const [showRecords, setShowRecords] = useState(false);
-  const [isReplaying, setIsReplaying] = useState(false);
 
   function processFile(file: File) {
     if (!file.type.startsWith('image/')) return;
@@ -32,8 +21,7 @@ export default function ImageUpload({ canvasMapRef, pathMapRef }: Props) {
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(img, 0, 0);
       URL.revokeObjectURL(url);
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
-      dispatch(setImage(dataUrl));
+      dispatch(setImage(canvas.toDataURL('image/jpeg', 0.92)));
     };
     img.onerror = () => URL.revokeObjectURL(url);
     img.src = url;
@@ -52,59 +40,18 @@ export default function ImageUpload({ canvasMapRef, pathMapRef }: Props) {
     if (file) processFile(file);
   }
 
-  const applyRecord = useCallback(async (record: PuzzleRecord) => {
-    if (!record.croppedImageDataUrl || isReplaying) return;
-    setIsReplaying(true);
-
-    try {
-      const viewH = window.innerHeight - TOOLBAR_HEIGHT;
-      const viewW = window.innerWidth;
-      const canvasSize = 2 * Math.min(viewW, viewH);
-
-      const result = await generatePieces(
-        record.croppedImageDataUrl,
-        record.cols,
-        record.rows,
-        viewW,
-        viewH,
-        canvasSize,
-        // cropRegion 省略 → 使用完整圖片（裁切圖已是正確區域）
-      );
-
-      canvasMapRef.current.clear();
-      result.canvasMap.forEach((c, id) => canvasMapRef.current.set(id, c));
-      pathMapRef.current.clear();
-      result.pathMap.forEach((p, id) => pathMapRef.current.set(id, p));
-
-      // 沿用原紀錄 ID（不建立新紀錄，完成後只在破紀錄時更新）
-      dispatch(setReferenceImage(record.croppedImageDataUrl));
-      dispatch(setPieces({
-        pieces: result.pieces,
-        rows: result.rows,
-        cols: result.cols,
-        boardH: canvasSize,
-        pieceW: result.pieceW,
-        pieceH: result.pieceH,
-        puzzleOffsetX: result.puzzleOffsetX,
-        puzzleOffsetY: result.puzzleOffsetY,
-      }));
-      dispatch(setCurrentGameId(record.id));
-      dispatch(startGame());
-    } finally {
-      setIsReplaying(false);
-    }
-  }, [canvasMapRef, pathMapRef, dispatch, isReplaying]);
-
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-6">
+    <div className="h-full overflow-y-auto flex flex-col items-center justify-center bg-gray-50 p-6">
       <div className="w-full max-w-md flex flex-col items-center gap-6">
-        <div className="w-full flex items-center justify-between">
-          <h1 className="text-4xl font-bold text-gray-800">拼圖樂</h1>
+        <div className="w-full flex items-center">
           <button
-            onClick={() => setShowRecords(true)}
-            className="px-4 py-2 text-sm bg-white border border-gray-200 hover:border-gray-300 hover:bg-gray-50 rounded-lg text-gray-600 transition-colors shadow-sm"
+            onClick={() => dispatch(goToHome())}
+            className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1 transition-colors"
           >
-            歷史紀錄
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            返回首頁
           </button>
         </div>
 
@@ -135,18 +82,7 @@ export default function ImageUpload({ canvasMapRef, pathMapRef }: Props) {
             onChange={onFileChange}
           />
         </div>
-
-        {isReplaying && (
-          <p className="text-sm text-blue-500 animate-pulse">正在載入遊戲…</p>
-        )}
       </div>
-
-      {showRecords && (
-        <RecordsModal
-          onClose={() => setShowRecords(false)}
-          onApply={applyRecord}
-        />
-      )}
     </div>
   );
 }

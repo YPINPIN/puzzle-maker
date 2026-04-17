@@ -28,21 +28,30 @@ npm run preview  # 預覽 production 建置結果
 
 ## 遊戲流程與狀態機
 
-遊戲以 Redux `phase` 欄位驅動，依序為：
+遊戲以 Redux `phase` 欄位驅動：
 
 ```
-upload → config → crop → playing → complete
+home → upload → config → crop → playing → complete
 ```
 
-`App.tsx` 根據 `phase` 條件渲染對應元件；`canvasMapRef`（offscreen canvas）與 `pathMapRef`（Path2D 形狀）在 App 層建立並向下傳遞，貫穿整個遊戲生命週期。
+`resetGame()` 回到 `home`。`App.tsx` 根據 `phase` 條件渲染對應元件；`canvasMapRef`（offscreen canvas）與 `pathMapRef`（Path2D 形狀）在 App 層建立並向下傳遞，貫穿整個遊戲生命週期。
 
-| Phase      | 元件                    | 說明                          |
-|------------|-------------------------|-------------------------------|
-| `upload`   | `ImageUpload`           | 上傳或重新遊玩舊紀錄           |
-| `config`   | `DifficultySelector`    | 選擇難度，決定 cols × rows     |
-| `crop`     | `CropPreview`           | 裁切圖片，生成拼圖片            |
-| `playing`  | `PuzzleBoard`           | 主遊戲畫面                     |
-| `complete` | `PuzzleBoard` + `CompletionOverlay` | 完成覆蓋層              |
+| Phase      | 元件                                | 說明                                         |
+|------------|-------------------------------------|----------------------------------------------|
+| `home`     | `HomePage`                          | 主選單：建立新拼圖、讀取存檔、快速開局       |
+| `upload`   | `ImageUpload`                       | 純上傳頁（拖放圖片）；快捷設定滿時從首頁攔截 |
+| `config`   | `DifficultySelector`                | 選擇難度，決定 cols × rows                   |
+| `crop`     | `CropPreview`                       | 裁切圖片，生成拼圖片，建立快捷設定紀錄       |
+| `playing`  | `PuzzleBoard` + `AppHeader`         | 主遊戲畫面，含暫停／儲存控制                 |
+| `complete` | `PuzzleBoard` + `CompletionOverlay` | 完成覆蓋層，可儲存或離開                     |
+
+### 首頁入口邏輯
+
+- **建立新拼圖**：檢查 `getRecords().length >= 10`，若滿則攔截並提示前往「快速開局」清除後再建立；否則 `dispatch(goToUpload())`
+- **讀取存檔**：開啟 `RecordsModal`（`mode='history'`）→ 選擇後呼叫 `continueGame`
+- **快速開局**：開啟 `RecordsModal`（`mode='quick'`）→ 選擇後呼叫 `applyRecord`
+
+`applyRecord` 與 `continueGame` 的實作在 `HomePage`（非 `ImageUpload`）。
 
 ## Canvas 渲染架構
 
@@ -60,7 +69,7 @@ upload → config → crop → playing → complete
 3. 未 snap 且非拖曳中的片（含 hover 高亮、紅光警示）
 4. 拖曳中的片（最上層，帶陰影、綠光預覽）
 
-`useGameLoop` 以 `requestAnimationFrame` 驅動渲染；`usePointerDrag` 處理 pointer 事件。兩者都掛載在 `PuzzleBoard`。
+`useGameLoop` 以 `requestAnimationFrame` 驅動渲染；`usePointerDrag` 處理 pointer 事件。兩者都掛載在 `PuzzleBoard`。`usePointerDrag` 讀取 `isPausedRef`，暫停狀態下跳過所有拖曳。
 
 ### Offscreen Canvas 與 Path2D
 
@@ -85,13 +94,70 @@ upload → config → crop → playing → complete
 
 ### 重要常數（`src/lib/constants.ts`）
 
-| 常數              | 值   | 說明                     |
-|------------------|------|--------------------------|
-| `TOOLBAR_HEIGHT` | 48   | 工具列高度（px）          |
-| `TAB_RATIO`      | 0.2  | tab 大小 = pieceW × 0.2  |
+| 常數              | 值   | 說明                      |
+|------------------|------|---------------------------|
+| `TOOLBAR_HEIGHT` | 64   | 全域 Header 高度（px）    |
+| `TAB_RATIO`      | 0.2  | tab 大小 = pieceW × 0.2   |
 | `SNAP_THRESHOLD` | 20   | snap 至板子的吸附距離（px）|
-| `GROUP_THRESHOLD`| 6    | 兩片合組的位置容差（px）  |
+| `GROUP_THRESHOLD`| 6    | 兩片合組的位置容差（px）   |
+
+## 計時器機制
+
+計時器以純數值計算，不使用 `setInterval` 驅動 Redux 狀態：
+
+- **公式**：`elapsed = (isPaused ? pausedAt : Date.now()) - startTime - pauseOffset`
+- `pauseOffset`：累計暫停毫秒數；每次 `resumeGame` 時加上本次暫停時長
+- `AppHeader` 以 `setInterval(500ms)` 更新本地 `displayElapsed` state 做 UI 顯示
+- 完成時的精確時間由 `usePointerDrag` 在觸發 `setComplete` 前計算並傳入
 
 ## 紀錄系統
 
-`src/lib/records.ts` 使用 `localStorage`（key: `puzzle-records`）儲存最多 10 筆遊戲紀錄（`PuzzleRecord`）。欄位包含縮圖、裁切圖（≤800px JPEG）、最佳時間、難度。`ImageUpload` 元件可從紀錄重新開始遊戲。
+兩個獨立的 `localStorage` 儲存，互不依賴：
+
+### 快捷設定（`src/lib/records.ts`）
+- key：`puzzle-quick-settings`，最多 10 筆 `PuzzleRecord`
+- 欄位：縮圖、裁切圖（≤800px JPEG）、難度、最佳時間、`isCompleted`
+- 每次 CropPreview 確認開始時建立，是唯一建立快捷設定的入口
+
+### 歷史紀錄（`src/lib/gameHistory.ts`）
+- key：`puzzle-game-history`，最多 10 筆 `GameHistoryRecord`
+- 欄位：縮圖、裁切圖、難度、`configId`、`savedState`（含所有片位置與 group 狀態）、`isCompleted`
+- 保存流程：`SavePanel`（10 格選位面板）→ `saveGameHistoryAtSlot(record, slotIndex)`
+- 完成時若已有對應歷史紀錄（`gameId` 匹配），自動覆蓋並標記 `isCompleted: true`
+
+### ID 設計（重要）
+
+| 欄位 | 說明 |
+|------|------|
+| `configId`（Redux + `GameHistoryRecord`）| 快捷設定紀錄的 ID，由 CropPreview 產生；完成時用來回寫最佳時間 |
+| `gameId`（Redux + `GameHistoryRecord.id`）| 每次新開遊戲的 UUID；續玩時沿用原 `historyRecord.id` |
+
+每次新開遊戲（不論從 CropPreview 或快速開局重玩）都會各自產生新的 `configId` 與 `gameId`。從歷史紀錄續玩時，`gameId = historyRecord.id`、`configId = historyRecord.configId`。
+
+刪除快捷設定不會造成錯誤，`configId` 成為懸空參照時，`CompletionOverlay` 的查找會安全返回 null。
+
+## 全域 Header（`src/features/layout/AppHeader.tsx`）
+
+所有 phase 均顯示。`playing` phase 額外顯示難度、格數、計時器與操作按鈕（查看參考圖、暫停/繼續、保存並結束、結束遊戲）。
+
+`handleSaveToSlot` 使用 `saveDataRef` pattern：每次 render 將最新 Redux 狀態同步至 ref，讓 `useCallback` 不需列舉依賴也能讀到最新值，避免 stale closure 導致計時錯誤。
+
+## 共用元件
+
+- `src/components/ConfirmDialog.tsx`：通用二次確認對話框，支援 `danger` 紅色模式
+- `src/features/game/SavePanel.tsx`：10 格存檔選位面板；以 `gameId` 比對標示「目前紀錄」格；佔用格點擊前顯示 `ConfirmDialog` 確認覆蓋（原始 slot 除外）
+
+## 完成流程
+
+- **有對應歷史紀錄**（`gameId` 能在 `gameHistory` 找到）：自動覆蓋儲存並標記 `isCompleted`，顯示「已自動保存」提示
+- **無歷史紀錄**：顯示「保存紀錄」與「離開」按鈕；選擇保存則開啟 `SavePanel`
+
+## 續玩位置縮放
+
+從歷史紀錄續玩時，若視窗尺寸不同，`HomePage.continueGame` 用仿射變換重新對齊座標，並對非 snap 的片子做邊界 clamp：
+
+```
+scale = result.pieceW / savedState.pieceW
+newX  = oldX * scale + (newPuzzleOffsetX - oldPuzzleOffsetX * scale)
+// 非 snap 片：x clamped to [0, canvasSize - pieceW]
+```

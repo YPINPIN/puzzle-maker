@@ -1,4 +1,4 @@
-const STORAGE_KEY = 'puzzle-records';
+const STORAGE_KEY = 'puzzle-quick-settings';
 
 export type PuzzleRecord = {
   id: string;

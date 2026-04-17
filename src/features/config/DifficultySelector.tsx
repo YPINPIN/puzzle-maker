@@ -58,7 +58,7 @@ export default function DifficultySelector() {
   const presets = GRID_PRESETS[selectedDifficulty];
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4 gap-6">
+    <div className="h-full overflow-y-auto flex flex-col items-center justify-center bg-gray-50 p-4 gap-6">
       <div className="w-full max-w-sm flex items-center">
         <button
           onClick={() => dispatch(resetGame())}

@@ -1,7 +1,9 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import type { AppDispatch, RootState } from '../../store';
+import { resumeGame } from '../../store/puzzleSlice';
 import { useGameLoop } from './useGameLoop';
 import { usePointerDrag } from './usePointerDrag';
-import GameToolbar from './GameToolbar';
 import ImagePreviewOverlay from './ImagePreviewOverlay';
 import { TOOLBAR_HEIGHT } from '../../lib/constants';
 
@@ -15,6 +17,8 @@ const ZOOM_MAX = 200;  // %（= canvas 原始大小，1:1 pixel）
 const ZOOM_STEP = 25;  // %
 
 export default function PuzzleBoard({ canvasMapRef, pathMapRef }: Props) {
+  const dispatch = useDispatch<AppDispatch>();
+  const isPaused = useSelector((s: RootState) => s.puzzle.isPaused);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const hoveredPieceIdRef = useRef<number | null>(null);
   const activePieceIdRef = useRef<number | null>(null);
@@ -162,10 +166,8 @@ export default function PuzzleBoard({ canvasMapRef, pathMapRef }: Props) {
   const canPan = zoomPercent > ZOOM_MIN;
 
   return (
-    <div className="relative flex flex-col w-screen h-screen">
-      <GameToolbar />
-
-      {/* 遊戲區域：深色桌面背景，佔滿剩餘高度 */}
+    <div className="relative flex flex-col w-full h-full">
+      {/* 遊戲區域：深色桌面背景，佔滿全部高度 */}
       <div
         className="flex-1 relative overflow-hidden"
         style={{ backgroundColor: '#2e2b28' }}
@@ -173,6 +175,19 @@ export default function PuzzleBoard({ canvasMapRef, pathMapRef }: Props) {
         {isResizing && (
           <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40 pointer-events-none">
             <span className="text-white text-lg font-semibold tracking-wide">調整版面中…</span>
+          </div>
+        )}
+
+        {/* 暫停 overlay */}
+        {isPaused && (
+          <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center z-20 pointer-events-auto">
+            <p className="text-white text-2xl font-bold mb-4">⏸ 遊戲暫停</p>
+            <button
+              onClick={() => dispatch(resumeGame())}
+              className="px-6 py-3 bg-blue-500 hover:bg-blue-400 rounded-xl text-white font-semibold transition-colors"
+            >
+              繼續遊戲
+            </button>
           </div>
         )}
 

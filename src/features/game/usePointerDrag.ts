@@ -42,6 +42,8 @@ export function usePointerDrag({
   const pieceGroup = useSelector((s: RootState) => s.puzzle.pieceGroup);
   const draggingGroupId = useSelector((s: RootState) => s.puzzle.draggingGroupId);
   const startTime = useSelector((s: RootState) => s.puzzle.startTime);
+  const isPaused = useSelector((s: RootState) => s.puzzle.isPaused);
+  const pauseOffset = useSelector((s: RootState) => s.puzzle.pauseOffset);
   const pieceW = useSelector((s: RootState) => s.puzzle.pieceW);
   const pieceH = useSelector((s: RootState) => s.puzzle.pieceH);
 
@@ -49,11 +51,15 @@ export function usePointerDrag({
   const groupsRef = useRef(groups);
   const pieceGroupRef = useRef(pieceGroup);
   const draggingGroupIdRef = useRef(draggingGroupId);
+  const isPausedRef = useRef(isPaused);
+  const pauseOffsetRef = useRef(pauseOffset);
 
   useEffect(() => { piecesRef.current = pieces; }, [pieces]);
   useEffect(() => { groupsRef.current = groups; }, [groups]);
   useEffect(() => { pieceGroupRef.current = pieceGroup; }, [pieceGroup]);
   useEffect(() => { draggingGroupIdRef.current = draggingGroupId; }, [draggingGroupId]);
+  useEffect(() => { isPausedRef.current = isPaused; }, [isPaused]);
+  useEffect(() => { pauseOffsetRef.current = pauseOffset; }, [pauseOffset]);
 
   // Stable refs for callbacks（避免 useEffect 重新掛載）
   const onPanStartRef = useRef(onPanStart);
@@ -106,6 +112,7 @@ export function usePointerDrag({
     }
 
     function onPointerDown(e: PointerEvent) {
+      if (isPausedRef.current) return;
       const { x, y } = getCanvasPos(e);
       const hitId = hitTest(x, y);
 
@@ -265,7 +272,7 @@ export function usePointerDrag({
         return p.isSnapped;
       });
       if (allSnapped && snapCandidate) {
-        const elapsed = startTime ? Date.now() - startTime : 0;
+        const elapsed = startTime ? Date.now() - startTime - pauseOffsetRef.current : 0;
         dispatch(setComplete(elapsed));
       }
     }
@@ -284,6 +291,6 @@ export function usePointerDrag({
   }, [
     canvasRef, pathMapRef, hoveredPieceIdRef, activePieceIdRef,
     dragDeltaRef, dragBasePositionsRef,
-    dispatch, pieceW, pieceH, startTime,
+    dispatch, pieceW, pieceH, startTime, isPaused, pauseOffset,
   ]);
 }
