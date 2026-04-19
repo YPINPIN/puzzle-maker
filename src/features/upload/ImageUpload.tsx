@@ -2,6 +2,7 @@ import { useRef, useState, type DragEvent, type ChangeEvent } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from '../../store';
 import { setImage, goToHome } from '../../store/puzzleSlice';
+import PresetImagesModal from './PresetImagesModal';
 
 export default function ImageUpload() {
   const dispatch = useDispatch<AppDispatch>();
@@ -9,6 +10,7 @@ export default function ImageUpload() {
   const inputRef = useRef<HTMLInputElement>(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const [pendingImageUrl, setPendingImageUrl] = useState<string | null>(imageDataUrl);
+  const [showPresetModal, setShowPresetModal] = useState(false);
 
   function processFile(file: File) {
     if (!file.type.startsWith('image/')) return;
@@ -141,8 +143,30 @@ export default function ImageUpload() {
             className="hidden"
             onChange={onFileChange}
           />
+
+          {/* Divider */}
+          <div className="flex items-center gap-3 w-full">
+            <div className="flex-1 h-px bg-paper-300" />
+            <span className="text-xs text-paper-600 font-medium">或</span>
+            <div className="flex-1 h-px bg-paper-300" />
+          </div>
+
+          {/* Preset images button */}
+          <button
+            onClick={() => setShowPresetModal(true)}
+            className="btn-secondary w-full py-3 text-sm"
+          >
+            選用內建圖片
+          </button>
         </div>
       </div>
+
+      {showPresetModal && (
+        <PresetImagesModal
+          onClose={() => setShowPresetModal(false)}
+          onSelect={(dataUrl) => setPendingImageUrl(dataUrl)}
+        />
+      )}
     </div>
   );
 }
