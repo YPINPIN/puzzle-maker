@@ -11,6 +11,8 @@ type Props = {
   onClose: () => void;
   onApply?: (record: PuzzleRecord) => void;
   onContinue?: (record: GameHistoryRecord) => void;
+  onShare?: (record: PuzzleRecord) => void;
+  onImportCode?: () => void;
 };
 
 const DIFFICULTY_LABEL: Record<string, string> = {
@@ -33,7 +35,7 @@ function formatTime(ms: number): string {
   return `${seconds} 秒`;
 }
 
-export default function RecordsModal({ mode, onClose, onApply, onContinue }: Props) {
+export default function RecordsModal({ mode, onClose, onApply, onContinue, onShare, onImportCode }: Props) {
   const [quickSettings, setQuickSettings] = useState<PuzzleRecord[]>([]);
   const [gameHistory, setGameHistory] = useState<GameHistoryRecord[]>([]);
   const [pendingDeleteQuick, setPendingDeleteQuick] = useState<string | null>(null);
@@ -88,12 +90,22 @@ export default function RecordsModal({ mode, onClose, onApply, onContinue }: Pro
             <h2 className="text-xl font-bold text-paper-900">{title}</h2>
             <p className="text-xs text-paper-600 mt-0.5">{subtitle}</p>
           </div>
-          <button
-            onClick={onClose}
-            className="w-9 h-9 flex items-center justify-center rounded-full bg-paper-100 hover:bg-paper-300 text-paper-600 hover:text-paper-900 transition-colors text-lg font-bold"
-          >
-            ✕
-          </button>
+          <div className="flex items-center gap-2">
+            {mode === 'quick' && onImportCode && (
+              <button
+                onClick={onImportCode}
+                className="btn-secondary px-3 py-1.5 text-xs"
+              >
+                匯入代碼
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              className="w-9 h-9 flex items-center justify-center rounded-full bg-paper-100 hover:bg-paper-300 text-paper-600 hover:text-paper-900 transition-colors text-lg font-bold"
+            >
+              ✕
+            </button>
+          </div>
         </div>
 
         {/* Content */}
@@ -139,6 +151,14 @@ export default function RecordsModal({ mode, onClose, onApply, onContinue }: Pro
                           className="btn-primary px-3 py-1.5 text-xs"
                         >
                           重新遊玩
+                        </button>
+                      )}
+                      {r.croppedImageDataUrl && onShare && (
+                        <button
+                          onClick={() => onShare(r)}
+                          className="btn-secondary px-3 py-1.5 text-xs"
+                        >
+                          分享
                         </button>
                       )}
                       <button

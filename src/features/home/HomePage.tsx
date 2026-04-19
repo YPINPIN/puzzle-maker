@@ -12,6 +12,7 @@ import type { PuzzleRecord } from '../../lib/records';
 import type { GameHistoryRecord, InProgressGameState, Difficulty } from '../../types/puzzle';
 import RecordsModal from '../upload/RecordsModal';
 import ConfirmDialog from '../../components/ConfirmDialog';
+import ShareCodeModal from '../../components/ShareCodeModal';
 
 type Props = {
   canvasMapRef: React.RefObject<Map<number, HTMLCanvasElement>>;
@@ -23,6 +24,8 @@ export default function HomePage({ canvasMapRef, pathMapRef }: Props) {
   const [showRecords, setShowRecords] = useState<'quick' | 'history' | null>(null);
   const [showFullWarning, setShowFullWarning] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [shareTarget, setShareTarget] = useState<PuzzleRecord | null>(null);
+  const [showImportDialog, setShowImportDialog] = useState(false);
 
   function handleNewPuzzle() {
     if (getRecords().length >= 10) {
@@ -201,6 +204,28 @@ export default function HomePage({ canvasMapRef, pathMapRef }: Props) {
           onClose={() => setShowRecords(null)}
           onApply={applyRecord}
           onContinue={continueGame}
+          onShare={(record) => setShareTarget(record)}
+          onImportCode={() => setShowImportDialog(true)}
+        />
+      )}
+
+      {shareTarget && (
+        <ShareCodeModal
+          mode="share"
+          record={shareTarget}
+          onClose={() => setShareTarget(null)}
+        />
+      )}
+
+      {showImportDialog && (
+        <ShareCodeModal
+          mode="import"
+          onImport={(record) => {
+            setShowImportDialog(false);
+            setShowRecords(null);
+            applyRecord(record);
+          }}
+          onClose={() => setShowImportDialog(false)}
         />
       )}
     </div>
