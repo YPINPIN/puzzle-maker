@@ -1,1 +1,143 @@
 @import "tailwindcss";
+
+@theme {
+  /* Brand 琥珀金 */
+  --color-brand-50:  #FFF5E1;
+  --color-brand-500: #F4A52B;
+  --color-brand-600: #E08A10;
+  --color-brand-700: #B96A00;
+
+  /* Accent 湖水綠 */
+  --color-accent-50:  #E4F6F4;
+  --color-accent-500: #2AA39A;
+  --color-accent-600: #1F857E;
+
+  /* 米白紙張中性色 */
+  --color-paper-50:  #FDFBF7;
+  --color-paper-100: #F8F5F0;
+  --color-paper-200: #F4F1EC;
+  --color-paper-300: #E6DFD3;
+  --color-paper-400: #C8BDA8;
+  --color-paper-600: #8E8070;
+  --color-paper-800: #5E5246;
+  --color-paper-900: #201A13;
+
+  /* 木質遊戲區 */
+  --color-wood-900:  #2A231C;
+  --color-wood-950:  #1A140D;
+
+  /* 狀態色 */
+  --color-success:    #22A36A;
+  --color-success-bg: #E3F6EC;
+  --color-warning:    #E89813;
+  --color-warning-bg: #FDF1D7;
+  --color-danger:     #D94B3B;
+  --color-danger-bg:  #FCE6E2;
+}
+
+/* ===== 頁面暖色漸層（各頁共用，深色自動切換） ===== */
+:root {
+  --pg-warm: radial-gradient(120% 80% at 50% 0%, #FDF5E5 0%, #F4F1EC 60%);
+}
+
+/* ===== 遊戲級按鈕：金屬琥珀 CTA ===== */
+button { cursor: pointer; }
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg, #F6B641 0%, #E08A10 100%);
+  color: #2B1A00;
+  font-weight: 800;
+  border-radius: 14px;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.45),
+    0 2px 8px rgba(176,103,0,.25);
+  transition: transform .08s ease, filter .15s ease, box-shadow .08s ease;
+  cursor: pointer;
+}
+.btn-primary:hover { filter: brightness(1.06); }
+.btn-primary:active {
+  transform: scale(0.97);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.35),
+    0 1px 4px rgba(176,103,0,.2);
+}
+.btn-primary:disabled { opacity: .5; cursor: not-allowed; }
+
+/* ===== 次要按鈕 ===== */
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #FFFFFF;
+  color: #201A13;
+  font-weight: 700;
+  border: 1px solid #C8BDA8;
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(32,26,19,.06), inset 0 -2px 0 rgba(32,26,19,.06);
+  transition: background .12s ease, border-color .12s ease, transform .08s ease;
+  cursor: pointer;
+}
+.btn-secondary:hover { background: #F8F5F0; border-color: #E08A10; }
+.btn-secondary:active { transform: translateY(1px); }
+
+/* ===== 危險按鈕 ===== */
+.btn-danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg, #E66154 0%, #C23A2B 100%);
+  color: #fff;
+  font-weight: 800;
+  border-radius: 12px;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.3),
+    0 2px 6px rgba(127,32,20,.25);
+  transition: transform .08s ease, filter .12s ease;
+  cursor: pointer;
+}
+.btn-danger:hover { filter: brightness(1.08); }
+.btn-danger:active { transform: scale(0.97); box-shadow: inset 0 1px 0 rgba(255,255,255,.25), 0 1px 3px rgba(127,32,20,.2); }
+
+/* ===== LED 計時器 ===== */
+.timer-box {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: rgba(0,0,0,.4);
+  border: 1px solid rgba(244,165,43,.35);
+  border-radius: 12px;
+  font-family: ui-monospace, 'JetBrains Mono', 'Courier New', monospace;
+  font-weight: 700;
+  color: #FDE9C4;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 0 18px rgba(244,165,43,.1);
+}
+
+/* ===== 金色光暈（完成 Overlay） ===== */
+.amber-glow {
+  box-shadow:
+    0 0 60px rgba(244,165,43,.45),
+    0 20px 40px rgba(0,0,0,.25);
+}
+
+/* ===== 卡片 hover 升起 ===== */
+.card-lift {
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+.card-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(32,26,19,.12), 0 4px 8px rgba(32,26,19,.06);
+}
+
+/* ===== Canvas 拼圖金屬相框 ===== */
+.puzzle-frame {
+  box-shadow:
+    0 0 0 2px #B96A00,
+    0 0 0 4px #7C4500,
+    0 20px 60px rgba(0,0,0,.75),
+    inset 0 0 40px rgba(185,106,0,.08);
+}
+

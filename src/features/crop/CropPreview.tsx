@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from '../../store';
 import { setPieces, startGame, backToConfig, setReferenceImage, setGameId, setConfigId } from '../../store/puzzleSlice';
 import { generatePieces } from '../../lib/pieceFactory';
-import { TOOLBAR_HEIGHT } from '../../lib/constants';
+import { TOOLBAR_HEIGHT, MAX_CANVAS_WIDTH, getEffectiveDPR } from '../../lib/constants';
 import { saveRecord } from '../../lib/records';
 
 type Props = {
@@ -71,7 +71,7 @@ export default function CropPreview({ canvasMapRef, pathMapRef }: Props) {
     img.src = imageDataUrl;
   }, [imageDataUrl, cols, rows]);
 
-  // Canvas 尺寸設定
+  // Canvas 尺寸設定（resize 時同步重算圖片位置）
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -79,6 +79,17 @@ export default function CropPreview({ canvasMapRef, pathMapRef }: Props) {
       if (!canvas) return;
       canvas.width = canvas.offsetWidth;
       canvas.height = canvas.offsetHeight;
+      const img = imgRef.current;
+      if (!img) return;
+      const pad = 48;
+      const scaleX = (canvas.width - pad * 2) / img.width;
+      const scaleY = (canvas.height - pad * 2) / img.height;
+      const scale = Math.min(scaleX, scaleY, 1);
+      imgTransformRef.current = {
+        scale,
+        offsetX: (canvas.width - img.width * scale) / 2,
+        offsetY: (canvas.height - img.height * scale) / 2,
+      };
     }
     resize();
     window.addEventListener('resize', resize);
@@ -338,13 +349,15 @@ export default function CropPreview({ canvasMapRef, pathMapRef }: Props) {
     dispatch(setConfigId(configId));
     dispatch(setGameId(crypto.randomUUID()));
 
-    const viewH = window.innerHeight - TOOLBAR_HEIGHT;
-    const viewW = window.innerWidth;
-    const canvasSize = 2 * Math.min(viewW, viewH);
+    const displayW = Math.min(window.innerWidth, MAX_CANVAS_WIDTH);
+    const displayH = window.innerHeight - TOOLBAR_HEIGHT;
+    const dpr = getEffectiveDPR();
+    const canvasW = displayW * dpr;
+    const canvasH = displayH * dpr;
 
     try {
       const result = await generatePieces(
-        imageDataUrl, cols, rows, viewW, viewH, canvasSize, cropRegion
+        imageDataUrl, cols, rows, canvasW, canvasH, cropRegion
       );
 
       canvasMapRef.current.clear();
@@ -356,7 +369,8 @@ export default function CropPreview({ canvasMapRef, pathMapRef }: Props) {
         pieces: result.pieces,
         rows: result.rows,
         cols: result.cols,
-        boardH: canvasSize,
+        boardW: canvasW,
+        boardH: canvasH,
         pieceW: result.pieceW,
         pieceH: result.pieceH,
         puzzleOffsetX: result.puzzleOffsetX,
@@ -369,23 +383,27 @@ export default function CropPreview({ canvasMapRef, pathMapRef }: Props) {
   }, [imageDataUrl, cols, rows, difficulty, canvasMapRef, pathMapRef, dispatch]);
 
   return (
-    <div className="flex flex-col w-full h-full bg-black">
+    <div className="flex flex-col w-full h-full" style={{ background: '#0D0906' }}>
       {/* 頂部 toolbar（非 fixed，不擋圖片） */}
-      <div className="flex items-center justify-between px-4 py-3 bg-black/80 backdrop-blur-sm flex-shrink-0">
+      <div
+        className="flex items-center justify-between px-4 py-3 backdrop-blur-sm flex-shrink-0"
+        style={{
+          background: 'linear-gradient(180deg, #251E15 0%, rgba(26,20,13,.9) 100%)',
+          borderBottom: '1px solid #3A2F25',
+        }}
+      >
         <button
           onClick={() => dispatch(backToConfig())}
-          className="text-white text-sm px-4 py-2 rounded-lg border border-white/30 hover:bg-white/20 transition-colors"
+          className="text-paper-400 text-sm font-bold px-4 py-2 rounded-lg hover:brightness-110 transition-all"
+          style={{ background: '#3A2F25', border: '1px solid #5A4B38' }}
         >
           ← 返回難度選擇
         </button>
-        <h2 className="text-white font-semibold text-sm sm:text-base">
-          選擇裁切區域（{cols} × {rows} 格）
-        </h2>
         <button
           onClick={handleConfirm}
-          className="text-white text-sm px-4 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 transition-colors font-semibold"
+          className="btn-primary text-sm px-5 py-2"
         >
-          確認開始
+          開始拼圖
         </button>
       </div>
 
@@ -396,7 +414,10 @@ export default function CropPreview({ canvasMapRef, pathMapRef }: Props) {
           className="block w-full h-full touch-none cursor-grab active:cursor-grabbing"
         />
         {/* 操作提示 */}
-        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 text-white/50 text-xs pointer-events-none whitespace-nowrap">
+        <div
+          className="absolute top-3 left-1/2 -translate-x-1/2 text-brand-500/80 text-xs font-medium pointer-events-none whitespace-nowrap px-3 py-1 rounded-full"
+          style={{ background: 'rgba(26,20,13,.6)', border: '1px solid rgba(244,165,43,.25)' }}
+        >
           拖曳移動裁切框 · 滾輪縮放（最小 ½ 圖片短邊，不超出邊界）
         </div>
       </div>

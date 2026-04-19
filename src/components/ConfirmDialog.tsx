@@ -19,29 +19,26 @@ export default function ConfirmDialog({
 }: Props) {
   return (
     <div
-      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4"
+      className="fixed inset-0 z-[60] flex items-center justify-center p-4"
+      style={{ background: 'rgba(13,9,6,.85)' }}
       onClick={onCancel}
     >
       <div
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 flex flex-col gap-4"
+        className="bg-paper-50 rounded-3xl shadow-2xl w-full max-w-sm p-6 flex flex-col gap-4 border border-paper-300"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="text-lg font-bold text-gray-800">{title}</h2>
-        <p className="text-sm text-gray-600 leading-relaxed">{message}</p>
+        <h2 className="text-lg font-bold text-paper-900">{title}</h2>
+        <p className="text-sm text-paper-800 leading-relaxed">{message}</p>
         <div className="flex gap-3 justify-end mt-1">
           <button
             onClick={onCancel}
-            className="px-4 py-2 text-sm font-semibold bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-lg transition-colors"
+            className="btn-secondary px-4 py-2 text-sm"
           >
             {cancelText}
           </button>
           <button
             onClick={onConfirm}
-            className={`px-4 py-2 text-sm font-semibold rounded-lg transition-colors text-white ${
-              danger
-                ? 'bg-red-500 hover:bg-red-600'
-                : 'bg-blue-500 hover:bg-blue-600'
-            }`}
+            className={danger ? 'btn-danger px-4 py-2 text-sm' : 'btn-primary px-4 py-2 text-sm'}
           >
             {confirmText}
           </button>

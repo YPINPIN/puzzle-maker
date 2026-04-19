@@ -6,7 +6,7 @@ import {
   startGame, restoreGame, goToUpload,
 } from '../../store/puzzleSlice';
 import { generatePieces } from '../../lib/pieceFactory';
-import { TOOLBAR_HEIGHT } from '../../lib/constants';
+import { TOOLBAR_HEIGHT, MAX_CANVAS_WIDTH, TAB_RATIO, getEffectiveDPR } from '../../lib/constants';
 import { getRecords } from '../../lib/records';
 import type { PuzzleRecord } from '../../lib/records';
 import type { GameHistoryRecord, InProgressGameState, Difficulty } from '../../types/puzzle';
@@ -36,17 +36,18 @@ export default function HomePage({ canvasMapRef, pathMapRef }: Props) {
     if (!record.croppedImageDataUrl || isLoading) return;
     setIsLoading(true);
     try {
-      const viewH = window.innerHeight - TOOLBAR_HEIGHT;
-      const viewW = window.innerWidth;
-      const canvasSize = 2 * Math.min(viewW, viewH);
+      const displayW = Math.min(window.innerWidth, MAX_CANVAS_WIDTH);
+      const displayH = window.innerHeight - TOOLBAR_HEIGHT;
+      const dpr = getEffectiveDPR();
+      const canvasW = displayW * dpr;
+      const canvasH = displayH * dpr;
 
       const result = await generatePieces(
         record.croppedImageDataUrl,
         record.cols,
         record.rows,
-        viewW,
-        viewH,
-        canvasSize,
+        canvasW,
+        canvasH,
       );
 
       canvasMapRef.current.clear();
@@ -59,7 +60,8 @@ export default function HomePage({ canvasMapRef, pathMapRef }: Props) {
         pieces: result.pieces,
         rows: result.rows,
         cols: result.cols,
-        boardH: canvasSize,
+        boardW: canvasW,
+        boardH: canvasH,
         pieceW: result.pieceW,
         pieceH: result.pieceH,
         puzzleOffsetX: result.puzzleOffsetX,
@@ -78,17 +80,20 @@ export default function HomePage({ canvasMapRef, pathMapRef }: Props) {
     setIsLoading(true);
     try {
       const { savedState } = historyRecord;
-      const viewH = window.innerHeight - TOOLBAR_HEIGHT;
-      const viewW = window.innerWidth;
-      const canvasSize = 2 * Math.min(viewW, viewH);
+      const displayW = Math.min(window.innerWidth, MAX_CANVAS_WIDTH);
+      const displayH = window.innerHeight - TOOLBAR_HEIGHT;
+      const dpr = getEffectiveDPR();
+      const canvasW = displayW * dpr;
+      const canvasH = displayH * dpr;
 
       const result = await generatePieces(
         historyRecord.croppedImageDataUrl,
         historyRecord.cols,
         historyRecord.rows,
-        viewW,
-        viewH,
-        canvasSize,
+        canvasW,
+        canvasH,
+        undefined,
+        savedState.pieces
       );
 
       canvasMapRef.current.clear();
@@ -96,30 +101,34 @@ export default function HomePage({ canvasMapRef, pathMapRef }: Props) {
       pathMapRef.current.clear();
       result.pathMap.forEach((p, id) => pathMapRef.current.set(id, p));
 
-      const scale = result.pieceW / savedState.pieceW;
-      const odx = result.puzzleOffsetX - savedState.puzzleOffsetX * scale;
-      const ody = result.puzzleOffsetY - savedState.puzzleOffsetY * scale;
-      const maxX = canvasSize - result.pieceW;
-      const maxY = canvasSize - result.pieceH;
+      // 正方形 piece，scaleX = scaleY；puzzleOffset 需各自計算補正量
+      const scaleX = result.pieceW / savedState.pieceW;
+      const scaleY = result.pieceH / savedState.pieceH;
+      const odx = result.puzzleOffsetX - savedState.puzzleOffsetX * scaleX;
+      const ody = result.puzzleOffsetY - savedState.puzzleOffsetY * scaleY;
+      const TAB_SIZE = Math.floor(result.pieceW * TAB_RATIO);
+      const maxX = canvasW - result.pieceW - TAB_SIZE;
+      const maxY = canvasH - result.pieceH - TAB_SIZE;
       const scaledPieces = savedState.pieces.map((p) => {
-        const scaledX = Math.round(p.currentPosition.x * scale + odx);
-        const scaledY = Math.round(p.currentPosition.y * scale + ody);
+        const scaledX = Math.round(p.currentPosition.x * scaleX + odx);
+        const scaledY = Math.round(p.currentPosition.y * scaleY + ody);
         return {
           ...p,
           currentPosition: {
-            x: p.isSnapped ? scaledX : Math.max(0, Math.min(maxX, scaledX)),
-            y: p.isSnapped ? scaledY : Math.max(0, Math.min(maxY, scaledY)),
+            x: p.isSnapped ? scaledX : Math.max(TAB_SIZE, Math.min(maxX, scaledX)),
+            y: p.isSnapped ? scaledY : Math.max(TAB_SIZE, Math.min(maxY, scaledY)),
           },
           correctPosition: {
-            x: Math.round(p.correctPosition.x * scale + odx),
-            y: Math.round(p.correctPosition.y * scale + ody),
+            x: Math.round(p.correctPosition.x * scaleX + odx),
+            y: Math.round(p.correctPosition.y * scaleY + ody),
           },
         };
       });
       const scaledSavedState: InProgressGameState = {
         ...savedState,
+        boardW: canvasW,
+        boardH: canvasH,
         pieces: scaledPieces,
-        boardH: canvasSize,
         pieceW: result.pieceW,
         pieceH: result.pieceH,
         puzzleOffsetX: result.puzzleOffsetX,
@@ -142,7 +151,10 @@ export default function HomePage({ canvasMapRef, pathMapRef }: Props) {
   }, [canvasMapRef, pathMapRef, dispatch, isLoading]);
 
   return (
-    <div className="h-full overflow-y-auto flex flex-col items-center justify-center bg-gray-50 p-6">
+    <div
+      className="h-full overflow-y-auto flex flex-col items-center justify-center p-6"
+      style={{ background: 'var(--pg-warm)' }}
+    >
       <div className="w-full max-w-sm flex flex-col gap-4">
 
         <MenuCard
@@ -168,7 +180,7 @@ export default function HomePage({ canvasMapRef, pathMapRef }: Props) {
         />
 
         {isLoading && (
-          <p className="text-sm text-blue-500 animate-pulse text-center mt-2">正在載入遊戲…</p>
+          <p className="text-sm text-brand-600 animate-pulse text-center mt-2">正在載入遊戲…</p>
         )}
       </div>
 
@@ -209,28 +221,30 @@ function MenuCard({
   return (
     <button
       onClick={onClick}
-      className={`w-full flex items-center gap-4 p-5 rounded-2xl border text-left transition-all active:scale-[0.98] ${
+      className={`w-full flex items-center gap-4 p-5 rounded-2xl border-2 text-left transition-all active:scale-[0.99] card-lift ${
         variant === 'primary'
-          ? 'bg-blue-500 hover:bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-200'
-          : 'bg-white hover:bg-gray-50 border-gray-200 hover:border-gray-300 text-gray-800 shadow-sm'
+          ? 'btn-primary border-brand-700'
+          : 'bg-paper-50 hover:bg-paper-100 border-paper-300 hover:border-brand-500/50 shadow-sm'
       }`}
     >
-      <div className={`w-12 h-12 flex-shrink-0 rounded-xl flex items-center justify-center ${
-        variant === 'primary' ? 'bg-white/20' : 'bg-gray-100'
+      <div className={`w-12 h-12 flex-shrink-0 rounded-2xl flex items-center justify-center ${
+        variant === 'primary'
+          ? 'bg-white/35 shadow-[inset_0_1px_0_rgba(255,255,255,.5)]'
+          : 'bg-brand-50 text-brand-600'
       }`}>
         {icon}
       </div>
       <div>
-        <p className={`font-bold text-base ${variant === 'primary' ? 'text-white' : 'text-gray-800'}`}>
+        <p className="font-extrabold text-base text-paper-900">
           {title}
         </p>
-        <p className={`text-sm mt-0.5 ${variant === 'primary' ? 'text-blue-100' : 'text-gray-500'}`}>
+        <p className={`text-sm mt-0.5 font-medium ${variant === 'primary' ? 'text-paper-900/70' : 'text-paper-800/80'}`}>
           {subtitle}
         </p>
       </div>
       <div className="ml-auto">
         <svg
-          className={`w-5 h-5 ${variant === 'primary' ? 'text-white/70' : 'text-gray-400'}`}
+          className={`w-5 h-5 ${variant === 'primary' ? 'text-paper-900/60' : 'text-brand-500'}`}
           fill="none" stroke="currentColor" viewBox="0 0 24 24"
         >
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -242,7 +256,7 @@ function MenuCard({
 
 function IconNew() {
   return (
-    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg className="w-6 h-6 text-paper-900/80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
         d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
     </svg>
@@ -251,7 +265,7 @@ function IconNew() {
 
 function IconSave() {
   return (
-    <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg className="w-6 h-6 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
         d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
     </svg>
@@ -260,7 +274,7 @@ function IconSave() {
 
 function IconQuick() {
   return (
-    <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg className="w-6 h-6 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
         d="M13 10V3L4 14h7v7l9-11h-7z" />
     </svg>

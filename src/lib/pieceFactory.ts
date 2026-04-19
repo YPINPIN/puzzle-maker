@@ -28,17 +28,18 @@ export async function generatePieces(
   imageDataUrl: string,
   cols: number,
   rows: number,
-  viewportW: number,
-  viewportH: number,
-  canvasSize: number,
-  cropRegion?: { x: number; y: number; width: number; height: number }
+  canvasW: number,
+  canvasH: number,
+  cropRegion?: { x: number; y: number; width: number; height: number },
+  existingPieces?: PuzzlePiece[]
 ): Promise<PieceFactoryResult> {
   const image = await loadImage(imageDataUrl);
 
-  // 拼圖片大小由視窗尺寸決定：200% 時格線恰好填滿視窗（1:1 pixel）
+  // pieceSize 設計：200% zoom (scale=1.0) 時格線恰好 fit-to-window
+  // canvasW/2 = displayW，pieceSize = min(displayW/cols, displayH/rows)
   const pieceSize = Math.min(
-    Math.floor(viewportW / cols),
-    Math.floor(viewportH / rows),
+    Math.floor(canvasW / 2 / cols),
+    Math.floor(canvasH / 2 / rows),
   );
   const pieceW = pieceSize;
   const pieceH = pieceSize;
@@ -46,9 +47,9 @@ export async function generatePieces(
   const offW = pieceW + 2 * TAB_SIZE;
   const offH = pieceH + 2 * TAB_SIZE;
 
-  // 拼圖格線在正方形 canvas 中置中
-  const puzzleOffsetX = Math.floor((canvasSize - cols * pieceW) / 2);
-  const puzzleOffsetY = Math.floor((canvasSize - rows * pieceH) / 2);
+  // 拼圖格線在矩形 canvas 中置中
+  const puzzleOffsetX = Math.floor((canvasW - cols * pieceW) / 2);
+  const puzzleOffsetY = Math.floor((canvasH - rows * pieceH) / 2);
 
   // 圖片來源區域（使用裁切範圍或完整圖片）
   const srcX = cropRegion?.x ?? 0;
@@ -56,7 +57,12 @@ export async function generatePieces(
   const srcW = cropRegion?.width ?? image.width;
   const srcH = cropRegion?.height ?? image.height;
 
-  const edgeMatrix = generateEdges(rows, cols);
+  // 有既有片子時重用邊緣（resize/續玩），否則隨機生成（新開局）
+  const existingEdgeMap = existingPieces
+    ? new Map(existingPieces.map(p => [p.id, p.edges]))
+    : null;
+  const edgeMatrix = existingEdgeMap ? null : generateEdges(rows, cols);
+
   const pieces: PuzzlePiece[] = [];
   const canvasMap = new Map<number, HTMLCanvasElement>();
   const pathMap = new Map<number, Path2D>();
@@ -69,10 +75,10 @@ export async function generatePieces(
   const m = TAB_SIZE + 4;
 
   const zones = [
-    { x0: m,         x1: canvasSize - pieceW - m,  y0: m,         y1: gridT - pieceH - m },  // 上
-    { x0: m,         x1: canvasSize - pieceW - m,  y0: gridB + m, y1: canvasSize - pieceH - m }, // 下
-    { x0: m,         x1: gridL - pieceW - m,        y0: gridT,    y1: gridB - pieceH },       // 左
-    { x0: gridR + m, x1: canvasSize - pieceW - m,  y0: gridT,     y1: gridB - pieceH },       // 右
+    { x0: m,         x1: canvasW - pieceW - m, y0: m,         y1: gridT - pieceH - m },  // 上
+    { x0: m,         x1: canvasW - pieceW - m, y0: gridB + m, y1: canvasH - pieceH - m }, // 下
+    { x0: m,         x1: gridL - pieceW - m,   y0: Math.max(m, gridT), y1: Math.min(canvasH - pieceH - m, gridB - pieceH) },  // 左
+    { x0: gridR + m, x1: canvasW - pieceW - m, y0: Math.max(m, gridT), y1: Math.min(canvasH - pieceH - m, gridB - pieceH) }, // 右
   ].filter(z => z.x1 > z.x0 && z.y1 > z.y0);
 
   const zoneAreas = zones.map(z => (z.x1 - z.x0) * (z.y1 - z.y0));
@@ -81,7 +87,9 @@ export async function generatePieces(
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
       const id = r * cols + c;
-      const { edges } = edgeMatrix[r][c];
+      const edges = existingEdgeMap
+        ? existingEdgeMap.get(id)!
+        : edgeMatrix![r][c].edges;
 
       // correctPosition 在 canvas 座標系（含居中偏移）
       const correctX = puzzleOffsetX + c * pieceW;
@@ -112,9 +120,9 @@ export async function generatePieces(
 
       canvasMap.set(id, offscreen);
 
-      // 散片初始位置：分布在格線矩形外圍 4 個區域（按面積加權隨機）
+      // 散片初始位置：分布在格線矩形外圍區域（按面積加權隨機）
       let currentX: number, currentY: number;
-      if (zones.length > 0) {
+      if (zones.length > 0 && totalArea > 0) {
         let pick = Math.random() * totalArea;
         let zone = zones[0];
         for (let i = 0; i < zones.length; i++) {
@@ -125,8 +133,8 @@ export async function generatePieces(
         currentY = zone.y0 + Math.random() * (zone.y1 - zone.y0);
       } else {
         // fallback（格線幾乎佔滿 canvas）
-        currentX = m + Math.random() * Math.max(0, canvasSize - pieceW - 2 * m);
-        currentY = m + Math.random() * Math.max(0, canvasSize - pieceH - 2 * m);
+        currentX = m + Math.random() * Math.max(0, canvasW - pieceW - 2 * m);
+        currentY = m + Math.random() * Math.max(0, canvasH - pieceH - 2 * m);
       }
 
       pieces.push({

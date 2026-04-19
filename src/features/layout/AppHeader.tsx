@@ -22,9 +22,7 @@ const DIFFICULTY_LABEL: Record<string, string> = {
 function formatTime(ms: number): string {
   const s = Math.floor(ms / 1000);
   const m = Math.floor(s / 60);
-  return m > 0
-    ? `${m} 分 ${(s % 60).toString().padStart(2, '0')} 秒`
-    : `${s} 秒`;
+  return `${m.toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`;
 }
 
 export default function AppHeader() {
@@ -44,6 +42,7 @@ export default function AppHeader() {
   const groups = useSelector((s: RootState) => s.puzzle.groups);
   const pieceGroup = useSelector((s: RootState) => s.puzzle.pieceGroup);
   const nextGroupId = useSelector((s: RootState) => s.puzzle.nextGroupId);
+  const boardW = useSelector((s: RootState) => s.puzzle.boardW);
   const boardH = useSelector((s: RootState) => s.puzzle.boardH);
   const pieceW = useSelector((s: RootState) => s.puzzle.pieceW);
   const pieceH = useSelector((s: RootState) => s.puzzle.pieceH);
@@ -59,13 +58,13 @@ export default function AppHeader() {
   const saveDataRef = useRef({
     gameId, configId, startTime, isPaused, pausedAt, pauseOffset,
     referenceDataUrl, pieces, groups, pieceGroup, nextGroupId,
-    boardH, pieceW, pieceH, puzzleOffsetX, puzzleOffsetY,
+    boardW, boardH, pieceW, pieceH, puzzleOffsetX, puzzleOffsetY,
     difficulty, cols, rows,
   });
   saveDataRef.current = {
     gameId, configId, startTime, isPaused, pausedAt, pauseOffset,
     referenceDataUrl, pieces, groups, pieceGroup, nextGroupId,
-    boardH, pieceW, pieceH, puzzleOffsetX, puzzleOffsetY,
+    boardW, boardH, pieceW, pieceH, puzzleOffsetX, puzzleOffsetY,
     difficulty, cols, rows,
   };
 
@@ -108,7 +107,7 @@ export default function AppHeader() {
     const {
       gameId, configId, startTime, isPaused, pausedAt, pauseOffset,
       referenceDataUrl, pieces, groups, pieceGroup, nextGroupId,
-      boardH, pieceW, pieceH, puzzleOffsetX, puzzleOffsetY,
+      boardW, boardH, pieceW, pieceH, puzzleOffsetX, puzzleOffsetY,
       difficulty, cols, rows,
     } = saveDataRef.current;
 
@@ -121,7 +120,7 @@ export default function AppHeader() {
 
     const savedState: InProgressGameState = {
       pieces, groups, pieceGroup, nextGroupId,
-      elapsedAtSave, boardH, pieceW, pieceH, puzzleOffsetX, puzzleOffsetY,
+      elapsedAtSave, boardW, boardH, pieceW, pieceH, puzzleOffsetX, puzzleOffsetY,
     };
 
     return {
@@ -161,15 +160,36 @@ export default function AppHeader() {
 
   return (
     <>
-    <div className="flex-shrink-0 bg-gray-800 text-white px-4 py-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 min-h-[64px]">
+    <div
+      className="flex-shrink-0 text-white px-4 py-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 min-h-[64px] relative"
+      style={{
+        background: 'linear-gradient(180deg, #251E15 0%, #1A140D 100%)',
+        borderBottom: '1px solid #3A2F25',
+        boxShadow: 'inset 0 -1px 0 rgba(244,165,43,.2), 0 2px 8px rgba(0,0,0,.3)',
+      }}
+    >
       {/* App 名稱 */}
-      <span className="text-base font-bold tracking-wide text-white/90 mr-1">
-        拼圖樂
+      <span className="flex items-center gap-2 mr-1">
+        <span
+          className="w-7 h-7 rounded-lg flex items-center justify-center text-sm flex-shrink-0"
+          style={{
+            background: 'linear-gradient(135deg, #F6B641, #B96A00)',
+            boxShadow: 'inset 0 1px 0 rgba(255,255,255,.4)',
+          }}
+        >🧩</span>
+        <span className="text-base font-black tracking-wide text-paper-100">拼圖樂</span>
       </span>
 
       {/* 難度 + 格數 */}
       {isPlaying && cols > 0 && (
-        <span className="text-xs text-gray-300 bg-gray-700 rounded px-2 py-0.5 whitespace-nowrap">
+        <span
+          className="text-xs font-bold rounded-full px-2.5 py-0.5 whitespace-nowrap"
+          style={{
+            background: 'rgba(244,165,43,.14)',
+            color: '#F5B13F',
+            border: '1px solid rgba(244,165,43,.35)',
+          }}
+        >
           {DIFFICULTY_LABEL[difficulty] ?? difficulty}・{cols}×{rows}
         </span>
       )}
@@ -178,40 +198,44 @@ export default function AppHeader() {
 
       {/* 計時器 */}
       {isPlaying && (
-        <div className="font-mono text-sm font-semibold tracking-wider text-white/90 whitespace-nowrap">
+        <div className="timer-box text-sm whitespace-nowrap">
+          <span style={{ color: '#F5B13F' }}>⏱</span>
           {formatTime(displayElapsed)}
         </div>
       )}
 
       {/* 遊戲控制按鈕（playing phase） */}
       {phase === 'playing' && (
-        <div className="flex gap-1.5 flex-shrink-0 flex-wrap justify-end">
+        <div className="flex flex-wrap gap-2 flex-shrink-0">
           <button
             onClick={() => dispatch(toggleImagePreview())}
-            className="px-2.5 py-1 text-xs bg-gray-600 hover:bg-gray-500 rounded-lg transition-colors whitespace-nowrap"
+            className="px-3 py-1.5 text-xs font-bold rounded-lg transition-all hover:brightness-110"
+            style={{ background: '#3A2F25', border: '1px solid #5A4B38', color: '#F4ECDE' }}
           >
-            查看參考圖
+            👁 參考圖
           </button>
           <button
             onClick={() => dispatch(isPaused ? resumeGame() : pauseGame())}
-            className="px-2.5 py-1 text-xs bg-gray-600 hover:bg-gray-500 rounded-lg transition-colors whitespace-nowrap"
+            className="px-3 py-1.5 text-xs font-bold rounded-lg transition-all hover:brightness-110"
+            style={{ background: '#3A2F25', border: '1px solid #5A4B38', color: '#F4ECDE' }}
           >
-            {isPaused ? '繼續' : '暫停'}
+            {isPaused ? '▶ 繼續' : '⏸ 暫停'}
           </button>
           <button
             onClick={() => setShowSavePanel(true)}
-            className="px-2.5 py-1 text-xs bg-blue-600 hover:bg-blue-500 rounded-lg transition-colors whitespace-nowrap"
+            className="btn-primary px-3 py-1.5 text-xs"
           >
-            保存並結束
+            💾 保存並結束
           </button>
           <button
             onClick={() => setShowExitConfirm(true)}
-            className="px-2.5 py-1 text-xs bg-red-700 hover:bg-red-600 rounded-lg transition-colors whitespace-nowrap"
+            className="btn-danger px-3 py-1.5 text-xs"
           >
-            結束遊戲
+            結束
           </button>
         </div>
       )}
+
     </div>
 
     {showSavePanel && (

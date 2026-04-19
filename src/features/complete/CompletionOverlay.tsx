@@ -25,6 +25,7 @@ export default function CompletionOverlay() {
   const groups = useSelector((s: RootState) => s.puzzle.groups);
   const pieceGroup = useSelector((s: RootState) => s.puzzle.pieceGroup);
   const nextGroupId = useSelector((s: RootState) => s.puzzle.nextGroupId);
+  const boardW = useSelector((s: RootState) => s.puzzle.boardW);
   const boardH = useSelector((s: RootState) => s.puzzle.boardH);
   const pieceW = useSelector((s: RootState) => s.puzzle.pieceW);
   const pieceH = useSelector((s: RootState) => s.puzzle.pieceH);
@@ -85,6 +86,7 @@ export default function CompletionOverlay() {
         pieceGroup,
         nextGroupId,
         elapsedAtSave: elapsedMs,
+        boardW,
         boardH,
         pieceW,
         pieceH,
@@ -114,6 +116,7 @@ export default function CompletionOverlay() {
         pieceGroup,
         nextGroupId,
         elapsedAtSave: elapsedMs,
+        boardW,
         boardH,
         pieceW,
         pieceH,
@@ -131,43 +134,58 @@ export default function CompletionOverlay() {
 
   return (
     <>
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-        <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full flex flex-col items-center gap-5">
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center p-4"
+        style={{ background: 'rgba(13,9,6,.85)' }}
+      >
+        <div
+          className="amber-glow rounded-3xl p-6 max-w-sm w-full flex flex-col items-center gap-4 relative overflow-y-auto"
+          style={{
+            background: 'radial-gradient(120% 80% at 50% 0%, var(--color-brand-50), var(--color-paper-200))',
+            border: '2px solid #F4A52B',
+            maxHeight: 'calc(100vh - 2rem)',
+          }}
+        >
+
           {referenceDataUrl && (
             <img
               src={referenceDataUrl}
               alt="完成的拼圖"
-              className="max-w-full max-h-48 rounded-xl shadow-lg object-contain"
+              className="max-w-full max-h-48 rounded-xl object-contain"
+              style={{ boxShadow: '0 0 0 2px #F4A52B, 0 8px 24px rgba(0,0,0,.2)' }}
             />
           )}
-          <div className="text-5xl">🎉</div>
-          <h1 className="text-3xl font-bold text-gray-800">拼圖完成！</h1>
-          <p className="text-xl text-gray-600">
-            用時：<span className="font-semibold text-blue-600">{formatTime(elapsedMs)}</span>
-          </p>
+          <div className="text-5xl">🏆</div>
+          <h1 className="text-3xl font-black text-paper-900 tracking-tight">拼圖完成！</h1>
+          <div
+            className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 font-mono font-bold"
+            style={{ background: 'var(--color-paper-100)', color: 'var(--color-brand-700)', border: '1px solid #F4A52B' }}
+          >
+            ⏱ 用時 {formatTime(elapsedMs)}
+          </div>
 
           {hasHistoryRecord ? (
             <div className="flex flex-col items-center gap-3 w-full mt-2">
-              <p className="text-xs text-green-600 font-medium">已自動保存至歷史紀錄</p>
+              <p className="text-xs font-bold" style={{ color: 'var(--color-success)' }}>★ 已自動保存至歷史紀錄</p>
               <button
                 onClick={() => dispatch(resetGame())}
-                className="w-full px-8 py-3 bg-blue-500 hover:bg-blue-600 text-white text-lg font-bold rounded-xl shadow-lg transition-colors"
+                className="btn-primary w-full text-lg px-8 py-3"
               >
                 再玩一次
               </button>
             </div>
           ) : (
             <div className="flex flex-col items-center gap-3 w-full mt-2">
-              <p className="text-xs text-gray-400 text-center">離開將不保存遊戲紀錄</p>
+              <p className="text-xs text-paper-600 text-center">離開將不保存遊戲紀錄</p>
               <button
                 onClick={() => setShowSavePanel(true)}
-                className="w-full px-8 py-3 bg-blue-500 hover:bg-blue-600 text-white text-lg font-bold rounded-xl shadow-lg transition-colors"
+                className="btn-primary w-full text-lg px-8 py-3"
               >
                 保存紀錄
               </button>
               <button
                 onClick={() => dispatch(resetGame())}
-                className="w-full px-8 py-3 bg-gray-100 hover:bg-gray-200 text-gray-600 text-lg font-bold rounded-xl transition-colors"
+                className="btn-secondary w-full text-lg px-8 py-3"
               >
                 離開
               </button>

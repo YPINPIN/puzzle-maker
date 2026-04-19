@@ -10,6 +10,7 @@ export type InProgressGameState = {
   pieceGroup: Record<number, number>;
   nextGroupId: number;
   elapsedAtSave: number;
+  boardW: number;
   boardH: number;
   pieceW: number;
   pieceH: number;

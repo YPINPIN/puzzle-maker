@@ -14,6 +14,7 @@ type PuzzleState = {
   nextGroupId: number;
   draggingGroupId: number | null;
   // Layout info
+  boardW: number;
   boardH: number;
   pieceW: number;
   pieceH: number;
@@ -43,6 +44,7 @@ const initialState: PuzzleState = {
   pieceGroup: {},
   nextGroupId: 0,
   draggingGroupId: null,
+  boardW: 0,
   boardH: 0,
   pieceW: 0,
   pieceH: 0,
@@ -96,11 +98,27 @@ const puzzleSlice = createSlice({
       state.referenceDataUrl = action.payload;
     },
 
+    expandBoard(state, action: PayloadAction<{ newBoardH: number }>) {
+      const delta = Math.round((action.payload.newBoardH - state.boardH) / 2);
+      if (delta <= 0 || state.pieces.length === 0) return;
+      state.puzzleOffsetX += delta;
+      state.puzzleOffsetY += delta;
+      for (const piece of state.pieces) {
+        piece.correctPosition.x += delta;
+        piece.correctPosition.y += delta;
+        piece.currentPosition.x += delta;
+        piece.currentPosition.y += delta;
+      }
+      state.boardW = action.payload.newBoardH;
+      state.boardH = action.payload.newBoardH;
+    },
+
     boardResized(
       state,
       action: PayloadAction<{ scaleX: number; scaleY: number }>
     ) {
       const { scaleX, scaleY } = action.payload;
+      state.boardW = Math.round(state.boardW * scaleX);
       state.boardH = Math.round(state.boardH * scaleY);
       state.pieceW = Math.round(state.pieceW * scaleX);
       state.pieceH = Math.round(state.pieceH * scaleY);
@@ -120,6 +138,7 @@ const puzzleSlice = createSlice({
         pieces: PuzzlePiece[];
         rows: number;
         cols: number;
+        boardW: number;
         boardH: number;
         pieceW: number;
         pieceH: number;
@@ -127,10 +146,11 @@ const puzzleSlice = createSlice({
         puzzleOffsetY: number;
       }>
     ) {
-      const { pieces, rows, cols, boardH, pieceW, pieceH, puzzleOffsetX, puzzleOffsetY } = action.payload;
+      const { pieces, rows, cols, boardW, boardH, pieceW, pieceH, puzzleOffsetX, puzzleOffsetY } = action.payload;
       state.pieces = pieces;
       state.rows = rows;
       state.cols = cols;
+      state.boardW = boardW;
       state.boardH = boardH;
       state.pieceW = pieceW;
       state.pieceH = pieceH;
@@ -291,6 +311,7 @@ const puzzleSlice = createSlice({
       state.pauseOffset = 0;
       state.isPaused = true;
       state.pausedAt = now;
+      state.boardW = savedState.boardW ?? savedState.boardH;
       state.boardH = savedState.boardH;
       state.pieceW = savedState.pieceW;
       state.pieceH = savedState.pieceH;
@@ -329,6 +350,36 @@ const puzzleSlice = createSlice({
       state.configId = action.payload;
     },
 
+    rescalePieces(
+      state,
+      action: PayloadAction<{
+        piecePositions: Record<number, { current: { x: number; y: number }; correct: { x: number; y: number }; isSnapped: boolean }>;
+        boardW: number;
+        boardH: number;
+        pieceW: number;
+        pieceH: number;
+        puzzleOffsetX: number;
+        puzzleOffsetY: number;
+      }>
+    ) {
+      const { piecePositions, boardW, boardH, pieceW, pieceH, puzzleOffsetX, puzzleOffsetY } = action.payload;
+      state.boardW = boardW;
+      state.boardH = boardH;
+      state.pieceW = pieceW;
+      state.pieceH = pieceH;
+      state.puzzleOffsetX = puzzleOffsetX;
+      state.puzzleOffsetY = puzzleOffsetY;
+      for (const piece of state.pieces) {
+        const pos = piecePositions[piece.id];
+        if (pos) {
+          piece.currentPosition = pos.current;
+          piece.correctPosition = pos.correct;
+          piece.isSnapped = pos.isSnapped;
+        }
+      }
+      // groups, pieceGroup, nextGroupId are preserved
+    },
+
     resetGame() {
       return initialState;
     },
@@ -341,6 +392,7 @@ export const {
   confirmConfig,
   saveCropRegion,
   setReferenceImage,
+  expandBoard,
   boardResized,
   setPieces,
   startGame,
@@ -359,6 +411,7 @@ export const {
   goToHome,
   setGameId,
   setConfigId,
+  rescalePieces,
   resetGame,
 } = puzzleSlice.actions;
 

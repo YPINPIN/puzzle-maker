@@ -57,9 +57,13 @@ home → upload → config → crop → playing → complete
 
 ### 座標系統
 
-- Canvas 邏輯尺寸：**正方形**，邊長 = `2 × min(viewportW, viewportH - TOOLBAR_HEIGHT)`
-- 200% zoom 時 CSS scale = 1（1:1 pixel，最清晰）；預設 100% 時以 `fitScale = 0.5` 縮放至視窗
+- Canvas 邏輯尺寸：**正方形**，邊長 = `effectiveDPR × min(viewportW, viewportH - TOOLBAR_HEIGHT)`；寬度另受 `MAX_CANVAS_WIDTH` 上限（1440px）限制
+- `effectiveDPR = clamp(ceil(devicePixelRatio), 2, 3)`：DPR≤2 用 2（桌機與一般手機），DPR=3 用 3（iPhone Pro 等），避免模糊
+- 縮放範圍：ZOOM_MIN=100%（fitScale=1/DPR，canvas 填滿視窗，1:1 physical pixel 最清晰）至 ZOOM_MAX=200%（格線填滿視窗）；步進 ZOOM_STEP=25%
+- 公式：`actualCssScale = fitScale × zoom / 100`
 - 拼圖格線在 canvas 內**置中**，偏移量存為 `puzzleOffsetX / puzzleOffsetY`
+
+視窗 resize 時，`PuzzleBoard` 以 debounce 偵測，若 canvas 尺寸改變則呼叫 `rescalePieces` action 重新比例縮放所有片子座標。
 
 ### 渲染層次（`src/lib/renderer.ts`）
 
@@ -94,12 +98,14 @@ home → upload → config → crop → playing → complete
 
 ### 重要常數（`src/lib/constants.ts`）
 
-| 常數              | 值   | 說明                      |
-|------------------|------|---------------------------|
-| `TOOLBAR_HEIGHT` | 64   | 全域 Header 高度（px）    |
-| `TAB_RATIO`      | 0.2  | tab 大小 = pieceW × 0.2   |
-| `SNAP_THRESHOLD` | 20   | snap 至板子的吸附距離（px）|
-| `GROUP_THRESHOLD`| 6    | 兩片合組的位置容差（px）   |
+| 常數／函式             | 值／說明                                                                  |
+|----------------------|---------------------------------------------------------------------------|
+| `TOOLBAR_HEIGHT`     | 64 — 全域 Header **最小**高度（px）；實際高度可能因 flex-wrap 而更高      |
+| `MAX_CANVAS_WIDTH`   | 1440 — canvas 容器最大寬度（px），超寬螢幕上限                            |
+| `TAB_RATIO`          | 0.2 — tab 大小 = pieceW × 0.2                                             |
+| `SNAP_THRESHOLD`     | 20 — snap 至板子的吸附距離（px）                                          |
+| `GROUP_THRESHOLD`    | 6 — 兩片合組的位置容差（px）                                              |
+| `getEffectiveDPR()`  | `clamp(ceil(devicePixelRatio), 2, 3)` — 決定 canvas 解析度倍率；所有 canvasW/H 計算均透過此函式 |
 
 ## 計時器機制
 
@@ -140,7 +146,53 @@ home → upload → config → crop → playing → complete
 
 所有 phase 均顯示。`playing` phase 額外顯示難度、格數、計時器與操作按鈕（查看參考圖、暫停/繼續、保存並結束、結束遊戲）。
 
+Header 使用 `flex-wrap`，`min-h-[64px]`（= `TOOLBAR_HEIGHT`），窄螢幕上按鈕可能換行導致實際高度 > 64px。因此 `PuzzleBoard.getContainerDims()` 從 `gameAreaRef.current.clientHeight` 讀取真實容器高度，而非 `window.innerHeight - 64`；掛載後若兩者差距 > 4px，`needsInitialRegenRef` 會觸發自動重算。
+
 `handleSaveToSlot` 使用 `saveDataRef` pattern：每次 render 將最新 Redux 狀態同步至 ref，讓 `useCallback` 不需列舉依賴也能讀到最新值，避免 stale closure 導致計時錯誤。
+
+## 配色設計與共用樣式（`src/index.css`）
+
+### Tailwind CSS 自訂色票
+
+| 群組 | Token | 代表色 | 用途 |
+|------|-------|--------|------|
+| Brand 琥珀金 | `brand-500` | `#F4A52B` | 主 CTA、強調文字 |
+| | `brand-600` | `#E08A10` | hover 狀態 |
+| | `brand-700` | `#B96A00` | 相框邊框 |
+| Accent 湖水綠 | `accent-500` | `#2AA39A` | 次要強調 |
+| 米白紙張 | `paper-50` | `#FDFBF7` | 最淺背景 |
+| | `paper-100` | `#F8F5F0` | 頁面背景 |
+| | `paper-300` | `#E6DFD3` | 分隔線、邊框 |
+| | `paper-900` | `#201A13` | 主要文字 |
+| 木質遊戲區 | `wood-950` | `#1A140D` | Canvas 外框深色 |
+| 狀態色 | `success` | `#22A36A` | 成功訊息 |
+| | `warning` | `#E89813` | 警示訊息 |
+| | `danger` | `#D94B3B` | 危險操作 |
+
+頁面暖色漸層背景：CSS 變數 `--pg-warm`（`radial-gradient`，各頁共用）。
+
+### 共用 CSS 類別
+
+| 類別 | 說明 |
+|------|------|
+| `.btn-primary` | 金屬琥珀漸層主按鈕（`brand-500→brand-600`），圓角 14px |
+| `.btn-secondary` | 白底次要按鈕，hover 時邊框轉 `brand-600` |
+| `.btn-danger` | 紅色漸層危險按鈕 |
+| `.timer-box` | LED 計時器外框，黑底琥珀光暈，等寬字型 |
+| `.amber-glow` | 完成 Overlay 金色光暈 box-shadow |
+| `.card-lift` | 卡片 hover 上移 2px + 陰影加深 |
+| `.puzzle-frame` | Canvas 金屬相框（三層 outline + 內發光） |
+
+### Canvas 硬碼顏色（`src/lib/renderer.ts`）
+
+| 用途 | 顏色值 |
+|------|--------|
+| 待放區背景 | `#d8d3cc` |
+| 格線矩形 | `#f0ede8` |
+| 格子虛線 | `rgba(150,140,130,0.5)` |
+| 拖曳陰影 | `rgba(0,0,0,0.4)` |
+| 紅光（錯位警示） | stroke `rgba(220,50,50,0.75)`，shadow `rgba(255,60,60,0.9)` |
+| 綠光（放下預覽） | stroke `rgba(50,200,80,0.85)`，shadow `rgba(60,255,100,0.9)` |
 
 ## 共用元件
 

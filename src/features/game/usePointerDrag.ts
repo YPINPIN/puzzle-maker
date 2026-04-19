@@ -164,10 +164,10 @@ export function usePointerDrag({
         let minDx = -Infinity, maxDx = Infinity;
         let minDy = -Infinity, maxDy = Infinity;
         for (const base of Object.values(dragBasePositionsRef.current)) {
-          minDx = Math.max(minDx, -base.x);
-          maxDx = Math.min(maxDx, W - pieceW - base.x);
-          minDy = Math.max(minDy, -base.y);
-          maxDy = Math.min(maxDy, H - pieceH - base.y);
+          minDx = Math.max(minDx, TAB_SIZE - base.x);
+          maxDx = Math.min(maxDx, W - pieceW - TAB_SIZE - base.x);
+          minDy = Math.max(minDy, TAB_SIZE - base.y);
+          maxDy = Math.min(maxDy, H - pieceH - TAB_SIZE - base.y);
         }
         dragDeltaRef.current = {
           x: Math.max(minDx, Math.min(maxDx, rawDx)),

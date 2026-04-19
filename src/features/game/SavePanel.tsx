@@ -58,22 +58,23 @@ export default function SavePanel({ gameId, onSave, onClose }: Props) {
   return (
     <>
       <div
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+        className="fixed inset-0 z-50 flex items-center justify-center p-4"
+        style={{ background: 'rgba(13,9,6,.85)' }}
         onClick={onClose}
       >
         <div
-          className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[85vh] flex flex-col overflow-hidden"
+          className="bg-paper-50 rounded-3xl shadow-2xl w-full max-w-lg max-h-[85vh] flex flex-col overflow-hidden border border-paper-300"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 flex-shrink-0">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-paper-300 flex-shrink-0">
             <div>
-              <h2 className="text-xl font-bold text-gray-800">選擇保存位置</h2>
-              <p className="text-xs text-gray-400 mt-0.5">最多保留 10 筆，點選空位直接保存，點選已有紀錄可覆蓋</p>
+              <h2 className="text-xl font-bold text-paper-900">選擇保存位置</h2>
+              <p className="text-xs text-paper-600 mt-0.5">最多保留 10 筆，點選空位直接保存，點選已有紀錄可覆蓋</p>
             </div>
             <button
               onClick={onClose}
-              className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors text-lg font-bold"
+              className="w-9 h-9 flex items-center justify-center rounded-full bg-paper-100 hover:bg-paper-300 text-paper-600 hover:text-paper-900 transition-colors text-lg font-bold"
             >
               ✕
             </button>
@@ -90,42 +91,52 @@ export default function SavePanel({ gameId, onSave, onClose }: Props) {
                     onClick={() => handleSlotClick(record, i)}
                     className={`w-full flex items-center gap-3 p-3 rounded-xl border text-left transition-colors ${
                       isOrigin
-                        ? 'border-green-400 bg-green-50 hover:bg-green-100'
+                        ? ''
                         : record
-                          ? 'border-gray-200 hover:border-blue-300 hover:bg-blue-50'
-                          : 'border-dashed border-gray-300 hover:border-blue-400 hover:bg-blue-50'
+                          ? 'border-paper-300 hover:border-brand-500/50 hover:bg-brand-50'
+                          : 'border-dashed border-paper-400 hover:border-brand-500 hover:bg-brand-50'
                     }`}
+                    style={isOrigin ? {
+                      border: '1px solid var(--color-success)',
+                      background: 'var(--color-success-bg)',
+                    } : undefined}
                   >
                     {/* Slot number */}
-                    <div className={`w-7 h-7 flex-shrink-0 rounded-full flex items-center justify-center text-xs font-bold ${
-                      isOrigin ? 'bg-green-500 text-white' : record ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-400'
-                    }`}>
+                    <div
+                      className={`w-7 h-7 flex-shrink-0 rounded-full flex items-center justify-center text-xs font-bold ${
+                        isOrigin ? '' : record ? 'bg-paper-200 text-paper-800' : 'bg-paper-100 text-paper-600'
+                      }`}
+                      style={isOrigin ? { background: 'var(--color-success)', color: '#fff' } : undefined}
+                    >
                       {i + 1}
                     </div>
 
                     {record ? (
                       <>
                         {/* Thumbnail */}
-                        <div className="w-12 h-12 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100">
+                        <div className="w-12 h-12 flex-shrink-0 rounded-lg overflow-hidden bg-paper-200">
                           <img src={record.thumbnailDataUrl} alt="縮圖" className="w-full h-full object-cover" />
                         </div>
                         {/* Info */}
                         <div className="flex flex-col gap-0.5 flex-1 min-w-0">
                           <div className="flex items-center gap-1.5 flex-wrap">
                             {isOrigin && (
-                              <span className="text-xs px-1.5 py-0.5 rounded-full bg-green-200 text-green-800 font-semibold">
+                              <span
+                                className="text-xs px-1.5 py-0.5 rounded-full font-semibold"
+                                style={{ background: 'var(--color-success-bg)', color: 'var(--color-success)' }}
+                              >
                                 目前紀錄
                               </span>
                             )}
                             {record.isCompleted && (
-                              <span className="text-xs px-1.5 py-0.5 rounded-full bg-green-100 text-green-700 font-medium">
+                              <span className="text-xs px-1.5 py-0.5 rounded-full font-bold" style={{ background: 'var(--color-success-bg)', color: 'var(--color-success)', border: '1px solid rgba(34,163,106,.2)' }}>
                                 已完成
                               </span>
                             )}
-                            <span className="text-xs font-medium text-gray-700">
+                            <span className="text-xs font-medium text-paper-800">
                               {DIFFICULTY_LABEL[record.difficulty] ?? record.difficulty}
                             </span>
-                            <span className="text-xs text-gray-500">
+                            <span className="text-xs text-paper-600">
                               {record.cols}×{record.rows}（{record.cols * record.rows} 片）
                             </span>
                             {!record.isCompleted && (() => {
@@ -133,25 +144,28 @@ export default function SavePanel({ gameId, onSave, onClose }: Props) {
                               const total = record.savedState.pieces.length;
                               const pct = total > 0 ? Math.round((snapped / total) * 100) : 0;
                               return (
-                                <span className="text-xs px-1.5 py-0.5 rounded-full bg-yellow-50 text-yellow-700 font-medium">
+                                <span className="text-xs px-1.5 py-0.5 rounded-full font-bold" style={{ background: 'var(--color-brand-50)', color: 'var(--color-brand-700)', border: '1px solid rgba(244,165,43,.3)' }}>
                                   {pct}% 完成
                                 </span>
                               );
                             })()}
                           </div>
-                          <p className="text-xs text-gray-400">儲存於 {formatDate(record.updatedAt)}</p>
-                          <p className="text-xs text-gray-500">
+                          <p className="text-xs text-paper-600">儲存於 {formatDate(record.updatedAt)}</p>
+                          <p className="text-xs text-paper-600">
                             {record.isCompleted
                               ? `完成時間：${formatTime(record.savedState.elapsedAtSave)}`
                               : `已拼 ${record.savedState.pieces.filter((p) => p.isSnapped).length} / ${record.savedState.pieces.length} 片・已用 ${formatTime(record.savedState.elapsedAtSave)}`}
                           </p>
                         </div>
-                        <span className={`text-xs flex-shrink-0 ${isOrigin ? 'text-green-600 font-semibold' : 'text-blue-400'}`}>
+                        <span
+                          className="text-xs flex-shrink-0 font-semibold"
+                          style={{ color: isOrigin ? 'var(--color-success)' : 'var(--color-brand-500)' }}
+                        >
                           {isOrigin ? '覆蓋儲存' : '覆蓋'}
                         </span>
                       </>
                     ) : (
-                      <span className="text-sm text-gray-400">空位</span>
+                      <span className="text-sm text-paper-600">空位</span>
                     )}
                   </button>
                 );
