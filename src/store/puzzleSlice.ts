@@ -174,6 +174,8 @@ const puzzleSlice = createSlice({
     startGame(state) {
       state.phase = 'playing';
       state.startTime = Date.now();
+      state.imageDataUrl = null;
+      state.cropRegion = null;
     },
 
     setDraggingGroup(

@@ -17,18 +17,25 @@ export default function App() {
   const canvasMapRef = useRef<Map<number, HTMLCanvasElement>>(new Map());
   const pathMapRef = useRef<Map<number, Path2D>>(new Map());
   const [showQuitConfirm, setShowQuitConfirm] = useState(false);
+  // 追蹤是否透過 back swipe 離開：true → 假 entry 已被 browser 消費，cleanup 不需 go(-1)
+  const backNavigatedRef = useRef(false);
 
   // 攔截手機返回手勢（Android/iOS back swipe）防止遊戲進度丟失
   useEffect(() => {
     if (phase !== 'playing') return;
+    backNavigatedRef.current = false;
     history.pushState({ puzzle: true }, '');
+
     const onPopState = () => {
-      history.pushState({ puzzle: true }, '');
+      backNavigatedRef.current = true;
       setShowQuitConfirm(true);
     };
     window.addEventListener('popstate', onPopState);
+
     return () => {
       window.removeEventListener('popstate', onPopState);
+      // 透過 end game 按鈕等正常路徑離開時，消費掉假 entry 避免 history 污染
+      if (!backNavigatedRef.current) history.go(-1);
     };
   }, [phase]);
 
@@ -60,7 +67,11 @@ export default function App() {
             setShowQuitConfirm(false);
             dispatch(resetGame());
           }}
-          onCancel={() => setShowQuitConfirm(false)}
+          onCancel={() => {
+            backNavigatedRef.current = false;
+            history.pushState({ puzzle: true }, '');
+            setShowQuitConfirm(false);
+          }}
           danger
         />
       )}
