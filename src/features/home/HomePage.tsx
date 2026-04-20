@@ -6,7 +6,7 @@ import {
   startGame, restoreGame, goToUpload,
 } from '../../store/puzzleSlice';
 import { generatePieces } from '../../lib/pieceFactory';
-import { TOOLBAR_HEIGHT, MAX_CANVAS_WIDTH, TAB_RATIO, getEffectiveDPR, ZOOM_BUTTON_AVOID_W, ZOOM_BUTTON_AVOID_H } from '../../lib/constants';
+import { TOOLBAR_HEIGHT, MAX_CANVAS_WIDTH, TAB_RATIO, getEffectiveDPR, ZOOM_BUTTON_AVOID_W, ZOOM_BUTTON_AVOID_H, GAME_BOTTOM_BAR_HEIGHT } from '../../lib/constants';
 import { getRecords } from '../../lib/records';
 import type { PuzzleRecord } from '../../lib/records';
 import type { GameHistoryRecord, InProgressGameState, Difficulty } from '../../types/puzzle';
@@ -40,7 +40,7 @@ export default function HomePage({ canvasMapRef, pathMapRef }: Props) {
     setIsLoading(true);
     try {
       const displayW = Math.min(window.innerWidth, MAX_CANVAS_WIDTH);
-      const displayH = window.innerHeight - TOOLBAR_HEIGHT;
+      const displayH = window.innerHeight - TOOLBAR_HEIGHT - GAME_BOTTOM_BAR_HEIGHT;
       const dpr = getEffectiveDPR();
       const canvasW = displayW * dpr;
       const canvasH = displayH * dpr;
@@ -87,7 +87,7 @@ export default function HomePage({ canvasMapRef, pathMapRef }: Props) {
     try {
       const { savedState } = historyRecord;
       const displayW = Math.min(window.innerWidth, MAX_CANVAS_WIDTH);
-      const displayH = window.innerHeight - TOOLBAR_HEIGHT;
+      const displayH = window.innerHeight - TOOLBAR_HEIGHT - GAME_BOTTOM_BAR_HEIGHT;
       const dpr = getEffectiveDPR();
       const canvasW = displayW * dpr;
       const canvasH = displayH * dpr;

@@ -5,7 +5,7 @@ import { resumeGame, rescalePieces } from '../../store/puzzleSlice';
 import { useGameLoop } from './useGameLoop';
 import { usePointerDrag } from './usePointerDrag';
 import ImagePreviewOverlay from './ImagePreviewOverlay';
-import { MAX_CANVAS_WIDTH, TAB_RATIO, getEffectiveDPR, ZOOM_MIN, ZOOM_MAX, ZOOM_STEP } from '../../lib/constants';
+import { MAX_CANVAS_WIDTH, TAB_RATIO, getEffectiveDPR, ZOOM_MIN, ZOOM_MAX, ZOOM_STEP, TOOLBAR_HEIGHT, GAME_BOTTOM_BAR_HEIGHT } from '../../lib/constants';
 import { generatePieces } from '../../lib/pieceFactory';
 
 type Props = {
@@ -53,12 +53,12 @@ export default function PuzzleBoard({ canvasMapRef, pathMapRef }: Props) {
     const dpr = getEffectiveDPR();
     const c = gameAreaRef.current;
     const displayW = c ? Math.min(c.clientWidth, MAX_CANVAS_WIDTH) : Math.min(window.innerWidth, MAX_CANVAS_WIDTH);
-    const displayH = c ? c.clientHeight : (window.innerHeight - 64);
+    const displayH = c ? c.clientHeight : (window.innerHeight - TOOLBAR_HEIGHT - GAME_BOTTOM_BAR_HEIGHT);
     return { w: displayW * dpr, h: displayH * dpr, displayW, displayH };
   }, []);
 
   const _initDpr = getEffectiveDPR();
-  const baseDimsRef = useRef({ w: Math.min(window.innerWidth, MAX_CANVAS_WIDTH) * _initDpr, h: (window.innerHeight - 64) * _initDpr });
+  const baseDimsRef = useRef({ w: Math.min(window.innerWidth, MAX_CANVAS_WIDTH) * _initDpr, h: (window.innerHeight - TOOLBAR_HEIGHT - GAME_BOTTOM_BAR_HEIGHT) * _initDpr });
   const fitScaleRef = useRef(1 / _initDpr);
 
   // zoomPercent：100 = fit-to-canvas（預設）；200 = fit-to-grid，可平移
@@ -168,9 +168,9 @@ export default function PuzzleBoard({ canvasMapRef, pathMapRef }: Props) {
               pieceW: oldPieceW, pieceH: oldPieceH,
               puzzleOffsetX: oldOffsetX, puzzleOffsetY: oldOffsetY } = boardDataRef.current;
 
-      // imageDataUrl = 原始圖（裁切流程）；referenceDataUrl = 已裁切圖（歷史紀錄流程）
-      const effectiveUrl = imageDataUrl ?? referenceDataUrl;
-      const effectiveCrop = imageDataUrl ? (cropRegion ?? undefined) : undefined;
+      // referenceDataUrl 優先（已裁切小圖，避免手機載入原始大圖的記憶體問題）
+      const effectiveUrl = referenceDataUrl ?? imageDataUrl;
+      const effectiveCrop = referenceDataUrl ? undefined : (cropRegion ?? undefined);
 
       if (pieces.length > 0 && effectiveUrl) {
         try {
