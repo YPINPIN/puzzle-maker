@@ -31,7 +31,8 @@ export async function generatePieces(
   canvasW: number,
   canvasH: number,
   cropRegion?: { x: number; y: number; width: number; height: number },
-  existingPieces?: PuzzlePiece[]
+  existingPieces?: PuzzlePiece[],
+  avoidBottomRight?: { w: number; h: number }
 ): Promise<PieceFactoryResult> {
   const image = await loadImage(imageDataUrl);
 
@@ -121,21 +122,38 @@ export async function generatePieces(
       canvasMap.set(id, offscreen);
 
       // 散片初始位置：分布在格線矩形外圍區域（按面積加權隨機）
+      // 可選排除右下角（縮放按鈕疊層區域）
+      const avoidW = avoidBottomRight?.w ?? 0;
+      const avoidH = avoidBottomRight?.h ?? 0;
       let currentX: number, currentY: number;
-      if (zones.length > 0 && totalArea > 0) {
-        let pick = Math.random() * totalArea;
-        let zone = zones[0];
-        for (let i = 0; i < zones.length; i++) {
-          pick -= zoneAreas[i];
-          if (pick <= 0) { zone = zones[i]; break; }
+      const pickPosition = () => {
+        if (zones.length > 0 && totalArea > 0) {
+          let pick = Math.random() * totalArea;
+          let zone = zones[0];
+          for (let i = 0; i < zones.length; i++) {
+            pick -= zoneAreas[i];
+            if (pick <= 0) { zone = zones[i]; break; }
+          }
+          return {
+            x: zone.x0 + Math.random() * (zone.x1 - zone.x0),
+            y: zone.y0 + Math.random() * (zone.y1 - zone.y0),
+          };
         }
-        currentX = zone.x0 + Math.random() * (zone.x1 - zone.x0);
-        currentY = zone.y0 + Math.random() * (zone.y1 - zone.y0);
-      } else {
-        // fallback（格線幾乎佔滿 canvas）
-        currentX = m + Math.random() * Math.max(0, canvasW - pieceW - 2 * m);
-        currentY = m + Math.random() * Math.max(0, canvasH - pieceH - 2 * m);
+        return {
+          x: m + Math.random() * Math.max(0, canvasW - pieceW - 2 * m),
+          y: m + Math.random() * Math.max(0, canvasH - pieceH - 2 * m),
+        };
+      };
+      let pos = pickPosition();
+      if (avoidW > 0 && avoidH > 0) {
+        for (let attempt = 0; attempt < 8; attempt++) {
+          if (pos.x + pieceW > canvasW - avoidW && pos.y + pieceH > canvasH - avoidH) {
+            pos = pickPosition();
+          } else break;
+        }
       }
+      currentX = pos.x;
+      currentY = pos.y;
 
       pieces.push({
         id,

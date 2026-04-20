@@ -70,7 +70,7 @@ home → upload → config → crop → playing → complete
 
 - Canvas 邏輯尺寸：**正方形**，邊長 = `effectiveDPR × min(viewportW, viewportH - TOOLBAR_HEIGHT)`；寬度另受 `MAX_CANVAS_WIDTH` 上限（1440px）限制
 - `effectiveDPR = clamp(ceil(devicePixelRatio), 2, 3)`：DPR≤2 用 2（桌機與一般手機），DPR=3 用 3（iPhone Pro 等），避免模糊
-- 縮放範圍：ZOOM_MIN=100%（fitScale=1/DPR，canvas 填滿視窗，1:1 physical pixel 最清晰）至 ZOOM_MAX=200%（格線填滿視窗）；步進 ZOOM_STEP=25%
+- 縮放範圍：`ZOOM_MIN=100%`（fitScale=1/DPR，canvas 填滿視窗）至 `ZOOM_MAX=200%`（格線填滿視窗）；步進 `ZOOM_STEP=25%`；這三個常數定義於 `src/lib/constants.ts`
 - 公式：`actualCssScale = fitScale × zoom / 100`
 - 拼圖格線在 canvas 內**置中**，偏移量存為 `puzzleOffsetX / puzzleOffsetY`
 
@@ -103,9 +103,11 @@ home → upload → config → crop → playing → complete
 
 每片初始為獨立 group（`groupId = piece.id`）。拖放結束時：
 
-1. `shouldMerge`（`snapLogic.ts`）：檢查拖曳組與相鄰片的相對位置誤差 < `GROUP_THRESHOLD`（6px），若成立則合組（`mergeGroups` action）
-2. `findSnapCandidate`（`snapLogic.ts`）：若整組中最近片距 `correctPosition` < `SNAP_THRESHOLD`（20px），觸發 `snapGroupToBoard`，直接將所有片設回 `correctPosition`
+1. `shouldMerge`（`snapLogic.ts`）：檢查拖曳組與相鄰片的相對位置誤差 < `GROUP_THRESHOLD × DPR`，若成立則合組（`mergeGroups` action）
+2. `findSnapCandidate`（`snapLogic.ts`）：若整組中最近片距 `correctPosition` < `SNAP_THRESHOLD × DPR`，觸發 `snapGroupToBoard`，直接將所有片設回 `correctPosition`
 3. 全部片 `isSnapped` 時觸發 `setComplete`
+
+Threshold 乘以 `getEffectiveDPR()` 是為了讓手機與桌機在 **CSS 像素**體感上保持一致（`GROUP_THRESHOLD=6 CSS px`，`SNAP_THRESHOLD=20 CSS px`）。
 
 ### 重要常數（`src/lib/constants.ts`）
 
@@ -114,9 +116,33 @@ home → upload → config → crop → playing → complete
 | `TOOLBAR_HEIGHT`     | 64 — 全域 Header **最小**高度（px）；實際高度可能因 flex-wrap 而更高      |
 | `MAX_CANVAS_WIDTH`   | 1440 — canvas 容器最大寬度（px），超寬螢幕上限                            |
 | `TAB_RATIO`          | 0.2 — tab 大小 = pieceW × 0.2                                             |
-| `SNAP_THRESHOLD`     | 20 — snap 至板子的吸附距離（px）                                          |
-| `GROUP_THRESHOLD`    | 6 — 兩片合組的位置容差（px）                                              |
+| `SNAP_THRESHOLD`     | 20 — snap 至板子的吸附距離（canvas px）；實際使用時乘以 DPR               |
+| `GROUP_THRESHOLD`    | 6 — 兩片合組的位置容差（canvas px）；實際使用時乘以 DPR                   |
+| `ZOOM_MIN`           | 100 — 最小縮放比例（%）                                                   |
+| `ZOOM_MAX`           | 200 — 最大縮放比例（%）                                                   |
+| `ZOOM_STEP`          | 25 — 縮放步進（%）                                                        |
 | `getEffectiveDPR()`  | `clamp(ceil(devicePixelRatio), 2, 3)` — 決定 canvas 解析度倍率；所有 canvasW/H 計算均透過此函式 |
+
+### generatePieces 散落邏輯（`src/lib/pieceFactory.ts`）
+
+散片初始位置分布在格線矩形外圍的四個區域（按面積加權隨機）。支援可選的 `avoidBottomRight?: { w, h }` 參數（canvas 邏輯像素），用於排除右下角縮放按鈕疊層所在位置；遇到落在排除區內的片會重試最多 8 次。
+
+**呼叫慣例**：`CropPreview.handleConfirm` 與 `HomePage.applyRecord`（新遊戲）傳入 `{ w: 170 * dpr, h: 140 * dpr }`；`PuzzleBoard` resize 與 `continueGame` 不傳（位置由 savedState 或 scale 覆蓋）。
+
+## 觸控與縮放（`src/features/game/usePointerDrag.ts`）
+
+使用 Pointer Events API 統一處理滑鼠、觸控、手寫筆：
+
+- **單指**：hit-test 命中拼圖片則拖曳，否則平移（pan）畫面
+- **雙指**：自動切換為 pinch-to-zoom 模式；記錄初始指間距離與 zoom 基準值，按比例計算新 zoom，同時追蹤中點偏移做平移補償；放開其中一指即退出 pinch 模式
+- **暫停狀態**：`isPausedRef` 為 true 時跳過拖曳（pinch zoom 仍可用）
+
+Props 需傳入：
+- `onZoomChange(newZoom)` — 更新 PuzzleBoard 的 zoom 狀態
+- `zoomPercentRef` — pinch 開始時讀取當前 zoom 基準值
+- `onPanStart / onPanDelta` — pan 回調（pinch 平移補償也使用）
+
+縮放按鈕容器使用 `pointer-events-none`，僅按鈕群組本身設為 `pointer-events-auto`，確保疊層下方的 canvas 仍能接收觸控事件。
 
 ## 計時器機制
 
@@ -160,6 +186,12 @@ home → upload → config → crop → playing → complete
 Header 使用 `flex-wrap`，`min-h-[64px]`（= `TOOLBAR_HEIGHT`），窄螢幕上按鈕可能換行導致實際高度 > 64px。因此 `PuzzleBoard.getContainerDims()` 從 `gameAreaRef.current.clientHeight` 讀取真實容器高度，而非 `window.innerHeight - 64`；掛載後若兩者差距 > 4px，`needsInitialRegenRef` 會觸發自動重算。
 
 `handleSaveToSlot` 使用 `saveDataRef` pattern：每次 render 將最新 Redux 狀態同步至 ref，讓 `useCallback` 不需列舉依賴也能讀到最新值，避免 stale closure 導致計時錯誤。
+
+## 手機適配
+
+- **Viewport**：`App.tsx` 使用 `height: 100dvh`（動態 viewport 高度，隨瀏覽器 UI 顯示/隱藏調整）+ `overscroll-none`；`index.html` 設 `viewport-fit=cover` 啟用 iOS 安全區 API
+- **Safe area**：縮放按鈕容器加 `padding-bottom: max(16px, env(safe-area-inset-bottom))`，防止被 iOS home indicator 遮蓋
+- **CropPreview**：使用 `ResizeObserver` 取代 `window.resize` 監聽 canvas 尺寸；`img.onload` 優先讀取 `offsetWidth/offsetHeight`（防止 iOS WebKit data URL 同步觸發時讀到 canvas 預設值 300）
 
 ## 配色設計與共用樣式（`src/index.css`）
 

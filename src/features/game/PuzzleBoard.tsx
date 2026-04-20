@@ -5,7 +5,7 @@ import { resumeGame, rescalePieces } from '../../store/puzzleSlice';
 import { useGameLoop } from './useGameLoop';
 import { usePointerDrag } from './usePointerDrag';
 import ImagePreviewOverlay from './ImagePreviewOverlay';
-import { MAX_CANVAS_WIDTH, TAB_RATIO, getEffectiveDPR } from '../../lib/constants';
+import { MAX_CANVAS_WIDTH, TAB_RATIO, getEffectiveDPR, ZOOM_MIN, ZOOM_MAX, ZOOM_STEP } from '../../lib/constants';
 import { generatePieces } from '../../lib/pieceFactory';
 
 type Props = {
@@ -13,9 +13,6 @@ type Props = {
   pathMapRef: React.RefObject<Map<number, Path2D>>;
 };
 
-const ZOOM_MIN = 100;  // % — fit-to-canvas：看到整個 canvas（含散片區）
-const ZOOM_MAX = 200;  // % — fit-to-grid：格線填滿視窗，可平移找散片
-const ZOOM_STEP = 25;  // %
 // 公式：actualCssScale = fitScale × zoom / 100
 // 100% → 0.5×1.0=0.5 → canvas 填滿視窗；200% → 0.5×2.0=1.0 → 1:1 pixel，可平移
 
@@ -294,12 +291,21 @@ export default function PuzzleBoard({ canvasMapRef, pathMapRef }: Props) {
     dragDeltaRef, dragBasePositionsRef,
   });
 
+  const onZoomChange = useCallback((z: number) => {
+    const clamped = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, Math.round(z / 5) * 5));
+    zoomPercentRef.current = clamped;
+    setZoomPercent(clamped);
+    clampPan(clamped);
+  }, [clampPan]);
+
   usePointerDrag({
     canvasRef, pathMapRef,
     hoveredPieceIdRef, activePieceIdRef,
     dragDeltaRef, dragBasePositionsRef,
     onPanStart,
     onPanDelta,
+    onZoomChange,
+    zoomPercentRef,
   });
 
   // 公式：100% → scale=0.5 → fit-to-canvas；200% → scale=1.0 → fit-to-grid
@@ -355,8 +361,11 @@ export default function PuzzleBoard({ canvasMapRef, pathMapRef }: Props) {
         />
       </div>
 
-      {/* 縮放控制（右下角） */}
-      <div className="absolute bottom-4 right-4 flex flex-col items-end gap-1.5 z-10">
+      {/* 縮放控制（右下角）：容器透穿 pointer events，僅按鈕本身可互動 */}
+      <div
+        className="absolute bottom-0 right-0 flex flex-col items-end gap-1.5 z-10 pointer-events-none"
+        style={{ padding: 'max(16px, env(safe-area-inset-bottom)) 16px 0 0' }}
+      >
         {/* 拖曳平移提示（縮放 > 100% 時顯示） */}
         <div
           className="flex items-center gap-1 text-xs font-bold text-brand-500 rounded-full px-2.5 py-1 pointer-events-none select-none transition-opacity duration-300"
@@ -369,9 +378,9 @@ export default function PuzzleBoard({ canvasMapRef, pathMapRef }: Props) {
           拖曳以平移
         </div>
 
-        {/* 縮放按鈕 */}
+        {/* 縮放按鈕（pointer-events-auto 恢復可互動） */}
         <div
-          className="flex items-center gap-1.5 backdrop-blur-md rounded-xl px-2 py-1.5 shadow-lg"
+          className="flex items-center gap-1.5 backdrop-blur-md rounded-xl px-2 py-1.5 shadow-lg pointer-events-auto"
           style={{ background: 'rgba(26,20,13,.85)', border: '1px solid #5A4B38' }}
         >
           <button

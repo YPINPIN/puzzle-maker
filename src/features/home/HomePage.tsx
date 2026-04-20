@@ -51,6 +51,9 @@ export default function HomePage({ canvasMapRef, pathMapRef }: Props) {
         record.rows,
         canvasW,
         canvasH,
+        undefined,
+        undefined,
+        { w: 170 * dpr, h: 140 * dpr }
       );
 
       canvasMapRef.current.clear();

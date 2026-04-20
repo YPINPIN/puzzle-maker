@@ -15,7 +15,7 @@ export default function App() {
   const pathMapRef = useRef<Map<number, Path2D>>(new Map());
 
   return (
-    <div className="flex flex-col w-screen h-screen overflow-hidden">
+    <div className="flex flex-col w-screen overflow-hidden overscroll-none" style={{ height: '100dvh' }}>
       <AppHeader />
       <div className="flex-1 overflow-hidden min-h-0">
         {phase === 'home' && (

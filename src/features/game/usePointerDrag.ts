@@ -11,7 +11,7 @@ import {
 } from '../../store/puzzleSlice';
 import type { PuzzlePiece } from '../../types/puzzle';
 import { shouldMerge, findSnapCandidate } from '../../lib/snapLogic';
-import { TAB_RATIO } from '../../lib/constants';
+import { TAB_RATIO, ZOOM_MIN, ZOOM_MAX } from '../../lib/constants';
 
 type Props = {
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
@@ -24,9 +24,15 @@ type Props = {
   onPanStart: () => void;
   /** pan 移動時，傳入從拖曳起點到現在的 CSS pixel delta */
   onPanDelta: (dxCss: number, dyCss: number) => void;
+  /** 縮放變更（pinch zoom 用），傳入新的 zoom%（100–200） */
+  onZoomChange: (newZoom: number) => void;
+  /** 目前 zoom% 的 ref（pinch 開始時讀取基準值） */
+  zoomPercentRef: React.MutableRefObject<number>;
 };
 
 export function usePointerDrag({
+  onZoomChange,
+  zoomPercentRef,
   canvasRef,
   pathMapRef,
   hoveredPieceIdRef,
@@ -64,12 +70,19 @@ export function usePointerDrag({
   // Stable refs for callbacks（避免 useEffect 重新掛載）
   const onPanStartRef = useRef(onPanStart);
   const onPanDeltaRef = useRef(onPanDelta);
+  const onZoomChangeRef = useRef(onZoomChange);
   useEffect(() => { onPanStartRef.current = onPanStart; }, [onPanStart]);
   useEffect(() => { onPanDeltaRef.current = onPanDelta; }, [onPanDelta]);
+  useEffect(() => { onZoomChangeRef.current = onZoomChange; }, [onZoomChange]);
 
   const dragStartMouseRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const isPanningRef = useRef(false);
   const panStartClientRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+
+  // 多點觸控追蹤（pinch zoom）
+  const pointerCacheRef = useRef<Map<number, { x: number; y: number }>>(new Map());
+  type PinchState = { dist0: number; zoom0: number; midX0: number; midY0: number };
+  const pinchRef = useRef<PinchState | null>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -112,6 +125,30 @@ export function usePointerDrag({
     }
 
     function onPointerDown(e: PointerEvent) {
+      pointerCacheRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+      // 第二根手指觸發 pinch zoom
+      if (pointerCacheRef.current.size === 2) {
+        // 取消進行中的拖曳或 pan
+        if (draggingGroupIdRef.current !== null) {
+          dragDeltaRef.current = { x: 0, y: 0 };
+          dragBasePositionsRef.current = {};
+          dispatch(endDragGroup());
+        }
+        isPanningRef.current = false;
+        activePieceIdRef.current = null;
+
+        const pts = [...pointerCacheRef.current.values()];
+        const [p1, p2] = pts;
+        const dist0 = Math.hypot(p2.x - p1.x, p2.y - p1.y);
+        const midX0 = (p1.x + p2.x) / 2;
+        const midY0 = (p1.y + p2.y) / 2;
+        pinchRef.current = { dist0: Math.max(dist0, 1), zoom0: zoomPercentRef.current, midX0, midY0 };
+        onPanStartRef.current();
+        canvas!.setPointerCapture(e.pointerId);
+        return;
+      }
+
       if (isPausedRef.current) return;
       const { x, y } = getCanvasPos(e);
       const hitId = hitTest(x, y);
@@ -146,6 +183,27 @@ export function usePointerDrag({
     }
 
     function onPointerMove(e: PointerEvent) {
+      pointerCacheRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+      // pinch zoom 模式（雙指）
+      if (pointerCacheRef.current.size >= 2 && pinchRef.current) {
+        const pts = [...pointerCacheRef.current.values()];
+        const [p1, p2] = pts;
+        const newDist = Math.hypot(p2.x - p1.x, p2.y - p1.y);
+        const newZoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN,
+          pinchRef.current.zoom0 * newDist / pinchRef.current.dist0
+        ));
+        onZoomChangeRef.current(newZoom);
+        // 中點平移：讓兩指中心對應的畫面位置保持穩定
+        const midX = (p1.x + p2.x) / 2;
+        const midY = (p1.y + p2.y) / 2;
+        onPanDeltaRef.current(
+          midX - pinchRef.current.midX0,
+          midY - pinchRef.current.midY0
+        );
+        return;
+      }
+
       if (isPanningRef.current) {
         const dxCss = e.clientX - panStartClientRef.current.x;
         const dyCss = e.clientY - panStartClientRef.current.y;
@@ -181,7 +239,16 @@ export function usePointerDrag({
       }
     }
 
-    function onPointerUp() {
+    function onPointerUp(e: PointerEvent) {
+      pointerCacheRef.current.delete(e.pointerId);
+
+      // 還有手指按著 → 仍在 pinch 模式，不做拖曳收尾
+      if (pointerCacheRef.current.size >= 1) {
+        pinchRef.current = null; // 剩一根手指時退出 pinch
+        return;
+      }
+
+      pinchRef.current = null;
       activePieceIdRef.current = null;
 
       if (isPanningRef.current) {
@@ -287,6 +354,8 @@ export function usePointerDrag({
       canvas.removeEventListener('pointermove', onPointerMove);
       canvas.removeEventListener('pointerup', onPointerUp);
       canvas.removeEventListener('pointercancel', onPointerUp);
+      pointerCacheRef.current.clear();
+      pinchRef.current = null;
     };
   }, [
     canvasRef, pathMapRef, hoveredPieceIdRef, activePieceIdRef,

@@ -39,15 +39,23 @@ export default function CropPreview({ canvasMapRef, pathMapRef }: Props) {
       const canvas = canvasRef.current;
       if (!canvas) return;
 
+      // 優先使用 offsetWidth/Height（CSS layout 尺寸），防止 onload 在 resize effect 前同步觸發時讀到預設值 300
+      const w = canvas.offsetWidth || canvas.width;
+      const h = canvas.offsetHeight || canvas.height;
+      if (canvas.width !== w || canvas.height !== h) {
+        canvas.width = w;
+        canvas.height = h;
+      }
+
       const pad = 48;
-      const scaleX = (canvas.width - pad * 2) / img.width;
-      const scaleY = (canvas.height - pad * 2) / img.height;
-      const scale = Math.min(scaleX, scaleY, 1);
+      const scaleX = (w - pad * 2) / img.width;
+      const scaleY = (h - pad * 2) / img.height;
+      const scale = Math.max(Math.min(scaleX, scaleY, 1), 0.001);
 
       imgTransformRef.current = {
         scale,
-        offsetX: (canvas.width - img.width * scale) / 2,
-        offsetY: (canvas.height - img.height * scale) / 2,
+        offsetX: (w - img.width * scale) / 2,
+        offsetY: (h - img.height * scale) / 2,
       };
 
       // 裁切框比例 = cols : rows，初始盡量大、置中
@@ -71,29 +79,33 @@ export default function CropPreview({ canvasMapRef, pathMapRef }: Props) {
     img.src = imageDataUrl;
   }, [imageDataUrl, cols, rows]);
 
-  // Canvas 尺寸設定（resize 時同步重算圖片位置）
+  // Canvas 尺寸設定（用 ResizeObserver 偵測 element 真實尺寸，比 window.resize 更可靠）
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     function resize() {
       if (!canvas) return;
-      canvas.width = canvas.offsetWidth;
-      canvas.height = canvas.offsetHeight;
+      const w = canvas.offsetWidth;
+      const h = canvas.offsetHeight;
+      if (w === 0 || h === 0) return; // 元素尚未 layout，跳過
+      canvas.width = w;
+      canvas.height = h;
       const img = imgRef.current;
       if (!img) return;
       const pad = 48;
-      const scaleX = (canvas.width - pad * 2) / img.width;
-      const scaleY = (canvas.height - pad * 2) / img.height;
-      const scale = Math.min(scaleX, scaleY, 1);
+      const scaleX = (w - pad * 2) / img.width;
+      const scaleY = (h - pad * 2) / img.height;
+      const scale = Math.max(Math.min(scaleX, scaleY, 1), 0.001);
       imgTransformRef.current = {
         scale,
-        offsetX: (canvas.width - img.width * scale) / 2,
-        offsetY: (canvas.height - img.height * scale) / 2,
+        offsetX: (w - img.width * scale) / 2,
+        offsetY: (h - img.height * scale) / 2,
       };
     }
     resize();
-    window.addEventListener('resize', resize);
-    return () => window.removeEventListener('resize', resize);
+    const ro = new ResizeObserver(resize);
+    ro.observe(canvas);
+    return () => ro.disconnect();
   }, []);
 
   // Render loop
@@ -357,7 +369,9 @@ export default function CropPreview({ canvasMapRef, pathMapRef }: Props) {
 
     try {
       const result = await generatePieces(
-        imageDataUrl, cols, rows, canvasW, canvasH, cropRegion
+        imageDataUrl, cols, rows, canvasW, canvasH, cropRegion,
+        undefined,
+        { w: 170 * dpr, h: 140 * dpr }
       );
 
       canvasMapRef.current.clear();

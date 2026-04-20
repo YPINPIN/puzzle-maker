@@ -1,5 +1,5 @@
 import type { PuzzlePiece } from '../types/puzzle';
-import { GROUP_THRESHOLD, SNAP_THRESHOLD } from './constants';
+import { GROUP_THRESHOLD, SNAP_THRESHOLD, getEffectiveDPR } from './constants';
 
 /**
  * 判斷兩片是否應合組。
@@ -22,7 +22,8 @@ export function shouldMerge(
 
   const diffX = Math.abs(actualDx - expectedDx);
   const diffY = Math.abs(actualDy - expectedDy);
-  return diffX < GROUP_THRESHOLD && diffY < GROUP_THRESHOLD;
+  const threshold = GROUP_THRESHOLD * getEffectiveDPR();
+  return diffX < threshold && diffY < threshold;
 }
 
 /**
@@ -41,5 +42,5 @@ export function findSnapCandidate(group: PuzzlePiece[]): PuzzlePiece | null {
       best = p;
     }
   }
-  return bestDist < SNAP_THRESHOLD ? best : null;
+  return bestDist < SNAP_THRESHOLD * getEffectiveDPR() ? best : null;
 }
