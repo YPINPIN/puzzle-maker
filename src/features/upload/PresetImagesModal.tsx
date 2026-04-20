@@ -5,11 +5,12 @@ type Props = {
   onSelect: (dataUrl: string) => void;
 };
 
+const BASE = import.meta.env.BASE_URL;
 const PRESET_IMAGES = [
-  { url: '/presets/puzzle-1.png', name: '奇幻自然' },
-  { url: '/presets/puzzle-2.png', name: '復古機械' },
-  { url: '/presets/puzzle-3.png', name: '貓咪咖啡館' },
-  { url: '/presets/puzzle-4.png', name: '賽博街景' },
+  { url: `${BASE}presets/puzzle-1.png`, name: '奇幻自然' },
+  { url: `${BASE}presets/puzzle-2.png`, name: '復古機械' },
+  { url: `${BASE}presets/puzzle-3.png`, name: '貓咪咖啡館' },
+  { url: `${BASE}presets/puzzle-4.png`, name: '賽博街景' },
 ];
 
 export default function PresetImagesModal({ onClose, onSelect }: Props) {

@@ -1,73 +1,100 @@
-# React + TypeScript + Vite
+# <sub><img src="public/favicon.svg" width="36" alt="logo"></sub> 拼圖樂 - 線上拼圖遊戲
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+[![React](https://img.shields.io/badge/React-19.2.4-61DAFB?logo=react&logoColor=white)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-6.0.2-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Vite](https://img.shields.io/badge/Vite-8.0.48-646CFF?logo=vite&logoColor=white)](https://vite.dev/)
+[![Redux Toolkit](https://img.shields.io/badge/Redux_Toolkit-2.11.2-764ABC?logo=redux&logoColor=white)](https://redux-toolkit.js.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.2.2-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
+[![Deploy](https://img.shields.io/badge/GitHub%20Pages-deployed-3FB950?logo=github&logoColor=white)](https://ypinpin.github.io/puzzle-maker/)
+[![Last Commit](https://img.shields.io/github/last-commit/YPINPIN/puzzle-maker)](https://github.com/YPINPIN/puzzle-maker/commits/main)
 
-Currently, two official plugins are available:
+💻 **[線上 Demo](https://ypinpin.github.io/puzzle-maker/)**
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+![拼圖樂 遊戲截圖](./screenshot.png)
 
-## React Compiler
+---
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## ✨ 專案介紹
 
-## Expanding the ESLint configuration
+**拼圖樂**是一款純前端的線上拼圖遊戲，使用 Canvas 2D API 實作高解析度渲染。
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+玩家可以上傳自己的圖片，或從內建圖片中選擇主題，自由選定難度後即可開始挑戰。遊戲提供暫停計時、中途存檔、續玩，以及將拼圖設定編碼成文字代碼分享給好友等功能。
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+---
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## 🎮 遊戲特色
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### 🖼️ 圖片來源
+
+- 支援本地圖片**拖放**或點選上傳
+- 內建 4 張精選主題圖片（奇幻自然、復古機械、貓咪咖啡館、賽博街景）
+- 自訂**裁切**區域，確保拼圖比例完美
+
+### 🎚️ 難度與拼圖
+
+- 四種難度：**簡單**（4×4）、**普通**（6×6）、**困難**（8×8）、**專家**（12×12）
+- 每片拼圖具有凹凸契合的 tab/blank 邊緣，形狀由演算法隨機生成
+- 拖放時提供**吸附**預覽（綠光）與**錯位警示**（紅光）
+- 相鄰片自動**合組**，整組一起拖曳
+
+### ⏱️ 計時器
+
+- 支援**暫停 / 繼續**計時
+- 完成時精確記錄用時，並回寫快捷設定的最佳時間
+
+### 💾 存檔系統
+
+- **快捷設定**：最多 10 筆，紀錄圖片縮圖、難度與最佳時間，可快速重玩
+- **歷史紀錄**：最多 10 個存檔槽，儲存所有拼圖片的位置狀態，支援中途離開後**續玩**
+
+### 🔗 分享代碼
+
+- 將快捷設定序列化並以 lz-string 壓縮為文字代碼
+- 複製代碼傳給好友，對方匯入即可在相同設定下挑戰
+
+### 📱 響應式設計
+
+- Canvas 尺寸依視窗大小自適應（支援手機、平板、桌機）
+- DPR 感知渲染（DPR ≤ 2 用 2x，DPR = 3 用 3x），確保畫面清晰不模糊
+
+---
+
+## 🛠️ Tech Stack
+
+| 技術                                              | 說明           |
+| ------------------------------------------------- | -------------- |
+| [React 19](https://react.dev/)                    | UI 框架        |
+| [TypeScript](https://www.typescriptlang.org/)     | 靜態型別       |
+| [Vite 8](https://vite.dev/)                       | 建置工具       |
+| [Redux Toolkit](https://redux-toolkit.js.org/)    | 全域狀態管理   |
+| [Tailwind CSS v4](https://tailwindcss.com/)       | 樣式框架       |
+| [lz-string](https://github.com/pieroxy/lz-string) | 分享代碼壓縮   |
+| Canvas 2D API                                     | 拼圖渲染與互動 |
+
+---
+
+## 🚀 開發與安裝
+
+```bash
+# 複製專案
+git clone https://github.com/YPINPIN/puzzle-maker.git
+cd puzzle-maker
+
+# 安裝依賴
+npm install
+
+# 啟動開發伺服器
+npm run dev
+
+# 建置 production
+npm run build
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+---
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## 🎨 素材來源
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+| 項目                 | 說明                                                |
+| -------------------- | --------------------------------------------------- |
+| 內建拼圖圖片（4 張） | 由 [Google Gemini](https://gemini.google.com/) 生成 |
+| App Logo / Favicon   | [Claude Code](https://claude.ai/code) 生成 SVG      |
