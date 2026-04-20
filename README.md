@@ -56,6 +56,11 @@
 
 - Canvas 尺寸依視窗大小自適應（支援手機、平板、桌機）
 - DPR 感知渲染（DPR ≤ 2 用 2x，DPR = 3 用 3x），確保畫面清晰不模糊
+- 遊戲畫面支援**雙指 pinch 縮放**（100%–200%）與**拖曳平移**，方便手機操作
+- 裁切頁面支援**雙指 pinch 調整裁切框大小**
+- 底部控制列固定在 Canvas 下方，縮放按鈕不再浮動遮擋拼圖碎片
+- 攔截手機**返回手勢**（Android 側滑 / iOS 滑回），觸發確認 Dialog 防止遊戲進度意外遺失
+- 支援 iOS **Safe Area**（`env(safe-area-inset-bottom)`），防止 Home Indicator 遮擋按鈕
 
 ---
 
