@@ -9,20 +9,14 @@ export function usePhaseHistory() {
   const phaseRef = useRef(phase);
   phaseRef.current = phase;
 
-  // true 期間是由 popstate 觸發的 phase 變化，不應再 push 新 entry
-  const navigatingRef = useRef(false);
-
-  // 初次 render 用 replaceState（不多推一層），後續 phase 變化才 pushState
   const isFirstRender = useRef(true);
 
+  // 每次 phase 變化都 push 一筆 history entry（初次用 replaceState）
+  // popstate 觸發 dispatch → phase 改變 → 這裡再 push，同時清除所有 forward history
   useEffect(() => {
     if (isFirstRender.current) {
       isFirstRender.current = false;
       history.replaceState({ phase }, '');
-      return;
-    }
-    if (navigatingRef.current) {
-      navigatingRef.current = false;
       return;
     }
     history.pushState({ phase }, '');
@@ -30,14 +24,12 @@ export function usePhaseHistory() {
 
   useEffect(() => {
     const onPopState = () => {
-      navigatingRef.current = true;
       switch (phaseRef.current) {
-        case 'upload':   dispatch(goToHome());    break;
-        case 'config':   dispatch(goToUpload());  break;
-        case 'crop':     dispatch(backToConfig()); break;
-        case 'playing':  dispatch(resetGame());   break;
-        case 'complete': dispatch(resetGame());   break;
-        default: navigatingRef.current = false;   break;
+        case 'upload':   dispatch(goToHome());     break;
+        case 'config':   dispatch(goToUpload());   break;
+        case 'crop':     dispatch(backToConfig());  break;
+        case 'playing':  dispatch(resetGame());    break;
+        case 'complete': dispatch(resetGame());    break;
       }
     };
     window.addEventListener('popstate', onPopState);
