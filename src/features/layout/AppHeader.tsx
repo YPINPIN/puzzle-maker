@@ -8,6 +8,7 @@ import {
   resetGame,
 } from '../../store/puzzleSlice';
 import { getGameHistory, saveGameHistoryAtSlot } from '../../lib/gameHistory';
+import { clearDraft } from '../../lib/gameDraft';
 import type { GameHistoryRecord, InProgressGameState } from '../../types/puzzle';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import SavePanel from '../game/SavePanel';
@@ -152,6 +153,7 @@ export default function AppHeader() {
     } else {
       saveGameHistoryAtSlot(finalRecord, slotIndex);
     }
+    clearDraft();
     setShowSavePanel(false);
     dispatch(resetGame());
   }, [buildRecord, dispatch]);
@@ -249,11 +251,12 @@ export default function AppHeader() {
     {showExitConfirm && (
       <ConfirmDialog
         title="確定要結束遊戲嗎？"
-        message="目前進度不會被保存，確定要結束嗎？"
+        message="進度將被清除，如需保留請先使用「保存並結束」。"
         confirmText="確定結束"
         cancelText="取消"
         danger
         onConfirm={() => {
+          clearDraft();
           setShowExitConfirm(false);
           dispatch(resetGame());
         }}

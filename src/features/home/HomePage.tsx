@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import type { AppDispatch } from '../../store';
 import {
@@ -9,6 +9,8 @@ import { generatePieces } from '../../lib/pieceFactory';
 import { TOOLBAR_HEIGHT, MAX_CANVAS_WIDTH, TAB_RATIO, getEffectiveDPR, ZOOM_BUTTON_AVOID_W, ZOOM_BUTTON_AVOID_H, GAME_BOTTOM_BAR_HEIGHT } from '../../lib/constants';
 import { getRecords } from '../../lib/records';
 import type { PuzzleRecord } from '../../lib/records';
+import { getDraft } from '../../lib/gameDraft';
+import type { GameDraft } from '../../lib/gameDraft';
 import type { GameHistoryRecord, InProgressGameState, Difficulty } from '../../types/puzzle';
 import RecordsModal from '../upload/RecordsModal';
 import ConfirmDialog from '../../components/ConfirmDialog';
@@ -26,6 +28,11 @@ export default function HomePage({ canvasMapRef, pathMapRef }: Props) {
   const [isLoading, setIsLoading] = useState(false);
   const [shareTarget, setShareTarget] = useState<PuzzleRecord | null>(null);
   const [showImportDialog, setShowImportDialog] = useState(false);
+  const [currentDraft, setCurrentDraft] = useState<GameDraft | null>(null);
+
+  useEffect(() => {
+    setCurrentDraft(getDraft());
+  }, []);
 
   function handleNewPuzzle() {
     if (getRecords().length >= 10) {
@@ -156,12 +163,47 @@ export default function HomePage({ canvasMapRef, pathMapRef }: Props) {
     }
   }, [canvasMapRef, pathMapRef, dispatch, isLoading]);
 
+  const resumeDraft = useCallback(async () => {
+    const draft = getDraft();
+    if (!draft || isLoading) return;
+    const fakeRecord: GameHistoryRecord = {
+      id: draft.gameId,
+      configId: draft.configId,
+      createdAt: 0,
+      updatedAt: 0,
+      difficulty: draft.difficulty,
+      cols: draft.cols,
+      rows: draft.rows,
+      thumbnailDataUrl: '',
+      croppedImageDataUrl: draft.croppedImageDataUrl,
+      savedState: draft.savedState,
+      isCompleted: false,
+    };
+    await continueGame(fakeRecord);
+  }, [continueGame, isLoading]);
+
   return (
     <div
       className="h-full overflow-y-auto flex flex-col items-center justify-center p-6"
       style={{ background: 'var(--pg-warm)' }}
     >
       <div className="w-full max-w-sm flex flex-col gap-4">
+
+        {currentDraft && (
+          <MenuCard
+            icon={
+              <img
+                src={currentDraft.croppedImageDataUrl}
+                className="w-full h-full object-cover rounded-xl"
+                alt=""
+              />
+            }
+            title="繼續上局"
+            subtitle={`${DIFFICULTY_LABEL[currentDraft.difficulty] ?? currentDraft.difficulty}・${currentDraft.cols}×${currentDraft.rows}`}
+            onClick={resumeDraft}
+            variant="resume"
+          />
+        )}
 
         <MenuCard
           icon={<IconNew />}
@@ -235,7 +277,11 @@ export default function HomePage({ canvasMapRef, pathMapRef }: Props) {
   );
 }
 
-type CardVariant = 'primary' | 'secondary';
+const DIFFICULTY_LABEL: Record<string, string> = {
+  easy: '簡單', normal: '普通', hard: '困難', expert: '專家',
+};
+
+type CardVariant = 'primary' | 'secondary' | 'resume';
 
 function MenuCard({
   icon, title, subtitle, onClick, variant,
@@ -252,12 +298,16 @@ function MenuCard({
       className={`w-full flex items-center gap-4 p-5 rounded-2xl border-2 text-left transition-all active:scale-[0.99] card-lift ${
         variant === 'primary'
           ? 'btn-primary border-brand-700'
+          : variant === 'resume'
+          ? 'bg-accent-500/10 hover:bg-accent-500/15 border-accent-500/40 hover:border-accent-500/70 shadow-sm'
           : 'bg-paper-50 hover:bg-paper-100 border-paper-300 hover:border-brand-500/50 shadow-sm'
       }`}
     >
-      <div className={`w-12 h-12 flex-shrink-0 rounded-2xl flex items-center justify-center ${
+      <div className={`w-12 h-12 flex-shrink-0 rounded-2xl flex items-center justify-center overflow-hidden ${
         variant === 'primary'
           ? 'bg-white/35 shadow-[inset_0_1px_0_rgba(255,255,255,.5)]'
+          : variant === 'resume'
+          ? 'bg-accent-500/20'
           : 'bg-brand-50 text-brand-600'
       }`}>
         {icon}
@@ -266,13 +316,21 @@ function MenuCard({
         <p className="font-extrabold text-base text-paper-900">
           {title}
         </p>
-        <p className={`text-sm mt-0.5 font-medium ${variant === 'primary' ? 'text-paper-900/70' : 'text-paper-800/80'}`}>
+        <p className={`text-sm mt-0.5 font-medium ${
+          variant === 'primary' ? 'text-paper-900/70'
+          : variant === 'resume' ? 'text-accent-500'
+          : 'text-paper-800/80'
+        }`}>
           {subtitle}
         </p>
       </div>
       <div className="ml-auto">
         <svg
-          className={`w-5 h-5 ${variant === 'primary' ? 'text-paper-900/60' : 'text-brand-500'}`}
+          className={`w-5 h-5 ${
+            variant === 'primary' ? 'text-paper-900/60'
+            : variant === 'resume' ? 'text-accent-500'
+            : 'text-brand-500'
+          }`}
           fill="none" stroke="currentColor" viewBox="0 0 24 24"
         >
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
