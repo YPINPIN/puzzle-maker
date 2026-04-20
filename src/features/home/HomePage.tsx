@@ -6,7 +6,7 @@ import {
   startGame, restoreGame, goToUpload,
 } from '../../store/puzzleSlice';
 import { generatePieces } from '../../lib/pieceFactory';
-import { TOOLBAR_HEIGHT, MAX_CANVAS_WIDTH, TAB_RATIO, getEffectiveDPR } from '../../lib/constants';
+import { TOOLBAR_HEIGHT, MAX_CANVAS_WIDTH, TAB_RATIO, getEffectiveDPR, ZOOM_BUTTON_AVOID_W, ZOOM_BUTTON_AVOID_H } from '../../lib/constants';
 import { getRecords } from '../../lib/records';
 import type { PuzzleRecord } from '../../lib/records';
 import type { GameHistoryRecord, InProgressGameState, Difficulty } from '../../types/puzzle';
@@ -53,7 +53,7 @@ export default function HomePage({ canvasMapRef, pathMapRef }: Props) {
         canvasH,
         undefined,
         undefined,
-        { w: 170 * dpr, h: 140 * dpr }
+        { w: ZOOM_BUTTON_AVOID_W * dpr, h: ZOOM_BUTTON_AVOID_H * dpr }
       );
 
       canvasMapRef.current.clear();

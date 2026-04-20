@@ -127,6 +127,8 @@ export function usePointerDrag({
     function onPointerDown(e: PointerEvent) {
       pointerCacheRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
 
+      if (isPausedRef.current) return;
+
       // 第二根手指觸發 pinch zoom
       if (pointerCacheRef.current.size === 2) {
         // 取消進行中的拖曳或 pan
@@ -149,7 +151,6 @@ export function usePointerDrag({
         return;
       }
 
-      if (isPausedRef.current) return;
       const { x, y } = getCanvasPos(e);
       const hitId = hitTest(x, y);
 
@@ -242,9 +243,14 @@ export function usePointerDrag({
     function onPointerUp(e: PointerEvent) {
       pointerCacheRef.current.delete(e.pointerId);
 
-      // 還有手指按著 → 仍在 pinch 模式，不做拖曳收尾
+      // 還有手指按著 → 退出 pinch，並清除任何進行中的拖曳狀態
       if (pointerCacheRef.current.size >= 1) {
-        pinchRef.current = null; // 剩一根手指時退出 pinch
+        pinchRef.current = null;
+        if (draggingGroupIdRef.current !== null) {
+          dragDeltaRef.current = { x: 0, y: 0 };
+          dragBasePositionsRef.current = {};
+          dispatch(endDragGroup());
+        }
         return;
       }
 

@@ -85,6 +85,29 @@ export async function generatePieces(
   const zoneAreas = zones.map(z => (z.x1 - z.x0) * (z.y1 - z.y0));
   const totalArea = zoneAreas.reduce((s, a) => s + a, 0);
 
+  // 散片初始位置：分布在格線矩形外圍區域（按面積加權隨機）
+  // 可選排除右下角（縮放按鈕疊層區域）
+  const avoidW = avoidBottomRight?.w ?? 0;
+  const avoidH = avoidBottomRight?.h ?? 0;
+  const pickPosition = () => {
+    if (zones.length > 0 && totalArea > 0) {
+      let pick = Math.random() * totalArea;
+      let zone = zones[0];
+      for (let i = 0; i < zones.length; i++) {
+        pick -= zoneAreas[i];
+        if (pick <= 0) { zone = zones[i]; break; }
+      }
+      return {
+        x: zone.x0 + Math.random() * (zone.x1 - zone.x0),
+        y: zone.y0 + Math.random() * (zone.y1 - zone.y0),
+      };
+    }
+    return {
+      x: m + Math.random() * Math.max(0, canvasW - pieceW - 2 * m),
+      y: m + Math.random() * Math.max(0, canvasH - pieceH - 2 * m),
+    };
+  };
+
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
       const id = r * cols + c;
@@ -121,29 +144,6 @@ export async function generatePieces(
 
       canvasMap.set(id, offscreen);
 
-      // 散片初始位置：分布在格線矩形外圍區域（按面積加權隨機）
-      // 可選排除右下角（縮放按鈕疊層區域）
-      const avoidW = avoidBottomRight?.w ?? 0;
-      const avoidH = avoidBottomRight?.h ?? 0;
-      let currentX: number, currentY: number;
-      const pickPosition = () => {
-        if (zones.length > 0 && totalArea > 0) {
-          let pick = Math.random() * totalArea;
-          let zone = zones[0];
-          for (let i = 0; i < zones.length; i++) {
-            pick -= zoneAreas[i];
-            if (pick <= 0) { zone = zones[i]; break; }
-          }
-          return {
-            x: zone.x0 + Math.random() * (zone.x1 - zone.x0),
-            y: zone.y0 + Math.random() * (zone.y1 - zone.y0),
-          };
-        }
-        return {
-          x: m + Math.random() * Math.max(0, canvasW - pieceW - 2 * m),
-          y: m + Math.random() * Math.max(0, canvasH - pieceH - 2 * m),
-        };
-      };
       let pos = pickPosition();
       if (avoidW > 0 && avoidH > 0) {
         for (let attempt = 0; attempt < 8; attempt++) {
@@ -152,8 +152,6 @@ export async function generatePieces(
           } else break;
         }
       }
-      currentX = pos.x;
-      currentY = pos.y;
 
       pieces.push({
         id,
@@ -161,7 +159,7 @@ export async function generatePieces(
         col: c,
         edges,
         correctPosition: { x: correctX, y: correctY },
-        currentPosition: { x: currentX, y: currentY },
+        currentPosition: { x: pos.x, y: pos.y },
         isSnapped: false,
         groupId: id,
       });

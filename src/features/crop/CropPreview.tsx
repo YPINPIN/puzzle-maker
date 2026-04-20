@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from '../../store';
 import { setPieces, startGame, backToConfig, setReferenceImage, setGameId, setConfigId } from '../../store/puzzleSlice';
 import { generatePieces } from '../../lib/pieceFactory';
-import { TOOLBAR_HEIGHT, MAX_CANVAS_WIDTH, getEffectiveDPR } from '../../lib/constants';
+import { TOOLBAR_HEIGHT, MAX_CANVAS_WIDTH, getEffectiveDPR, ZOOM_BUTTON_AVOID_W, ZOOM_BUTTON_AVOID_H } from '../../lib/constants';
 import { saveRecord } from '../../lib/records';
 
 type Props = {
@@ -197,16 +197,53 @@ export default function CropPreview({ canvasMapRef, pathMapRef }: Props) {
     return { ...crop, x, y };
   }
 
-  // Pointer events（拖曳移動裁切框）
+  // Pointer events（拖曳移動裁切框 + 雙指縮放）
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
+    const pointerCache = new Map<number, { x: number; y: number }>();
+    type PinchState = { dist0: number; cropW0: number; centerX0: number; centerY0: number };
+    let pinch: PinchState | null = null;
     let isDragging = false;
     let lastX = 0;
     let lastY = 0;
 
+    function getCropWBounds(img: HTMLImageElement, cropAspect: number) {
+      const maxW = Math.min(img.width, img.height * cropAspect);
+      const imgShortSide = Math.min(img.width, img.height);
+      const minW = cropAspect >= 1
+        ? (imgShortSide / 2) * cropAspect
+        : imgShortSide / 2;
+      return { minW, maxW };
+    }
+
     function onPointerDown(e: PointerEvent) {
+      pointerCache.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+      if (pointerCache.size === 2) {
+        isDragging = false;
+        const pts = [...pointerCache.values()];
+        const dist0 = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
+        const crop = cropRef.current;
+        const img = imgRef.current;
+        if (img) {
+          const { scale, offsetX, offsetY } = imgTransformRef.current;
+          const midClientX = (pts[0].x + pts[1].x) / 2;
+          const midClientY = (pts[0].y + pts[1].y) / 2;
+          const rect = canvas!.getBoundingClientRect();
+          const canvasMidX = (midClientX - rect.left) * (canvas!.width / rect.width);
+          const canvasMidY = (midClientY - rect.top) * (canvas!.height / rect.height);
+          pinch = {
+            dist0: Math.max(dist0, 1),
+            cropW0: crop.w,
+            centerX0: (canvasMidX - offsetX) / scale,
+            centerY0: (canvasMidY - offsetY) / scale,
+          };
+        }
+        return;
+      }
+
       isDragging = true;
       lastX = e.clientX;
       lastY = e.clientY;
@@ -214,12 +251,29 @@ export default function CropPreview({ canvasMapRef, pathMapRef }: Props) {
     }
 
     function onPointerMove(e: PointerEvent) {
+      pointerCache.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+      if (pointerCache.size >= 2 && pinch) {
+        const img = imgRef.current;
+        if (!img) return;
+        const pts = [...pointerCache.values()];
+        const newDist = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
+        const cropAspect = cols / rows;
+        const { minW, maxW } = getCropWBounds(img, cropAspect);
+        const newW = Math.min(maxW, Math.max(minW, pinch.cropW0 * newDist / pinch.dist0));
+        const newH = newW * (rows / cols);
+        cropRef.current = clampCrop(
+          { w: newW, h: newH, x: pinch.centerX0 - newW / 2, y: pinch.centerY0 - newH / 2 },
+          img.width, img.height
+        );
+        return;
+      }
+
       if (!isDragging) return;
       const img = imgRef.current;
       if (!img) return;
 
       const scale = imgTransformRef.current.scale;
-      // 移動量轉換回 image-native 座標
       const dx = (e.clientX - lastX) / scale;
       const dy = (e.clientY - lastY) / scale;
       lastX = e.clientX;
@@ -233,8 +287,12 @@ export default function CropPreview({ canvasMapRef, pathMapRef }: Props) {
     }
 
     function onPointerUp(e: PointerEvent) {
-      isDragging = false;
-      canvas!.releasePointerCapture(e.pointerId);
+      pointerCache.delete(e.pointerId);
+      if (pointerCache.size < 2) pinch = null;
+      if (pointerCache.size === 0) {
+        isDragging = false;
+        canvas!.releasePointerCapture(e.pointerId);
+      }
     }
 
     // 滾輪縮放裁切框（維持 cols:rows 比例，裁切框中心不動）
@@ -246,20 +304,10 @@ export default function CropPreview({ canvasMapRef, pathMapRef }: Props) {
       const crop = cropRef.current;
       const factor = e.deltaY < 0 ? 1.05 : 0.95;
       const cropAspect = cols / rows;
-
-      // 最大：確保 w 和 h 都不超出圖片邊界
-      const maxW = Math.min(img.width, img.height * cropAspect);
-
-      // 最小：裁切框短邊 >= 圖片短邊的 1/2
-      const imgShortSide = Math.min(img.width, img.height);
-      const minW = cropAspect >= 1
-        ? (imgShortSide / 2) * cropAspect  // 橫向裁切：高為短邊，推算寬
-        : imgShortSide / 2;                // 縱向裁切：寬本身就是短邊
-
+      const { minW, maxW } = getCropWBounds(img, cropAspect);
       const newW = Math.min(maxW, Math.max(minW, crop.w * factor));
       const newH = newW * (rows / cols);
 
-      // 保持裁切框中心不動
       const centerX = crop.x + crop.w / 2;
       const centerY = crop.y + crop.h / 2;
       cropRef.current = clampCrop(
@@ -280,6 +328,7 @@ export default function CropPreview({ canvasMapRef, pathMapRef }: Props) {
       canvas.removeEventListener('pointerup', onPointerUp);
       canvas.removeEventListener('pointercancel', onPointerUp);
       canvas.removeEventListener('wheel', onWheel);
+      pointerCache.clear();
     };
   }, [cols, rows]);
 
@@ -369,9 +418,10 @@ export default function CropPreview({ canvasMapRef, pathMapRef }: Props) {
 
     try {
       const result = await generatePieces(
-        imageDataUrl, cols, rows, canvasW, canvasH, cropRegion,
+        croppedImageDataUrl, cols, rows, canvasW, canvasH,
         undefined,
-        { w: 170 * dpr, h: 140 * dpr }
+        undefined,
+        { w: ZOOM_BUTTON_AVOID_W * dpr, h: ZOOM_BUTTON_AVOID_H * dpr }
       );
 
       canvasMapRef.current.clear();
@@ -432,7 +482,7 @@ export default function CropPreview({ canvasMapRef, pathMapRef }: Props) {
           className="absolute top-3 left-1/2 -translate-x-1/2 text-brand-500/80 text-xs font-medium pointer-events-none whitespace-nowrap px-3 py-1 rounded-full"
           style={{ background: 'rgba(26,20,13,.6)', border: '1px solid rgba(244,165,43,.25)' }}
         >
-          拖曳移動裁切框 · 滾輪縮放（最小 ½ 圖片短邊，不超出邊界）
+          拖曳移動裁切框 · 滾輪或雙指縮放
         </div>
       </div>
     </div>

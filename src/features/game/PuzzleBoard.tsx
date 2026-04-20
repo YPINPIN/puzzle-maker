@@ -292,7 +292,7 @@ export default function PuzzleBoard({ canvasMapRef, pathMapRef }: Props) {
   });
 
   const onZoomChange = useCallback((z: number) => {
-    const clamped = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, Math.round(z / 5) * 5));
+    const clamped = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, z));
     zoomPercentRef.current = clamped;
     setZoomPercent(clamped);
     clampPan(clamped);
@@ -315,8 +315,8 @@ export default function PuzzleBoard({ canvasMapRef, pathMapRef }: Props) {
   const canPan = zoomPercent > ZOOM_MIN;
 
   return (
-    <div className="relative flex flex-col w-full h-full">
-      {/* 遊戲區域：深色桌面背景，佔滿全部高度 */}
+    <div className="flex flex-col w-full h-full">
+      {/* 遊戲區域：深色桌面背景，佔滿剩餘高度 */}
       <div
         ref={gameAreaRef}
         className="flex-1 relative overflow-hidden"
@@ -361,27 +361,26 @@ export default function PuzzleBoard({ canvasMapRef, pathMapRef }: Props) {
         />
       </div>
 
-      {/* 縮放控制（右下角）：容器透穿 pointer events，僅按鈕本身可互動 */}
+      {/* 底部控制 bar：縮放按鈕移出 canvas 疊層，消除遮擋問題 */}
       <div
-        className="absolute bottom-0 right-0 flex flex-col items-end gap-1.5 z-10 pointer-events-none"
-        style={{ padding: 'max(16px, env(safe-area-inset-bottom)) 16px 0 0' }}
+        className="flex-shrink-0 flex items-center justify-between px-4"
+        style={{
+          background: 'rgba(13,9,6,0.95)',
+          borderTop: '1px solid #3A2F25',
+          paddingTop: '10px',
+          paddingBottom: 'max(12px, env(safe-area-inset-bottom))',
+        }}
       >
-        {/* 拖曳平移提示（縮放 > 100% 時顯示） */}
-        <div
-          className="flex items-center gap-1 text-xs font-bold text-brand-500 rounded-full px-2.5 py-1 pointer-events-none select-none transition-opacity duration-300"
-          style={{ background: 'rgba(26,20,13,.85)', border: '1px solid rgba(244,165,43,.4)', opacity: canPan ? 1 : 0 }}
+        <span
+          className="text-xs font-medium text-brand-500/70 transition-opacity duration-300 select-none"
+          style={{ opacity: canPan ? 1 : 0 }}
         >
-          <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-              d="M7 11.5V14m0-2.5v-6a1.5 1.5 0 113 0m-3 6a1.5 1.5 0 00-3 0v2a7.5 7.5 0 0015 0v-5a1.5 1.5 0 00-3 0m-6-3V11m0-5.5v-1a1.5 1.5 0 013 0v1m0 0V11m0-5.5a1.5 1.5 0 013 0v3m0 0V11" />
-          </svg>
-          拖曳以平移
-        </div>
+          雙指或拖曳空白處平移
+        </span>
 
-        {/* 縮放按鈕（pointer-events-auto 恢復可互動） */}
         <div
-          className="flex items-center gap-1.5 backdrop-blur-md rounded-xl px-2 py-1.5 shadow-lg pointer-events-auto"
-          style={{ background: 'rgba(26,20,13,.85)', border: '1px solid #5A4B38' }}
+          className="flex items-center gap-1.5 rounded-xl px-2 py-1"
+          style={{ background: 'rgba(58,47,37,0.8)', border: '1px solid #5A4B38' }}
         >
           <button
             onClick={() => changeZoom(-ZOOM_STEP)}
@@ -391,7 +390,7 @@ export default function PuzzleBoard({ canvasMapRef, pathMapRef }: Props) {
             −
           </button>
           <span className="text-xs font-bold text-paper-100 w-10 text-center select-none font-mono">
-            {zoomPercent}%
+            {Math.round(zoomPercent)}%
           </span>
           <button
             onClick={() => changeZoom(ZOOM_STEP)}
