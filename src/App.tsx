@@ -9,6 +9,7 @@ import PuzzleBoard from './features/game/PuzzleBoard';
 import CompletionOverlay from './features/complete/CompletionOverlay';
 import AppHeader from './features/layout/AppHeader';
 import { useGameDraft } from './features/game/useGameDraft';
+import { usePhaseHistory } from './features/game/usePhaseHistory';
 
 export default function App() {
   const phase = useSelector((s: RootState) => s.puzzle.phase);
@@ -16,6 +17,7 @@ export default function App() {
   const pathMapRef = useRef<Map<number, Path2D>>(new Map());
 
   useGameDraft();
+  usePhaseHistory();
 
   return (
     <div className="flex flex-col w-screen overflow-hidden overscroll-none" style={{ height: '100dvh' }}>
