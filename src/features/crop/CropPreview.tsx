@@ -1,7 +1,7 @@
 import { useRef, useEffect, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from '../../store';
-import { setPieces, startGame, backToConfig, setReferenceImage, setGameId, setConfigId } from '../../store/puzzleSlice';
+import { setPieces, startGame, setReferenceImage, setGameId, setConfigId } from '../../store/puzzleSlice';
 import { generatePieces } from '../../lib/pieceFactory';
 import { TOOLBAR_HEIGHT, MAX_CANVAS_WIDTH, getEffectiveDPR, ZOOM_BUTTON_AVOID_W, ZOOM_BUTTON_AVOID_H, GAME_BOTTOM_BAR_HEIGHT } from '../../lib/constants';
 import { saveRecord } from '../../lib/records';
@@ -457,7 +457,7 @@ export default function CropPreview({ canvasMapRef, pathMapRef }: Props) {
         }}
       >
         <button
-          onClick={() => dispatch(backToConfig())}
+          onClick={() => history.back()}
           className="text-paper-400 text-sm font-bold px-4 py-2 rounded-lg hover:brightness-110 transition-all"
           style={{ background: '#3A2F25', border: '1px solid #5A4B38' }}
         >

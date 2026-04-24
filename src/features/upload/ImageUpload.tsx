@@ -1,7 +1,7 @@
 import { useRef, useState, type DragEvent, type ChangeEvent } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from '../../store';
-import { setImage, goToHome } from '../../store/puzzleSlice';
+import { setImage } from '../../store/puzzleSlice';
 import PresetImagesModal from './PresetImagesModal';
 
 export default function ImageUpload() {
@@ -59,7 +59,7 @@ export default function ImageUpload() {
         style={{ background: 'linear-gradient(180deg, #251E15 0%, rgba(26,20,13,.9) 100%)', borderBottom: '1px solid #3A2F25' }}
       >
         <button
-          onClick={() => dispatch(goToHome())}
+          onClick={() => history.back()}
           className="text-paper-400 text-sm font-bold px-4 py-2 rounded-lg hover:brightness-110 transition-all"
           style={{ background: '#3A2F25', border: '1px solid #5A4B38' }}
         >

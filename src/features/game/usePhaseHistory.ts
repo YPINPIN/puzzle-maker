@@ -3,46 +3,73 @@ import { useSelector, useDispatch } from 'react-redux';
 import type { RootState, AppDispatch } from '../../store';
 import { goToHome, goToUpload, backToConfig, resetGame } from '../../store/puzzleSlice';
 
+const PHASE_ORDER = ['home', 'upload', 'config', 'crop', 'playing', 'complete'];
+
 export function usePhaseHistory() {
   const dispatch = useDispatch<AppDispatch>();
   const phase = useSelector((s: RootState) => s.puzzle.phase);
   const phaseRef = useRef(phase);
   phaseRef.current = phase;
 
-  // 是否有 backstop entry 存在：離開 home 時 push 一筆，回到 home 時清除
-  const hasBackstop = useRef(false);
+  const isBackNav = useRef(false);
+  // 正在 undo 一段 forward/stale entries，需連續往回走直到找到合法 entry
+  const isUndoingForward = useRef(false);
 
-  // 只在第一次離開 home 時 push 一筆 backstop（後續 forward 不再 push）
+  // 每次向前進入非 home phase 各 push 一筆 entry（含 phase 供方向偵測）
+  // back 觸發的 phase 變化由 isBackNav flag 跳過，避免重複 push
   useEffect(() => {
-    if (phase === 'home') {
-      hasBackstop.current = false;
+    if (isBackNav.current) {
+      isBackNav.current = false;
       return;
     }
-    if (!hasBackstop.current) {
-      hasBackstop.current = true;
-      history.pushState({ puzzle: true }, '');
-    }
+    if (phase === 'home') return;
+    history.pushState({ puzzle: true, phase }, '', '#app');
   }, [phase]);
 
   useEffect(() => {
-    const onPopState = () => {
-      let goesToHome = false;
+    const onPopState = (e: PopStateEvent) => {
+      const state = e.state as { puzzle?: boolean; phase?: string } | null;
+      const storedIdx = state?.phase ? PHASE_ORDER.indexOf(state.phase) : -1;
+      const currentIdx = PHASE_ORDER.indexOf(phaseRef.current);
+
+      // 正在 undo forward/stale：繼續往回走，直到 storedIdx <= currentIdx
+      if (isUndoingForward.current) {
+        if (storedIdx > currentIdx) {
+          history.back();
+        } else {
+          // 已回到正確位置，停止並取消（不 dispatch）
+          isUndoingForward.current = false;
+        }
+        return;
+      }
+
+      // 抵達 app_url（無 puzzle state）
+      if (!state?.puzzle) {
+        if (phaseRef.current !== 'home') {
+          isBackNav.current = true;
+          dispatch(goToHome());
+        }
+        return;
+      }
+
+      // storedIdx > currentIdx：forward 導航或 stale 舊 session entry → undo
+      if (storedIdx > currentIdx) {
+        isUndoingForward.current = true;
+        history.back();
+        return;
+      }
+
+      // 合法的 backward navigation
+      isBackNav.current = true;
       switch (phaseRef.current) {
-        case 'upload':   dispatch(goToHome());    goesToHome = true; break;
-        case 'config':   dispatch(goToUpload());  break;
+        case 'upload':   dispatch(goToHome());     break;
+        case 'config':   dispatch(goToUpload());   break;
         case 'crop':     dispatch(backToConfig()); break;
         case 'playing':
-        case 'complete': dispatch(resetGame());   goesToHome = true; break;
-      }
-      if (!goesToHome) {
-        // 重新 push backstop，清除 forward history，維持在 app 內
-        history.pushState({ puzzle: true }, '');
-        hasBackstop.current = true;
-      } else {
-        // 回到 home：不重新 push，ptr 停在 app_url，再按一次 back 即離開 app
-        hasBackstop.current = false;
+        case 'complete': dispatch(resetGame());    break;
       }
     };
+
     window.addEventListener('popstate', onPopState);
     return () => window.removeEventListener('popstate', onPopState);
   }, [dispatch]);

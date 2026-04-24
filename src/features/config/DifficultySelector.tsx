@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from '../../store';
-import { confirmConfig, goToUpload } from '../../store/puzzleSlice';
+import { confirmConfig } from '../../store/puzzleSlice';
 import type { Difficulty } from '../../types/puzzle';
 
 type GridPreset = { cols: number; rows: number; label: string };
@@ -68,7 +68,7 @@ export default function DifficultySelector() {
         style={{ background: 'linear-gradient(180deg, #251E15 0%, rgba(26,20,13,.9) 100%)', borderBottom: '1px solid #3A2F25' }}
       >
         <button
-          onClick={() => dispatch(goToUpload())}
+          onClick={() => history.back()}
           className="text-paper-400 text-sm font-bold px-4 py-2 rounded-lg hover:brightness-110 transition-all"
           style={{ background: '#3A2F25', border: '1px solid #5A4B38' }}
         >
