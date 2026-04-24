@@ -9,27 +9,38 @@ export function usePhaseHistory() {
   const phaseRef = useRef(phase);
   phaseRef.current = phase;
 
-  const isFirstRender = useRef(true);
+  // 是否有 backstop entry 存在：離開 home 時 push 一筆，回到 home 時清除
+  const hasBackstop = useRef(false);
 
-  // 每次 phase 變化都 push 一筆 history entry（初次用 replaceState）
-  // popstate 觸發 dispatch → phase 改變 → 這裡再 push，同時清除所有 forward history
+  // 只在第一次離開 home 時 push 一筆 backstop（後續 forward 不再 push）
   useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      history.replaceState({ phase }, '');
+    if (phase === 'home') {
+      hasBackstop.current = false;
       return;
     }
-    history.pushState({ phase }, '');
+    if (!hasBackstop.current) {
+      hasBackstop.current = true;
+      history.pushState({ puzzle: true }, '');
+    }
   }, [phase]);
 
   useEffect(() => {
     const onPopState = () => {
+      let goesToHome = false;
       switch (phaseRef.current) {
-        case 'upload':   dispatch(goToHome());     break;
-        case 'config':   dispatch(goToUpload());   break;
-        case 'crop':     dispatch(backToConfig());  break;
-        case 'playing':  dispatch(resetGame());    break;
-        case 'complete': dispatch(resetGame());    break;
+        case 'upload':   dispatch(goToHome());    goesToHome = true; break;
+        case 'config':   dispatch(goToUpload());  break;
+        case 'crop':     dispatch(backToConfig()); break;
+        case 'playing':
+        case 'complete': dispatch(resetGame());   goesToHome = true; break;
+      }
+      if (!goesToHome) {
+        // 重新 push backstop，清除 forward history，維持在 app 內
+        history.pushState({ puzzle: true }, '');
+        hasBackstop.current = true;
+      } else {
+        // 回到 home：不重新 push，ptr 停在 app_url，再按一次 back 即離開 app
+        hasBackstop.current = false;
       }
     };
     window.addEventListener('popstate', onPopState);
