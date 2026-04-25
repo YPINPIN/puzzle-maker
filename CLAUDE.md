@@ -343,10 +343,10 @@ const CREST: Record<string, IconName> = {
 ## 共用元件
 
 - `src/components/Icon.tsx`：SVG sprite icon 元件，見上方說明
-- `src/components/ConfirmDialog.tsx`：通用二次確認對話框，支援 `danger` 紅色模式
+- `src/components/ConfirmDialog.tsx`：通用二次確認對話框，支援 `danger` 紅色模式；`message` 接受 `ReactNode`，同檔案匯出 `Hi`（品牌金）、`HiAccent`（湖水綠）、`HiDanger`（紅）三個 helper span，用於在 dialog 訊息中標記重點文字
 - `src/components/ShareCodeModal.tsx`：分享代碼 Modal，雙模式（`mode='share'` 顯示代碼供複製；`mode='import'` 讓使用者貼入代碼）；匯入前檢查快捷設定是否已達 10 筆上限
 - `src/features/game/SavePanel.tsx`：10 格存檔選位面板；以 `gameId` 比對標示「目前紀錄」格；佔用格點擊前顯示 `ConfirmDialog` 確認覆蓋（原始 slot 除外）
-- `src/features/upload/PresetImagesModal.tsx`：內建圖片選擇 Modal；4 張圖片定義於元件頂部常數（`PRESET_IMAGES`）；點選後以 `fetch → blob → canvas.toDataURL('image/jpeg', 0.92)` 轉換（與 `ImageUpload.processFile` 一致），結果快取於 `useRef<Map>`
+- `src/features/upload/PresetImagesModal.tsx`：內建圖片選擇 Modal；8 張圖片定義於元件頂部常數（`PRESET_IMAGES`）；點選後以 `fetch → blob → canvas.toDataURL('image/jpeg', 0.92)` 轉換（與 `ImageUpload.processFile` 一致），結果快取於 `useRef<Map>`
 - `src/features/upload/RecordsModal.tsx`：雙模式清單 Modal（`mode='quick'` 顯示快捷設定；`mode='history'` 顯示歷史紀錄）；各筆紀錄可刪除（需 `ConfirmDialog` 確認）；quick 模式的 Header 有「匯入代碼」按鈕，每筆卡片有「分享」按鈕
 - `src/features/game/ImagePreviewOverlay.tsx`：遊戲中查看參考圖的全螢幕覆蓋層；由 `toggleImagePreview` action 控制 `showImagePreview` Redux 欄位；顯示 `referenceDataUrl`（裁切後圖片），點擊背景或 ✕ 鈕關閉
 

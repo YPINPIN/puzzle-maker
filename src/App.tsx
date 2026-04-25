@@ -2,7 +2,7 @@ import { useRef, useState, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import type { RootState, AppDispatch } from './store';
 import { resetGame, pauseGame, resumeGame } from './store/puzzleSlice';
-import ConfirmDialog from './components/ConfirmDialog';
+import ConfirmDialog, { HiAccent } from './components/ConfirmDialog';
 import HomePage from './features/home/HomePage';
 import ImageUpload from './features/upload/ImageUpload';
 import DifficultySelector from './features/config/DifficultySelector';
@@ -51,7 +51,7 @@ export default function App() {
       {showExitConfirm && (
         <ConfirmDialog
           title="確定要離開遊戲嗎？"
-          message="目前進度已自動暫存，回到首頁後可從「繼續上局」恢復。"
+          message={<>目前進度已自動暫存，回到首頁後可從<HiAccent>「繼續上局」</HiAccent>恢復。</>}
           confirmText="確定離開"
           cancelText="繼續遊戲"
           danger

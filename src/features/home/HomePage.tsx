@@ -13,7 +13,7 @@ import { getDraft, clearDraft } from '../../lib/gameDraft';
 import type { GameDraft } from '../../lib/gameDraft';
 import type { GameHistoryRecord, InProgressGameState, Difficulty } from '../../types/puzzle';
 import RecordsModal from '../upload/RecordsModal';
-import ConfirmDialog from '../../components/ConfirmDialog';
+import ConfirmDialog, { Hi, HiAccent, HiDanger } from '../../components/ConfirmDialog';
 import ShareCodeModal from '../../components/ShareCodeModal';
 import { Icon, type IconName } from '../../components/Icon';
 
@@ -233,7 +233,7 @@ export default function HomePage({ canvasMapRef, pathMapRef }: Props) {
       {showFullWarning && (
         <ConfirmDialog
           title="快捷設定已達上限"
-          message="快捷設定已儲存 10 筆，無法建立新設定。請先至「快速開局」刪除不需要的設定後再試。"
+          message={<>快捷設定已儲存 10 筆，無法建立新設定。請先至<HiAccent>「快速開局」</HiAccent>刪除不需要的設定後再試。</>}
           confirmText="前往快速開局"
           cancelText="取消"
           onConfirm={() => { setShowFullWarning(false); setShowRecords('quick'); }}
@@ -244,7 +244,7 @@ export default function HomePage({ canvasMapRef, pathMapRef }: Props) {
       {pendingAction && (
         <ConfirmDialog
           title="有未儲存的遊戲進度"
-          message={"繼續後將立即刪除暫存紀錄，無法再從「繼續上局」恢復。\n如需保留進度，請先點選「繼續上局」並使用「保存並結束」儲存。"}
+          message={<>繼續後將立即<HiDanger>刪除暫存紀錄</HiDanger>，無法再從「繼續上局」恢復。{'\n'}如需保留進度，請先點選<HiAccent>「繼續上局」</HiAccent>並使用<Hi>「保存並結束」</Hi>儲存。</>}
           confirmText="確定刪除並繼續"
           cancelText="取消"
           danger

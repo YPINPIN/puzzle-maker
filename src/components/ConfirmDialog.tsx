@@ -1,12 +1,25 @@
+import type { ReactNode } from 'react';
+
 type Props = {
   title: string;
-  message: string;
+  message: ReactNode;
   confirmText?: string;
   cancelText?: string;
   danger?: boolean;
   onConfirm: () => void;
   onCancel: () => void;
-};
+}
+
+// 重點文字用的工具 span
+export const Hi = ({ children }: { children: ReactNode }) => (
+  <span className="font-semibold text-brand-500">{children}</span>
+);
+export const HiAccent = ({ children }: { children: ReactNode }) => (
+  <span className="font-semibold text-accent-500">{children}</span>
+);
+export const HiDanger = ({ children }: { children: ReactNode }) => (
+  <span className="font-semibold text-danger">{children}</span>
+);
 
 export default function ConfirmDialog({
   title,
