@@ -6,6 +6,7 @@ import { getRecords, updateRecord } from '../../lib/records';
 import { getGameHistory, updateGameHistory, saveGameHistoryAtSlot } from '../../lib/gameHistory';
 import type { GameHistoryRecord } from '../../types/puzzle';
 import SavePanel from '../game/SavePanel';
+import { Icon } from '../../components/Icon';
 
 function formatTime(ms: number): string {
   const totalSeconds = Math.floor(ms / 1000);
@@ -139,7 +140,7 @@ export default function CompletionOverlay() {
         style={{ background: 'rgba(13,9,6,.85)' }}
       >
         <div
-          className="amber-glow rounded-3xl p-6 max-w-sm w-full flex flex-col items-center gap-4 relative overflow-y-auto"
+          className="amber-glow rounded-3xl p-5 max-w-sm w-full flex flex-col items-center gap-3 relative overflow-y-auto"
           style={{
             background: 'radial-gradient(120% 80% at 50% 0%, var(--color-brand-50), var(--color-paper-200))',
             border: '2px solid #F4A52B',
@@ -155,17 +156,17 @@ export default function CompletionOverlay() {
               style={{ boxShadow: '0 0 0 2px #F4A52B, 0 8px 24px rgba(0,0,0,.2)' }}
             />
           )}
-          <div className="text-5xl">🏆</div>
           <h1 className="text-3xl font-black text-paper-900 tracking-tight">拼圖完成！</h1>
           <div
             className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 font-mono font-bold"
             style={{ background: 'var(--color-paper-100)', color: 'var(--color-brand-700)', border: '1px solid #F4A52B' }}
           >
-            ⏱ 用時 {formatTime(elapsedMs)}
+            <Icon name="ic-timer" size={16} />
+            <span className="leading-none translate-y-px">用時 {formatTime(elapsedMs)}</span>
           </div>
 
           {hasHistoryRecord ? (
-            <div className="flex flex-col items-center gap-3 w-full mt-2">
+            <div className="flex flex-col items-center gap-3 w-full">
               <p className="text-xs font-bold" style={{ color: 'var(--color-success)' }}>★ 已自動保存至歷史紀錄</p>
               <button
                 onClick={() => dispatch(resetGame())}
@@ -175,7 +176,7 @@ export default function CompletionOverlay() {
               </button>
             </div>
           ) : (
-            <div className="flex flex-col items-center gap-3 w-full mt-2">
+            <div className="flex flex-col items-center gap-3 w-full">
               <p className="text-xs text-paper-600 text-center">離開將不保存遊戲紀錄</p>
               <button
                 onClick={() => setShowSavePanel(true)}

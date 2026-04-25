@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Icon, type IconName } from '../../components/Icon';
 import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from '../../store';
 import { confirmConfig } from '../../store/puzzleSlice';
@@ -12,6 +13,13 @@ const DIFFICULTIES: { value: Difficulty; label: string; count: number }[] = [
   { value: 'hard',   label: '困難', count: 100 },
   { value: 'expert', label: '專家', count: 150 },
 ];
+
+const CREST: Record<Difficulty, IconName> = {
+  easy: 'crest-easy',
+  normal: 'crest-normal',
+  hard: 'crest-hard',
+  expert: 'crest-expert',
+};
 
 const GRID_PRESETS: Record<Difficulty, GridPreset[]> = {
   easy:   [
@@ -69,16 +77,17 @@ export default function DifficultySelector() {
       >
         <button
           onClick={() => history.back()}
-          className="text-paper-400 text-sm font-bold px-4 py-2 rounded-lg hover:brightness-110 transition-all"
+          className="inline-flex items-center gap-1.5 text-paper-400 text-sm font-bold px-4 py-2 rounded-lg hover:brightness-110 transition-all"
           style={{ background: '#3A2F25', border: '1px solid #5A4B38' }}
         >
-          ← 返回選擇圖片
+          <Icon name="ic-arrow-left" size={16} />
+          返回選擇圖片
         </button>
-        <div className="w-9" />
         <button
           onClick={handleNext}
           className="btn-primary text-sm px-5 py-2"
         >
+          <Icon name="ic-crop" size={16} />
           選擇拼圖區域
         </button>
       </div>
@@ -88,12 +97,12 @@ export default function DifficultySelector() {
         <h1 className="text-3xl sm:text-4xl font-black text-paper-900 tracking-tight">選擇難度</h1>
 
         {/* 難度選擇 */}
-        <div className="flex gap-2 flex-wrap justify-center">
+        <div className="flex gap-2 justify-center">
           {DIFFICULTIES.map(({ value, label, count }) => (
             <button
               key={value}
               onClick={() => handleDifficultyChange(value)}
-              className={`relative px-4 py-3 rounded-2xl text-base font-extrabold border-2 transition-all card-lift ${
+              className={`relative flex flex-col items-center gap-1 sm:gap-2 px-3 py-3 sm:px-6 sm:py-5 rounded-2xl text-sm sm:text-base font-extrabold border-2 transition-all card-lift ${
                 selectedDifficulty === value
                   ? 'border-brand-700 text-paper-900 -translate-y-0.5'
                   : 'border-paper-300 bg-paper-100 text-paper-900 hover:border-brand-500'
@@ -103,13 +112,16 @@ export default function DifficultySelector() {
                 boxShadow: 'inset 0 1px 0 rgba(255,255,255,.5), 0 6px 0 #9E5A00, 0 10px 18px rgba(185,106,0,.3)',
               } : undefined}
             >
+              <span className="block w-6 h-6 sm:w-10 sm:h-10">
+                <Icon name={CREST[value]} size="100%" />
+              </span>
               <div>{label}</div>
-              <div className="text-xs font-bold font-mono opacity-80 mt-0.5">{count} 片</div>
+              <div className="text-xs font-bold font-mono opacity-80">{count} 片</div>
               {selectedDifficulty === value && (
                 <div
                   className="absolute -top-2 -right-2 w-5 h-5 rounded-full text-[10px] font-black flex items-center justify-center"
                   style={{ background: 'var(--color-paper-100)', color: 'var(--color-brand-700)', boxShadow: '0 2px 6px rgba(0,0,0,.2)', border: '2px solid #B96A00' }}
-                >✓</div>
+                ><Icon name="ic-check" size={12} /></div>
               )}
             </button>
           ))}

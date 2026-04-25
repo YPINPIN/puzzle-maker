@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { Icon } from './Icon';
 import { encodeShareCode, decodeShareCode, shareDataToRecord } from '../lib/shareCode';
 import { saveRecord, getRecords, type PuzzleRecord } from '../lib/records';
 
@@ -58,7 +59,7 @@ export default function ShareCodeModal(props: Props) {
             onClick={onClose}
             className="w-9 h-9 flex items-center justify-center rounded-full bg-paper-100 hover:bg-paper-300 text-paper-600 hover:text-paper-900 transition-colors text-lg font-bold"
           >
-            ✕
+            <Icon name="ic-close" size={18} />
           </button>
         </div>
 
@@ -78,6 +79,7 @@ export default function ShareCodeModal(props: Props) {
                 onClick={handleCopy}
                 className={`btn-primary py-2.5 text-sm transition-all ${copied ? 'opacity-80' : ''}`}
               >
+                <Icon name="ic-copy" size={16} />
                 {copied ? '已複製！' : '複製代碼'}
               </button>
             </>
@@ -101,9 +103,11 @@ export default function ShareCodeModal(props: Props) {
                   disabled={!inputCode.trim()}
                   className="btn-primary flex-1 py-2.5 text-sm disabled:opacity-40 disabled:cursor-not-allowed"
                 >
+                  <Icon name="ic-download" size={16} />
                   確認匯入
                 </button>
                 <button onClick={onClose} className="btn-secondary flex-1 py-2.5 text-sm">
+                  <Icon name="ic-close" size={16} />
                   取消
                 </button>
               </div>

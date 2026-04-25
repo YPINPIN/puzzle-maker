@@ -5,6 +5,7 @@ import { resumeGame, rescalePieces } from '../../store/puzzleSlice';
 import { useGameLoop } from './useGameLoop';
 import { usePointerDrag } from './usePointerDrag';
 import ImagePreviewOverlay from './ImagePreviewOverlay';
+import { Icon } from '../../components/Icon';
 import { MAX_CANVAS_WIDTH, TAB_RATIO, getEffectiveDPR, ZOOM_MIN, ZOOM_MAX, ZOOM_STEP, TOOLBAR_HEIGHT, GAME_BOTTOM_BAR_HEIGHT } from '../../lib/constants';
 import { generatePieces } from '../../lib/pieceFactory';
 
@@ -334,7 +335,7 @@ export default function PuzzleBoard({ canvasMapRef, pathMapRef }: Props) {
             className="fixed inset-0 flex flex-col items-center justify-center z-40 pointer-events-auto"
             style={{ background: 'rgba(13,9,6,.85)' }}
           >
-            <div className="text-5xl sm:text-7xl mb-3" style={{ filter: 'drop-shadow(0 0 20px rgba(244,165,43,.5))' }}>⏸</div>
+            <div className="mb-3 text-brand-500" style={{ filter: 'drop-shadow(0 0 20px rgba(244,165,43,.5))' }}><Icon name="ic-pause" size={80} /></div>
             <p className="text-paper-100 text-xl sm:text-2xl font-black mb-5 tracking-wide">遊戲暫停</p>
             <button
               onClick={() => dispatch(resumeGame())}
@@ -385,9 +386,9 @@ export default function PuzzleBoard({ canvasMapRef, pathMapRef }: Props) {
           <button
             onClick={() => changeZoom(-ZOOM_STEP)}
             disabled={zoomPercent <= ZOOM_MIN}
-            className="w-7 h-7 flex items-center justify-center rounded-lg text-brand-500 hover:bg-white/10 disabled:opacity-30 transition-colors text-lg font-bold"
+            className="w-7 h-7 flex items-center justify-center rounded-lg text-brand-500 hover:bg-white/10 disabled:opacity-30 transition-colors"
           >
-            −
+            <Icon name="ic-zoom-out" size={18} />
           </button>
           <span className="text-xs font-bold text-paper-100 w-10 text-center select-none font-mono">
             {Math.round(zoomPercent)}%
@@ -395,9 +396,9 @@ export default function PuzzleBoard({ canvasMapRef, pathMapRef }: Props) {
           <button
             onClick={() => changeZoom(ZOOM_STEP)}
             disabled={zoomPercent >= ZOOM_MAX}
-            className="w-7 h-7 flex items-center justify-center rounded-lg text-brand-500 hover:bg-white/10 disabled:opacity-30 transition-colors text-lg font-bold"
+            className="w-7 h-7 flex items-center justify-center rounded-lg text-brand-500 hover:bg-white/10 disabled:opacity-30 transition-colors"
           >
-            ＋
+            <Icon name="ic-zoom-in" size={18} />
           </button>
         </div>
       </div>

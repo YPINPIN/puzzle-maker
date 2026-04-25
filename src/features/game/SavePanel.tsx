@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Icon, type IconName } from '../../components/Icon';
 import { getGameHistory } from '../../lib/gameHistory';
 import type { GameHistoryRecord } from '../../types/puzzle';
 import ConfirmDialog from '../../components/ConfirmDialog';
@@ -8,6 +9,13 @@ const DIFFICULTY_LABEL: Record<string, string> = {
   normal: '普通',
   hard: '困難',
   expert: '專家',
+};
+
+const CREST: Record<string, IconName> = {
+  easy: 'crest-easy',
+  normal: 'crest-normal',
+  hard: 'crest-hard',
+  expert: 'crest-expert',
 };
 
 const MAX_SLOTS = 10;
@@ -76,7 +84,7 @@ export default function SavePanel({ gameId, onSave, onClose }: Props) {
               onClick={onClose}
               className="w-9 h-9 flex items-center justify-center rounded-full bg-paper-100 hover:bg-paper-300 text-paper-600 hover:text-paper-900 transition-colors text-lg font-bold"
             >
-              ✕
+              <Icon name="ic-close" size={18} />
             </button>
           </div>
 
@@ -133,8 +141,9 @@ export default function SavePanel({ gameId, onSave, onClose }: Props) {
                                 已完成
                               </span>
                             )}
-                            <span className="text-xs font-medium text-paper-800">
-                              {DIFFICULTY_LABEL[record.difficulty] ?? record.difficulty}
+                            <span className="inline-flex items-center gap-1 text-xs font-medium text-paper-800">
+                              <Icon name={CREST[record.difficulty] ?? 'crest-easy'} size={14} />
+                              <span className="translate-y-px">{DIFFICULTY_LABEL[record.difficulty] ?? record.difficulty}</span>
                             </span>
                             <span className="text-xs text-paper-600">
                               {record.cols}×{record.rows}（{record.cols * record.rows} 片）

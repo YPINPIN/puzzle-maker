@@ -12,12 +12,20 @@ import { clearDraft } from '../../lib/gameDraft';
 import type { GameHistoryRecord, InProgressGameState } from '../../types/puzzle';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import SavePanel from '../game/SavePanel';
+import { Icon, type IconName } from '../../components/Icon';
 
 const DIFFICULTY_LABEL: Record<string, string> = {
   easy: '簡單',
   normal: '普通',
   hard: '困難',
   expert: '專家',
+};
+
+const CREST: Record<string, IconName> = {
+  easy: 'crest-easy',
+  normal: 'crest-normal',
+  hard: 'crest-hard',
+  expert: 'crest-expert',
 };
 
 function formatTime(ms: number): string {
@@ -172,27 +180,22 @@ export default function AppHeader() {
     >
       {/* App 名稱 */}
       <span className="flex items-center gap-2 mr-1">
-        <span
-          className="w-7 h-7 rounded-lg flex items-center justify-center text-sm flex-shrink-0"
-          style={{
-            background: 'linear-gradient(135deg, #F6B641, #B96A00)',
-            boxShadow: 'inset 0 1px 0 rgba(255,255,255,.4)',
-          }}
-        >🧩</span>
+        <Icon name="brand-mark" size={24} />
         <span className="text-base font-black tracking-wide text-paper-100">拼圖樂</span>
       </span>
 
       {/* 難度 + 格數 */}
       {isPlaying && cols > 0 && (
         <span
-          className="text-xs font-bold rounded-full px-2.5 py-0.5 whitespace-nowrap"
+          className="inline-flex items-center gap-1.5 text-xs font-bold rounded-full px-2.5 py-0.5 whitespace-nowrap"
           style={{
             background: 'rgba(244,165,43,.14)',
             color: '#F5B13F',
             border: '1px solid rgba(244,165,43,.35)',
           }}
         >
-          {DIFFICULTY_LABEL[difficulty] ?? difficulty}・{cols}×{rows}
+          <Icon name={CREST[difficulty] ?? 'crest-easy'} size={16} />
+          <span className="translate-y-px">{DIFFICULTY_LABEL[difficulty] ?? difficulty}・{cols}×{rows}</span>
         </span>
       )}
 
@@ -200,9 +203,9 @@ export default function AppHeader() {
 
       {/* 計時器 */}
       {isPlaying && (
-        <div className="timer-box text-sm whitespace-nowrap">
-          <span style={{ color: '#F5B13F' }}>⏱</span>
-          {formatTime(displayElapsed)}
+        <div className="timer-box whitespace-nowrap">
+          <Icon name="ic-timer" size={16} style={{ color: '#F5B13F' }} />
+          <span className="translate-y-px">{formatTime(displayElapsed)}</span>
         </div>
       )}
 
@@ -211,23 +214,23 @@ export default function AppHeader() {
         <div className="flex flex-wrap gap-2 flex-shrink-0">
           <button
             onClick={() => dispatch(toggleImagePreview())}
-            className="px-3 py-1.5 text-xs font-bold rounded-lg transition-all hover:brightness-110"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-all hover:brightness-110"
             style={{ background: '#3A2F25', border: '1px solid #5A4B38', color: '#F4ECDE' }}
           >
-            👁 參考圖
+            <Icon name="ic-eye" size={16} /> 參考圖
           </button>
           <button
             onClick={() => dispatch(isPaused ? resumeGame() : pauseGame())}
-            className="px-3 py-1.5 text-xs font-bold rounded-lg transition-all hover:brightness-110"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-all hover:brightness-110"
             style={{ background: '#3A2F25', border: '1px solid #5A4B38', color: '#F4ECDE' }}
           >
-            {isPaused ? '▶ 繼續' : '⏸ 暫停'}
+            <Icon name={isPaused ? 'ic-play' : 'ic-pause'} size={16} /> {isPaused ? '繼續' : '暫停'}
           </button>
           <button
             onClick={() => setShowSavePanel(true)}
             className="btn-primary px-3 py-1.5 text-xs"
           >
-            💾 保存並結束
+            <Icon name="ic-save" size={16} /> 保存並結束
           </button>
           <button
             onClick={() => setShowExitConfirm(true)}

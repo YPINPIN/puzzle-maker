@@ -1,4 +1,5 @@
 import { useRef, useEffect, useCallback } from 'react';
+import { Icon } from '../../components/Icon';
 import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from '../../store';
 import { setPieces, startGame, setReferenceImage, setGameId, setConfigId } from '../../store/puzzleSlice';
@@ -458,15 +459,17 @@ export default function CropPreview({ canvasMapRef, pathMapRef }: Props) {
       >
         <button
           onClick={() => history.back()}
-          className="text-paper-400 text-sm font-bold px-4 py-2 rounded-lg hover:brightness-110 transition-all"
+          className="inline-flex items-center gap-1.5 text-paper-400 text-sm font-bold px-4 py-2 rounded-lg hover:brightness-110 transition-all"
           style={{ background: '#3A2F25', border: '1px solid #5A4B38' }}
         >
-          ← 返回難度選擇
+          <Icon name="ic-arrow-left" size={16} />
+          返回難度選擇
         </button>
         <button
           onClick={handleConfirm}
           className="btn-primary text-sm px-5 py-2"
         >
+          <Icon name="ic-play" size={16} />
           開始拼圖
         </button>
       </div>

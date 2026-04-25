@@ -1,4 +1,5 @@
 import { useRef, useState, type DragEvent, type ChangeEvent } from 'react';
+import { Icon } from '../../components/Icon';
 import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from '../../store';
 import { setImage } from '../../store/puzzleSlice';
@@ -60,10 +61,11 @@ export default function ImageUpload() {
       >
         <button
           onClick={() => history.back()}
-          className="text-paper-400 text-sm font-bold px-4 py-2 rounded-lg hover:brightness-110 transition-all"
+          className="inline-flex items-center gap-1.5 text-paper-400 text-sm font-bold px-4 py-2 rounded-lg hover:brightness-110 transition-all"
           style={{ background: '#3A2F25', border: '1px solid #5A4B38' }}
         >
-          ← 返回首頁
+          <Icon name="ic-arrow-left" size={16} />
+          返回首頁
         </button>
         <div className="w-9" />
         <button
@@ -71,6 +73,7 @@ export default function ImageUpload() {
           disabled={!pendingImageUrl}
           className="btn-primary text-sm px-5 py-2 disabled:opacity-40 disabled:cursor-not-allowed"
         >
+          <Icon name="ic-check" size={16} />
           確定圖片
         </button>
       </div>
@@ -118,12 +121,13 @@ export default function ImageUpload() {
               onDragLeave={() => setIsDragOver(false)}
             >
               <div
-                className="w-20 h-20 rounded-3xl flex items-center justify-center text-3xl"
+                className="w-20 h-20 rounded-3xl flex items-center justify-center"
                 style={{
-                  background: 'linear-gradient(135deg, var(--color-brand-50), var(--color-paper-50))',
-                  boxShadow: 'inset 0 1px 0 rgba(255,255,255,.8), 0 6px 14px rgba(244,165,43,.2)',
+                  background: '#2A1F14',
+                  boxShadow: '0 6px 14px rgba(0,0,0,.3)',
+                  border: '1px solid #5A4B38',
                 }}
-              >🧩</div>
+              ><Icon name="brand-mark" size={40} /></div>
               <p className="text-paper-900 text-lg font-extrabold text-center">把圖片拖到這裡</p>
               <p className="text-paper-800 text-sm">或<span className="text-brand-600 font-bold cursor-pointer">點擊上傳</span>你的照片</p>
               <div
@@ -156,6 +160,7 @@ export default function ImageUpload() {
             onClick={() => setShowPresetModal(true)}
             className="btn-secondary w-full py-3 text-sm"
           >
+            <Icon name="ic-image" size={16} />
             選用內建圖片
           </button>
         </div>

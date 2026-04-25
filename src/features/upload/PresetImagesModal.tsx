@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { Icon } from '../../components/Icon';
 
 type Props = {
   onClose: () => void;
@@ -70,7 +71,7 @@ export default function PresetImagesModal({ onClose, onSelect }: Props) {
             onClick={onClose}
             className="w-9 h-9 flex items-center justify-center rounded-full bg-paper-100 hover:bg-paper-300 text-paper-600 hover:text-paper-900 transition-colors font-bold text-lg"
           >
-            ✕
+            <Icon name="ic-close" size={18} />
           </button>
         </div>
 

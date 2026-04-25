@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Icon, type IconName } from '../../components/Icon';
 import { getRecords, deleteRecord, type PuzzleRecord } from '../../lib/records';
 import { getGameHistory, deleteGameHistory } from '../../lib/gameHistory';
 import type { GameHistoryRecord } from '../../types/puzzle';
@@ -20,6 +21,13 @@ const DIFFICULTY_LABEL: Record<string, string> = {
   normal: '普通',
   hard: '困難',
   expert: '專家',
+};
+
+const CREST: Record<string, IconName> = {
+  easy: 'crest-easy',
+  normal: 'crest-normal',
+  hard: 'crest-hard',
+  expert: 'crest-expert',
 };
 
 function formatDate(ts: number): string {
@@ -96,6 +104,7 @@ export default function RecordsModal({ mode, onClose, onApply, onContinue, onSha
                 onClick={onImportCode}
                 className="btn-secondary px-3 py-1.5 text-xs"
               >
+                <Icon name="ic-download" size={14} />
                 匯入代碼
               </button>
             )}
@@ -103,7 +112,7 @@ export default function RecordsModal({ mode, onClose, onApply, onContinue, onSha
               onClick={onClose}
               className="w-9 h-9 flex items-center justify-center rounded-full bg-paper-100 hover:bg-paper-300 text-paper-600 hover:text-paper-900 transition-colors text-lg font-bold"
             >
-              ✕
+              <Icon name="ic-close" size={18} />
             </button>
           </div>
         </div>
@@ -130,8 +139,9 @@ export default function RecordsModal({ mode, onClose, onApply, onContinue, onSha
                         }`} style={r.isCompleted ? { background: 'var(--color-success-bg)', color: 'var(--color-success)' } : { background: 'var(--color-paper-100)', color: 'var(--color-paper-600)' }}>
                           {r.isCompleted ? '已完成' : '未完成'}
                         </span>
-                        <span className="text-xs text-paper-600">
-                          {DIFFICULTY_LABEL[r.difficulty] ?? r.difficulty}
+                        <span className="inline-flex items-center gap-1 text-xs text-paper-600">
+                          <Icon name={CREST[r.difficulty] ?? 'crest-easy'} size={14} />
+                          <span className="translate-y-px">{DIFFICULTY_LABEL[r.difficulty] ?? r.difficulty}</span>
                         </span>
                         <span className="text-xs text-paper-600">
                           {r.cols}×{r.rows}（{r.cols * r.rows} 片）
@@ -150,6 +160,7 @@ export default function RecordsModal({ mode, onClose, onApply, onContinue, onSha
                           onClick={() => handleApply(r)}
                           className="btn-primary px-3 py-1.5 text-xs"
                         >
+                          <Icon name="ic-play" size={14} />
                           重新遊玩
                         </button>
                       )}
@@ -158,6 +169,7 @@ export default function RecordsModal({ mode, onClose, onApply, onContinue, onSha
                           onClick={() => onShare(r)}
                           className="btn-secondary px-3 py-1.5 text-xs"
                         >
+                          <Icon name="ic-share" size={14} />
                           分享
                         </button>
                       )}
@@ -165,6 +177,7 @@ export default function RecordsModal({ mode, onClose, onApply, onContinue, onSha
                         onClick={() => setPendingDeleteQuick(r.id)}
                         className="btn-secondary px-3 py-1.5 text-xs hover:border-red-400 hover:text-red-500"
                       >
+                        <Icon name="ic-trash" size={14} />
                         刪除
                       </button>
                     </div>
@@ -195,8 +208,9 @@ export default function RecordsModal({ mode, onClose, onApply, onContinue, onSha
                       <Thumbnail src={r.thumbnailDataUrl} />
                       <div className="flex flex-col justify-between flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-xs text-paper-600">
-                            {DIFFICULTY_LABEL[r.difficulty] ?? r.difficulty}
+                          <span className="inline-flex items-center gap-1 text-xs text-paper-600">
+                            <Icon name={CREST[r.difficulty] ?? 'crest-easy'} size={14} />
+                            <span className="translate-y-px">{DIFFICULTY_LABEL[r.difficulty] ?? r.difficulty}</span>
                           </span>
                           <span className="text-xs text-paper-600">
                             {r.cols}×{r.rows}（{total} 片）
@@ -226,6 +240,7 @@ export default function RecordsModal({ mode, onClose, onApply, onContinue, onSha
                             onClick={() => handleContinue(r)}
                             className="btn-primary px-3 py-1.5 text-xs"
                           >
+                            <Icon name="ic-play" size={14} />
                             繼續遊戲
                           </button>
                         )}
@@ -233,6 +248,7 @@ export default function RecordsModal({ mode, onClose, onApply, onContinue, onSha
                           onClick={() => setPendingDeleteHistory(r.id)}
                           className="btn-secondary px-3 py-1.5 text-xs hover:border-red-400 hover:text-red-500"
                         >
+                          <Icon name="ic-trash" size={14} />
                           刪除
                         </button>
                       </div>
@@ -283,10 +299,7 @@ function Thumbnail({ src }: { src: string }) {
 function EmptyState({ message }: { message: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-16 text-paper-500 gap-3">
-      <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-          d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-      </svg>
+      <Icon name="ic-clipboard" size={48} />
       <p className="text-center text-sm">{message}</p>
     </div>
   );
