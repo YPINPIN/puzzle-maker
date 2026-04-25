@@ -19,7 +19,7 @@ type Props = {
 
 export default function PuzzleBoard({ canvasMapRef, pathMapRef }: Props) {
   const dispatch = useDispatch<AppDispatch>();
-  const isPaused = useSelector((s: RootState) => s.puzzle.isPaused);
+  const showPauseOverlay = useSelector((s: RootState) => s.puzzle.showPauseOverlay);
   const imageDataUrl = useSelector((s: RootState) => s.puzzle.imageDataUrl);
   const referenceDataUrl = useSelector((s: RootState) => s.puzzle.referenceDataUrl);
   const cropRegion = useSelector((s: RootState) => s.puzzle.cropRegion);
@@ -330,7 +330,7 @@ export default function PuzzleBoard({ canvasMapRef, pathMapRef }: Props) {
         )}
 
         {/* 暫停 overlay */}
-        {isPaused && (
+        {showPauseOverlay && (
           <div
             className="fixed inset-0 flex flex-col items-center justify-center z-40 pointer-events-auto"
             style={{ background: 'rgba(13,9,6,.85)' }}

@@ -9,13 +9,13 @@ import { generatePieces } from '../../lib/pieceFactory';
 import { TOOLBAR_HEIGHT, MAX_CANVAS_WIDTH, TAB_RATIO, getEffectiveDPR, ZOOM_BUTTON_AVOID_W, ZOOM_BUTTON_AVOID_H, GAME_BOTTOM_BAR_HEIGHT } from '../../lib/constants';
 import { getRecords } from '../../lib/records';
 import type { PuzzleRecord } from '../../lib/records';
-import { getDraft } from '../../lib/gameDraft';
+import { getDraft, clearDraft } from '../../lib/gameDraft';
 import type { GameDraft } from '../../lib/gameDraft';
 import type { GameHistoryRecord, InProgressGameState, Difficulty } from '../../types/puzzle';
 import RecordsModal from '../upload/RecordsModal';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import ShareCodeModal from '../../components/ShareCodeModal';
-import { Icon } from '../../components/Icon';
+import { Icon, type IconName } from '../../components/Icon';
 
 type Props = {
   canvasMapRef: React.RefObject<Map<number, HTMLCanvasElement>>;
@@ -30,17 +30,26 @@ export default function HomePage({ canvasMapRef, pathMapRef }: Props) {
   const [shareTarget, setShareTarget] = useState<PuzzleRecord | null>(null);
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [currentDraft, setCurrentDraft] = useState<GameDraft | null>(null);
+  const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
 
   useEffect(() => {
     setCurrentDraft(getDraft());
   }, []);
+
+  function guardDraft(action: () => void) {
+    if (getDraft()) {
+      setPendingAction(() => action);
+    } else {
+      action();
+    }
+  }
 
   function handleNewPuzzle() {
     if (getRecords().length >= 10) {
       setShowFullWarning(true);
       return;
     }
-    dispatch(goToUpload());
+    guardDraft(() => dispatch(goToUpload()));
   }
 
   const applyRecord = useCallback(async (record: PuzzleRecord) => {
@@ -191,19 +200,7 @@ export default function HomePage({ canvasMapRef, pathMapRef }: Props) {
       <div className="w-full max-w-sm flex flex-col gap-4">
 
         {currentDraft && (
-          <MenuCard
-            icon={
-              <img
-                src={currentDraft.croppedImageDataUrl}
-                className="w-full h-full object-cover rounded-xl"
-                alt=""
-              />
-            }
-            title="繼續上局"
-            subtitle={`${DIFFICULTY_LABEL[currentDraft.difficulty] ?? currentDraft.difficulty}・${currentDraft.cols}×${currentDraft.rows}`}
-            onClick={resumeDraft}
-            variant="resume"
-          />
+          <DraftCard draft={currentDraft} onClick={resumeDraft} />
         )}
 
         <MenuCard
@@ -244,12 +241,30 @@ export default function HomePage({ canvasMapRef, pathMapRef }: Props) {
         />
       )}
 
+      {pendingAction && (
+        <ConfirmDialog
+          title="有未儲存的遊戲進度"
+          message={"繼續後將立即刪除暫存紀錄，無法再從「繼續上局」恢復。\n如需保留進度，請先點選「繼續上局」並使用「保存並結束」儲存。"}
+          confirmText="確定刪除並繼續"
+          cancelText="取消"
+          danger
+          onConfirm={() => {
+            clearDraft();
+            setCurrentDraft(null);
+            const action = pendingAction;
+            setPendingAction(null);
+            action();
+          }}
+          onCancel={() => setPendingAction(null)}
+        />
+      )}
+
       {showRecords && (
         <RecordsModal
           mode={showRecords}
           onClose={() => setShowRecords(null)}
-          onApply={applyRecord}
-          onContinue={continueGame}
+          onApply={(record) => { setShowRecords(null); guardDraft(() => applyRecord(record)); }}
+          onContinue={(record) => { setShowRecords(null); guardDraft(() => continueGame(record)); }}
           onShare={(record) => setShareTarget(record)}
           onImportCode={() => setShowImportDialog(true)}
         />
@@ -281,6 +296,66 @@ export default function HomePage({ canvasMapRef, pathMapRef }: Props) {
 const DIFFICULTY_LABEL: Record<string, string> = {
   easy: '簡單', normal: '普通', hard: '困難', expert: '專家',
 };
+
+const CREST: Record<string, IconName> = {
+  easy: 'crest-easy', normal: 'crest-normal',
+  hard: 'crest-hard', expert: 'crest-expert',
+};
+
+function formatDate(ts: number): string {
+  const d = new Date(ts);
+  return `${d.getFullYear()}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getDate().toString().padStart(2, '0')} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+}
+
+function formatTime(ms: number): string {
+  const totalSeconds = Math.floor(ms / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  if (minutes > 0) return `${minutes} 分 ${seconds.toString().padStart(2, '0')} 秒`;
+  return `${seconds} 秒`;
+}
+
+function DraftCard({ draft, onClick }: { draft: import('../../lib/gameDraft').GameDraft; onClick: () => void }) {
+  const snapped = draft.savedState.pieces.filter((p) => p.isSnapped).length;
+  const total = draft.savedState.pieces.length;
+  const progressPct = total > 0 ? Math.round((snapped / total) * 100) : 0;
+  return (
+    <button
+      onClick={onClick}
+      className="w-full flex gap-3 p-3 rounded-2xl border-2 text-left transition-all active:scale-[0.99] card-lift bg-accent-500/10 hover:bg-accent-500/15 border-accent-500/40 hover:border-accent-500/70 shadow-sm"
+    >
+      <div className="w-16 h-16 flex-shrink-0 rounded-xl overflow-hidden bg-paper-100">
+        <img
+          src={draft.thumbnailDataUrl ?? draft.croppedImageDataUrl}
+          alt=""
+          className={`w-full h-full ${draft.thumbnailDataUrl ? 'object-cover' : 'object-contain'}`}
+        />
+      </div>
+      <div className="flex flex-col justify-between flex-1 min-w-0 gap-0.5">
+        <p className="text-sm font-extrabold text-accent-500">繼續上局</p>
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="inline-flex items-center gap-1 text-xs text-paper-600">
+            <Icon name={CREST[draft.difficulty] ?? 'crest-easy'} size={13} />
+            <span className="translate-y-px">{DIFFICULTY_LABEL[draft.difficulty] ?? draft.difficulty}</span>
+          </span>
+          <span className="text-xs text-paper-600">{draft.cols}×{draft.rows}（{total} 片）</span>
+          <span
+            className="text-xs px-1.5 py-0.5 rounded-full font-bold border"
+            style={{ background: 'var(--color-brand-50)', color: 'var(--color-brand-700)', borderColor: 'rgba(244,165,43,.3)' }}
+          >
+            {progressPct}% 完成
+          </span>
+        </div>
+        {draft.savedAt != null && (
+          <p className="text-xs text-paper-500 truncate">暫存於 {formatDate(draft.savedAt)}</p>
+        )}
+        <p className="text-xs text-paper-600">
+          已拼 {snapped} / {total} 片・已用 {formatTime(draft.savedState.elapsedAtSave)}
+        </p>
+      </div>
+    </button>
+  );
+}
 
 type CardVariant = 'primary' | 'secondary' | 'resume';
 

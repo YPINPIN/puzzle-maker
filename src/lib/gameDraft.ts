@@ -9,7 +9,9 @@ export type GameDraft = {
   cols: number;
   rows: number;
   croppedImageDataUrl: string;
+  thumbnailDataUrl?: string;
   savedState: InProgressGameState;
+  savedAt?: number;
 };
 
 export function saveDraft(draft: GameDraft): void {

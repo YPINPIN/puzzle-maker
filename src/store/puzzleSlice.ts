@@ -28,6 +28,7 @@ type PuzzleState = {
   isPaused: boolean;
   pausedAt: number | null;
   pauseOffset: number;
+  showPauseOverlay: boolean;
   showImagePreview: boolean;
   gameId: string | null;
   configId: string | null;
@@ -57,6 +58,7 @@ const initialState: PuzzleState = {
   isPaused: false,
   pausedAt: null,
   pauseOffset: 0,
+  showPauseOverlay: false,
   showImagePreview: false,
   gameId: null,
   configId: null,
@@ -273,6 +275,14 @@ const puzzleSlice = createSlice({
       if (state.isPaused) return;
       state.isPaused = true;
       state.pausedAt = Date.now();
+      // showPauseOverlay 不在此設定，由 userPauseGame 負責
+    },
+
+    userPauseGame(state) {
+      if (state.isPaused) return;
+      state.isPaused = true;
+      state.pausedAt = Date.now();
+      state.showPauseOverlay = true;
     },
 
     resumeGame(state) {
@@ -282,6 +292,7 @@ const puzzleSlice = createSlice({
       }
       state.isPaused = false;
       state.pausedAt = null;
+      state.showPauseOverlay = false;
     },
 
     restoreGame(
@@ -313,6 +324,7 @@ const puzzleSlice = createSlice({
       state.pauseOffset = 0;
       state.isPaused = true;
       state.pausedAt = now;
+      state.showPauseOverlay = true;
       state.boardW = savedState.boardW ?? savedState.boardH;
       state.boardH = savedState.boardH;
       state.pieceW = savedState.pieceW;
@@ -406,6 +418,7 @@ export const {
   backToConfig,
   setComplete,
   pauseGame,
+  userPauseGame,
   resumeGame,
   restoreGame,
   toggleImagePreview,

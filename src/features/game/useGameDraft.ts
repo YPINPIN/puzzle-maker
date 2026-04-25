@@ -8,6 +8,28 @@ export function useGameDraft() {
   const stateRef = useRef(state);
   stateRef.current = state;
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const thumbnailRef = useRef<string>('');
+
+  // Pre-generate 200×200 centered thumbnail whenever reference image changes
+  useEffect(() => {
+    const url = state.referenceDataUrl;
+    if (!url) { thumbnailRef.current = ''; return; }
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 200;
+      canvas.height = 200;
+      const ctx = canvas.getContext('2d')!;
+      const aspect = img.width / img.height;
+      const tw = aspect > 1 ? 200 : Math.round(200 * aspect);
+      const th = aspect > 1 ? Math.round(200 / aspect) : 200;
+      ctx.fillStyle = '#F8F5F0';
+      ctx.fillRect(0, 0, 200, 200);
+      ctx.drawImage(img, Math.round((200 - tw) / 2), Math.round((200 - th) / 2), tw, th);
+      thumbnailRef.current = canvas.toDataURL('image/jpeg', 0.7);
+    };
+    img.src = url;
+  }, [state.referenceDataUrl]);
 
   function buildAndSave() {
     const s = stateRef.current;
@@ -24,6 +46,8 @@ export function useGameDraft() {
       cols: s.cols,
       rows: s.rows,
       croppedImageDataUrl: s.referenceDataUrl,
+      thumbnailDataUrl: thumbnailRef.current || undefined,
+      savedAt: now,
       savedState: {
         pieces: s.pieces,
         groups: s.groups,
@@ -64,4 +88,6 @@ export function useGameDraft() {
     document.addEventListener('visibilitychange', onHide);
     return () => document.removeEventListener('visibilitychange', onHide);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  return { saveNow: buildAndSave };
 }

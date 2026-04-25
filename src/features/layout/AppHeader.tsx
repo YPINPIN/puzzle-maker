@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from '../../store';
 import {
   pauseGame,
+  userPauseGame,
   resumeGame,
   toggleImagePreview,
   resetGame,
@@ -10,7 +11,6 @@ import {
 import { getGameHistory, saveGameHistoryAtSlot } from '../../lib/gameHistory';
 import { clearDraft } from '../../lib/gameDraft';
 import type { GameHistoryRecord, InProgressGameState } from '../../types/puzzle';
-import ConfirmDialog from '../../components/ConfirmDialog';
 import SavePanel from '../game/SavePanel';
 import { Icon, type IconName } from '../../components/Icon';
 
@@ -34,7 +34,7 @@ function formatTime(ms: number): string {
   return `${m.toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`;
 }
 
-export default function AppHeader() {
+export default function AppHeader({ onExitRequest }: { onExitRequest?: () => void }) {
   const dispatch = useDispatch<AppDispatch>();
   const phase = useSelector((s: RootState) => s.puzzle.phase);
   const difficulty = useSelector((s: RootState) => s.puzzle.difficulty);
@@ -60,7 +60,6 @@ export default function AppHeader() {
 
   const [displayElapsed, setDisplayElapsed] = useState(0);
   const [showSavePanel, setShowSavePanel] = useState(false);
-  const [showExitConfirm, setShowExitConfirm] = useState(false);
   const thumbnailRef = useRef<string>('');
 
   // 每次 render 同步最新值，讓 handleSaveToSlot 永遠拿到最新狀態
@@ -220,20 +219,23 @@ export default function AppHeader() {
             <Icon name="ic-eye" size={16} /> 參考圖
           </button>
           <button
-            onClick={() => dispatch(isPaused ? resumeGame() : pauseGame())}
+            onClick={() => dispatch(isPaused ? resumeGame() : userPauseGame())}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-all hover:brightness-110"
             style={{ background: '#3A2F25', border: '1px solid #5A4B38', color: '#F4ECDE' }}
           >
             <Icon name={isPaused ? 'ic-play' : 'ic-pause'} size={16} /> {isPaused ? '繼續' : '暫停'}
           </button>
           <button
-            onClick={() => setShowSavePanel(true)}
+            onClick={() => {
+              dispatch(pauseGame());   // reducer 有 guard：已暫停則 no-op
+              setShowSavePanel(true);
+            }}
             className="btn-primary px-3 py-1.5 text-xs"
           >
             <Icon name="ic-save" size={16} /> 保存並結束
           </button>
           <button
-            onClick={() => setShowExitConfirm(true)}
+            onClick={() => onExitRequest?.()}
             className="btn-danger px-3 py-1.5 text-xs"
           >
             結束
@@ -247,25 +249,13 @@ export default function AppHeader() {
       <SavePanel
         gameId={gameId}
         onSave={handleSaveToSlot}
-        onClose={() => setShowSavePanel(false)}
+        onClose={() => {
+          dispatch(resumeGame());   // reducer 有 guard：未暫停則 no-op
+          setShowSavePanel(false);
+        }}
       />
     )}
 
-    {showExitConfirm && (
-      <ConfirmDialog
-        title="確定要結束遊戲嗎？"
-        message="進度將被清除，如需保留請先使用「保存並結束」。"
-        confirmText="確定結束"
-        cancelText="取消"
-        danger
-        onConfirm={() => {
-          clearDraft();
-          setShowExitConfirm(false);
-          dispatch(resetGame());
-        }}
-        onCancel={() => setShowExitConfirm(false)}
-      />
-    )}
-    </>
+</>
   );
 }

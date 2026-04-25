@@ -5,7 +5,9 @@ import { goToHome, goToUpload, backToConfig, resetGame } from '../../store/puzzl
 
 const PHASE_ORDER = ['home', 'upload', 'config', 'crop', 'playing', 'complete'];
 
-export function usePhaseHistory() {
+export function usePhaseHistory(opts?: {
+  onInterceptBackFromPlaying?: () => void;
+}) {
   const dispatch = useDispatch<AppDispatch>();
   const phase = useSelector((s: RootState) => s.puzzle.phase);
   const phaseRef = useRef(phase);
@@ -14,6 +16,8 @@ export function usePhaseHistory() {
   const isBackNav = useRef(false);
   // 正在 undo 一段 forward/stale entries，需連續往回走直到找到合法 entry
   const isUndoingForward = useRef(false);
+  const interceptCallbackRef = useRef(opts?.onInterceptBackFromPlaying);
+  interceptCallbackRef.current = opts?.onInterceptBackFromPlaying;
 
   // 每次向前進入非 home phase 各 push 一筆 entry（含 phase 供方向偵測）
   // back 觸發的 phase 變化由 isBackNav flag 跳過，避免重複 push
@@ -66,6 +70,9 @@ export function usePhaseHistory() {
         case 'config':   dispatch(goToUpload());   break;
         case 'crop':     dispatch(backToConfig()); break;
         case 'playing':
+          history.pushState({ puzzle: true, phase: 'playing' }, '', '#app');
+          interceptCallbackRef.current?.();
+          return;
         case 'complete': dispatch(resetGame());    break;
       }
     };
