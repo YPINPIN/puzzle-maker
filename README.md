@@ -103,4 +103,4 @@ npm run build
 | 項目                 | 說明                                                |
 | -------------------- | --------------------------------------------------- |
 | 內建拼圖圖片（8 張） | 由 [Google Gemini](https://gemini.google.com/) 生成 |
-| App Logo / Favicon   | [Claude Code](https://claude.ai/code) 生成 SVG      |
+| App Logo / Icons     | 由 [Claude Design](https://claude.ai/) 設計生成 SVG |
