@@ -364,7 +364,7 @@ export default function PuzzleBoard({ canvasMapRef, pathMapRef }: Props) {
 
       {/* 底部控制 bar：縮放按鈕移出 canvas 疊層，消除遮擋問題 */}
       <div
-        className="flex-shrink-0 flex items-center justify-between px-4"
+        className="flex-shrink-0 px-4"
         style={{
           background: 'rgba(13,9,6,0.95)',
           borderTop: '1px solid #3A2F25',
@@ -372,34 +372,36 @@ export default function PuzzleBoard({ canvasMapRef, pathMapRef }: Props) {
           paddingBottom: 'max(12px, env(safe-area-inset-bottom))',
         }}
       >
-        <span
-          className="text-xs font-medium text-brand-500/70 transition-opacity duration-300 select-none"
-          style={{ opacity: canPan ? 1 : 0 }}
-        >
-          雙指或拖曳空白處平移
-        </span>
-
-        <div
-          className="flex items-center gap-1.5 rounded-xl px-2 py-1"
-          style={{ background: 'rgba(58,47,37,0.8)', border: '1px solid #5A4B38' }}
-        >
-          <button
-            onClick={() => changeZoom(-ZOOM_STEP)}
-            disabled={zoomPercent <= ZOOM_MIN}
-            className="w-7 h-7 flex items-center justify-center rounded-lg text-brand-500 hover:bg-white/10 disabled:opacity-30 transition-colors"
+        <div className="max-w-[1440px] mx-auto w-full flex items-center justify-between">
+          <span
+            className="text-xs font-medium text-brand-500/70 transition-opacity duration-300 select-none"
+            style={{ opacity: canPan ? 1 : 0 }}
           >
-            <Icon name="ic-zoom-out" size={18} />
-          </button>
-          <span className="text-xs font-bold text-paper-100 w-10 text-center select-none font-mono">
-            {Math.round(zoomPercent)}%
+            雙指或拖曳空白處平移
           </span>
-          <button
-            onClick={() => changeZoom(ZOOM_STEP)}
-            disabled={zoomPercent >= ZOOM_MAX}
-            className="w-7 h-7 flex items-center justify-center rounded-lg text-brand-500 hover:bg-white/10 disabled:opacity-30 transition-colors"
+
+          <div
+            className="flex items-center gap-1.5 rounded-xl px-2 py-1"
+            style={{ background: 'rgba(58,47,37,0.8)', border: '1px solid #5A4B38' }}
           >
-            <Icon name="ic-zoom-in" size={18} />
-          </button>
+            <button
+              onClick={() => changeZoom(-ZOOM_STEP)}
+              disabled={zoomPercent <= ZOOM_MIN}
+              className="w-7 h-7 flex items-center justify-center rounded-lg text-brand-500 hover:bg-white/10 disabled:opacity-30 transition-colors"
+            >
+              <Icon name="ic-zoom-out" size={18} />
+            </button>
+            <span className="text-xs font-bold text-paper-100 w-10 text-center select-none font-mono">
+              {Math.round(zoomPercent)}%
+            </span>
+            <button
+              onClick={() => changeZoom(ZOOM_STEP)}
+              disabled={zoomPercent >= ZOOM_MAX}
+              className="w-7 h-7 flex items-center justify-center rounded-lg text-brand-500 hover:bg-white/10 disabled:opacity-30 transition-colors"
+            >
+              <Icon name="ic-zoom-in" size={18} />
+            </button>
+          </div>
         </div>
       </div>
 

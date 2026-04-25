@@ -7,11 +7,11 @@ import type { Difficulty } from '../../types/puzzle';
 
 type GridPreset = { cols: number; rows: number; label: string };
 
-const DIFFICULTIES: { value: Difficulty; label: string; count: number }[] = [
-  { value: 'easy',   label: '簡單', count: 20  },
-  { value: 'normal', label: '普通', count: 50  },
-  { value: 'hard',   label: '困難', count: 100 },
-  { value: 'expert', label: '專家', count: 150 },
+const DIFFICULTIES: { value: Difficulty; label: string; count: number; device: string }[] = [
+  { value: 'easy',   label: '簡單', count: 20,  device: '手機 / 平板 / 桌機' },
+  { value: 'normal', label: '普通', count: 50,  device: '平板 / 桌機' },
+  { value: 'hard',   label: '困難', count: 100, device: '建議平板或桌機' },
+  { value: 'expert', label: '專家', count: 150, device: '建議桌機' },
 ];
 
 const CREST: Record<Difficulty, IconName> = {
@@ -72,28 +72,31 @@ export default function DifficultySelector() {
     >
       {/* Top Bar */}
       <div
-        className="flex items-center justify-between px-4 py-3 backdrop-blur-sm flex-shrink-0"
+        className="px-4 py-3 backdrop-blur-sm flex-shrink-0"
         style={{ background: 'linear-gradient(180deg, #251E15 0%, rgba(26,20,13,.9) 100%)', borderBottom: '1px solid #3A2F25' }}
       >
-        <button
-          onClick={() => history.back()}
-          className="inline-flex items-center gap-1.5 text-paper-400 text-sm font-bold px-4 py-2 rounded-lg hover:brightness-110 transition-all"
-          style={{ background: '#3A2F25', border: '1px solid #5A4B38' }}
-        >
-          <Icon name="ic-arrow-left" size={16} />
-          返回選擇圖片
-        </button>
-        <button
-          onClick={handleNext}
-          className="btn-primary text-sm px-5 py-2"
-        >
-          <Icon name="ic-crop" size={16} />
-          選擇拼圖區域
-        </button>
+        <div className="max-w-[1440px] mx-auto w-full flex items-center justify-between">
+          <button
+            onClick={() => history.back()}
+            className="inline-flex items-center gap-1.5 text-paper-400 text-sm font-bold px-4 py-2 rounded-lg hover:brightness-110 transition-all"
+            style={{ background: '#3A2F25', border: '1px solid #5A4B38' }}
+          >
+            <Icon name="ic-arrow-left" size={16} />
+            返回選擇圖片
+          </button>
+          <button
+            onClick={handleNext}
+            className="btn-primary text-sm px-5 py-2"
+          >
+            <Icon name="ic-crop" size={16} />
+            選擇拼圖區域
+          </button>
+        </div>
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto flex flex-col items-center justify-center p-4 gap-6">
+      <div className="flex-1 overflow-y-auto flex flex-col items-center p-6">
+        <div className="flex-1 flex flex-col items-center justify-center gap-6 w-full">
         <h1 className="text-3xl sm:text-4xl font-black text-paper-900 tracking-tight">選擇難度</h1>
 
         {/* 難度選擇 */}
@@ -127,6 +130,14 @@ export default function DifficultySelector() {
           ))}
         </div>
 
+        {/* 裝置建議 */}
+        <p className="text-xs text-paper-500 text-center">
+          建議遊玩裝置：
+          <span className="font-semibold text-paper-600">
+            {DIFFICULTIES.find(d => d.value === selectedDifficulty)?.device}
+          </span>
+        </p>
+
         {/* 格數選擇 */}
         <div className="flex flex-col items-center gap-3 w-full max-w-sm">
           <h2 className="text-xs font-bold uppercase tracking-widest text-paper-600">選擇格數</h2>
@@ -152,6 +163,23 @@ export default function DifficultySelector() {
           <p className="text-sm text-paper-600 font-mono">
             共 {selectedGrid.cols * selectedGrid.rows} 片
             （{selectedGrid.cols} 欄 × {selectedGrid.rows} 列）
+          </p>
+        </div>
+        </div>
+
+        <div className="flex flex-col items-center gap-1 pt-2 pb-1 text-xs text-paper-500">
+          <p>© 2026 拼圖樂. All rights reserved.</p>
+          <p className="inline-flex items-center gap-1.5">
+            <span>僅供個人學習使用，非商業用途</span>
+            <a
+              href="https://github.com/YPINPIN"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 hover:text-paper-700 transition-colors"
+            >
+              <Icon name="ic-github" size={14} />
+              <span className="translate-y-px">YPINPIN</span>
+            </a>
           </p>
         </div>
       </div>

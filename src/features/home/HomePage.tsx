@@ -194,40 +194,58 @@ export default function HomePage({ canvasMapRef, pathMapRef }: Props) {
 
   return (
     <div
-      className="h-full overflow-y-auto flex flex-col items-center justify-center p-6"
+      className="h-full overflow-y-auto flex flex-col items-center p-6"
       style={{ background: 'var(--pg-warm)' }}
     >
-      <div className="w-full max-w-sm flex flex-col gap-4">
+      <div className="flex-1 flex flex-col items-center justify-center w-full">
+        <div className="w-full max-w-sm flex flex-col gap-4">
 
-        {currentDraft && (
-          <DraftCard draft={currentDraft} onClick={resumeDraft} />
-        )}
+          {currentDraft && (
+            <DraftCard draft={currentDraft} onClick={resumeDraft} />
+          )}
 
-        <MenuCard
-          icon={<IconNew />}
-          title="建立新拼圖"
-          subtitle="上傳圖片，從頭開始"
-          onClick={handleNewPuzzle}
-          variant="primary"
-        />
-        <MenuCard
-          icon={<IconSave />}
-          title="讀取存檔"
-          subtitle="從上次中斷的地方繼續"
-          onClick={() => setShowRecords('history')}
-          variant="secondary"
-        />
-        <MenuCard
-          icon={<IconQuick />}
-          title="快速開局"
-          subtitle="從已儲存的設定立即開始"
-          onClick={() => setShowRecords('quick')}
-          variant="secondary"
-        />
+          <MenuCard
+            icon={<IconNew />}
+            title="建立新拼圖"
+            subtitle="上傳圖片，從頭開始"
+            onClick={handleNewPuzzle}
+            variant="primary"
+          />
+          <MenuCard
+            icon={<IconSave />}
+            title="讀取存檔"
+            subtitle="從上次中斷的地方繼續"
+            onClick={() => setShowRecords('history')}
+            variant="secondary"
+          />
+          <MenuCard
+            icon={<IconQuick />}
+            title="快速開局"
+            subtitle="從已儲存的設定立即開始"
+            onClick={() => setShowRecords('quick')}
+            variant="secondary"
+          />
 
-        {isLoading && (
-          <p className="text-sm text-brand-600 animate-pulse text-center mt-2">正在載入遊戲…</p>
-        )}
+          {isLoading && (
+            <p className="text-sm text-brand-600 animate-pulse text-center mt-2">正在載入遊戲…</p>
+          )}
+        </div>
+      </div>
+
+      <div className="flex flex-col items-center gap-1 pt-2 pb-1 text-xs text-paper-500">
+        <p>© 2026 拼圖樂. All rights reserved.</p>
+        <p className="inline-flex items-center gap-1.5">
+          <span>僅供個人學習使用，非商業用途</span>
+          <a
+            href="https://github.com/YPINPIN"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 hover:text-paper-700 transition-colors"
+          >
+            <Icon name="ic-github" size={14} />
+            <span className="translate-y-px">YPINPIN</span>
+          </a>
+        </p>
       </div>
 
       {showFullWarning && (

@@ -285,7 +285,7 @@ import { Icon } from '../../components/Icon';
 <Icon name="brand-mark" size={24} />
 ```
 
-- **Sprite 檔**：`public/icons.svg`（77 個 `<symbol>`），路徑以 `import.meta.env.BASE_URL` 前綴（部署子路徑適配）
+- **Sprite 檔**：`public/icons.svg`（78 個 `<symbol>`），路徑以 `import.meta.env.BASE_URL` 前綴（部署子路徑適配）
 - **型別**：`IconName` union type，定義於 `ICON_NAMES` 陣列；IDE 有自動補全
 - **預設 class**：`inline-block shrink-0 align-[-2px]`；`align-[-2px]` 在 flex 容器內無效，但對行內脈絡（純文字旁）有 2px 下移補償
 - **`spin` prop**：`true` 時加入 `animate-spin`，用於載入動畫
@@ -296,7 +296,7 @@ import { Icon } from '../../components/Icon';
 | 前綴 | 說明 |
 |------|------|
 | `brand-mark` | 品牌標誌，3 種變體：`brand-mark`（淺色，深色背景用）、`brand-mark-dark`（同色系深底版）、`brand-mark-mono`（`currentColor` 單色） |
-| `ic-*` | UI 功能 icon（navigation、action、state、media 等） |
+| `ic-*` | UI 功能 icon（navigation、action、state、media 等）；`ic-github` 為唯一外部品牌 icon，用於 footer 的 GitHub 連結 |
 | `crest-*` | 難度徽章：`crest-easy` / `crest-normal` / `crest-hard` / `crest-expert` |
 
 ### Flex 容器內的文字對齊
@@ -339,6 +339,34 @@ const CREST: Record<string, IconName> = {
   <span className="translate-y-px">{DIFFICULTY_LABEL[difficulty]}</span>
 </span>
 ```
+
+## RWD 版型慣例
+
+### Bar 最大寬度
+
+所有頁面的頂部 bar 與底部 bar 均採「外層全寬背景 + 內層限寬」結構，使寬螢幕上內容不無限延伸：
+
+```tsx
+{/* 外層：全寬背景色 */}
+<div className="px-4 py-3 ..." style={{ background: '...', borderBottom: '...' }}>
+  {/* 內層：內容限制最大寬度，與 MAX_CANVAS_WIDTH 對齊 */}
+  <div className="max-w-[1440px] mx-auto w-full flex items-center justify-between">
+    {/* 按鈕等內容 */}
+  </div>
+</div>
+```
+
+適用範圍：`AppHeader`、`PuzzleBoard` 底部 zoom bar、`ImageUpload` / `DifficultySelector` / `CropPreview` 的頂部 toolbar。
+
+### Copyright Footer
+
+`HomePage`、`ImageUpload`、`DifficultySelector` 三個頁面底部共用相同的版權 footer，內容**未抽成元件**，直接複製於各檔案。若需修改版權文字（年份、連結等），三個檔案須同步更新：
+
+- `src/features/home/HomePage.tsx`
+- `src/features/upload/ImageUpload.tsx`
+- `src/features/config/DifficultySelector.tsx`
+
+Footer 格式：`© 2026 拼圖樂. All rights reserved.` + GitHub icon 連結（`ic-github`）+ 非商業聲明。
 
 ## 共用元件
 
@@ -388,7 +416,7 @@ const url = `${import.meta.env.BASE_URL}presets/puzzle-1.png`;
 |------|------|
 | `public/favicon.svg` | 4 路徑品牌標誌（琥珀 `#F5B13F` × 奶油 `#F4ECDE`），viewBox 0 0 24 24 |
 | `public/apple-touch-icon.svg` | iOS 主畫面圖示，180×180，深色背景 + 5× 放大品牌標誌 |
-| `public/icons.svg` | SVG sprite，77 個 `<symbol>`（`brand-mark*`、`ic-*`、`crest-*`）；JS 中須以 `${import.meta.env.BASE_URL}icons.svg` 引用 |
+| `public/icons.svg` | SVG sprite，78 個 `<symbol>`（`brand-mark*`、`ic-*`、`crest-*`）；JS 中須以 `${import.meta.env.BASE_URL}icons.svg` 引用 |
 
 ### 內建拼圖圖片
 

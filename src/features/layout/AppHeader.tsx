@@ -170,13 +170,14 @@ export default function AppHeader({ onExitRequest }: { onExitRequest?: () => voi
   return (
     <>
     <div
-      className="flex-shrink-0 text-white px-4 py-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 min-h-[64px] relative"
+      className="flex-shrink-0 text-white px-4 py-2 min-h-[64px] relative"
       style={{
         background: 'linear-gradient(180deg, #251E15 0%, #1A140D 100%)',
         borderBottom: '1px solid #3A2F25',
         boxShadow: 'inset 0 -1px 0 rgba(244,165,43,.2), 0 2px 8px rgba(0,0,0,.3)',
       }}
     >
+      <div className="max-w-[1440px] mx-auto w-full flex flex-wrap items-center gap-x-3 gap-y-1.5 h-full">
       {/* App 名稱 */}
       <span className="flex items-center gap-2 mr-1">
         <Icon name="brand-mark" size={24} />
@@ -243,6 +244,7 @@ export default function AppHeader({ onExitRequest }: { onExitRequest?: () => voi
         </div>
       )}
 
+      </div>
     </div>
 
     {showSavePanel && (

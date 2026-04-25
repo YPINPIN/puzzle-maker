@@ -56,35 +56,38 @@ export default function ImageUpload() {
     >
       {/* Top Bar */}
       <div
-        className="flex items-center justify-between px-4 py-3 backdrop-blur-sm flex-shrink-0"
+        className="px-4 py-3 backdrop-blur-sm flex-shrink-0"
         style={{ background: 'linear-gradient(180deg, #251E15 0%, rgba(26,20,13,.9) 100%)', borderBottom: '1px solid #3A2F25' }}
       >
-        <button
-          onClick={() => history.back()}
-          className="inline-flex items-center gap-1.5 text-paper-400 text-sm font-bold px-4 py-2 rounded-lg hover:brightness-110 transition-all"
-          style={{ background: '#3A2F25', border: '1px solid #5A4B38' }}
-        >
-          <Icon name="ic-arrow-left" size={16} />
-          返回首頁
-        </button>
-        <div className="w-9" />
-        <button
-          onClick={handleConfirm}
-          disabled={!pendingImageUrl}
-          className="btn-primary text-sm px-5 py-2 disabled:opacity-40 disabled:cursor-not-allowed"
-        >
-          <Icon name="ic-check" size={16} />
-          確定圖片
-        </button>
+        <div className="max-w-[1440px] mx-auto w-full flex items-center justify-between">
+          <button
+            onClick={() => history.back()}
+            className="inline-flex items-center gap-1.5 text-paper-400 text-sm font-bold px-4 py-2 rounded-lg hover:brightness-110 transition-all"
+            style={{ background: '#3A2F25', border: '1px solid #5A4B38' }}
+          >
+            <Icon name="ic-arrow-left" size={16} />
+            返回首頁
+          </button>
+          <div className="w-9" />
+          <button
+            onClick={handleConfirm}
+            disabled={!pendingImageUrl}
+            className="btn-primary text-sm px-5 py-2 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <Icon name="ic-check" size={16} />
+            確定圖片
+          </button>
+        </div>
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto flex flex-col items-center justify-center p-6">
-        <div className="w-full max-w-md flex flex-col items-center gap-6">
+      <div className="flex-1 overflow-y-auto flex flex-col items-center p-6">
+        <div className="flex-1 flex flex-col items-center justify-center w-full">
+        <div className="w-full max-w-md flex flex-col items-center gap-3">
           <h1 className="text-2xl font-black text-paper-900 tracking-tight">上傳圖片</h1>
           {pendingImageUrl ? (
             <div
-              className={`w-full rounded-3xl overflow-hidden cursor-pointer border-2 transition-all ${
+              className={`w-full max-w-64 sm:max-w-80 aspect-square rounded-3xl overflow-hidden cursor-pointer border-2 transition-all ${
                 isDragOver ? 'border-accent-500 scale-[1.01]' : 'border-brand-500/50 hover:border-brand-500'
               }`}
               style={{ boxShadow: 'inset 0 0 0 6px var(--color-paper-50), 0 0 0 3px var(--color-brand-50)' }}
@@ -93,11 +96,11 @@ export default function ImageUpload() {
               onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
               onDragLeave={() => setIsDragOver(false)}
             >
-              <div className="relative">
+              <div className="relative w-full h-full">
                 <img
                   src={pendingImageUrl}
                   alt="已選圖片"
-                  className="w-full max-h-72 object-contain bg-paper-900"
+                  className="w-full h-full object-contain bg-paper-900"
                 />
                 <div
                   className="absolute bottom-3 left-1/2 -translate-x-1/2 text-xs font-bold px-3 py-1.5 rounded-full whitespace-nowrap pointer-events-none"
@@ -109,7 +112,7 @@ export default function ImageUpload() {
             </div>
           ) : (
             <div
-              className={`w-full border-2 border-dashed rounded-3xl p-12 flex flex-col items-center gap-4 cursor-pointer transition-all ${
+              className={`w-full max-w-64 sm:max-w-80 aspect-square border-2 border-dashed rounded-3xl flex flex-col items-center justify-center gap-1.5 cursor-pointer transition-all ${
                 isDragOver
                   ? 'border-accent-500 bg-accent-500/10 scale-[1.01]'
                   : 'border-brand-500/50 bg-paper-100 hover:border-brand-500 hover:bg-brand-50/50'
@@ -121,23 +124,16 @@ export default function ImageUpload() {
               onDragLeave={() => setIsDragOver(false)}
             >
               <div
-                className="w-20 h-20 rounded-3xl flex items-center justify-center"
+                className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center mb-1"
                 style={{
                   background: '#2A1F14',
                   boxShadow: '0 6px 14px rgba(0,0,0,.3)',
                   border: '1px solid #5A4B38',
                 }}
-              ><Icon name="brand-mark" size={40} /></div>
-              <p className="text-paper-900 text-lg font-extrabold text-center">把圖片拖到這裡</p>
-              <p className="text-paper-800 text-sm">或<span className="text-brand-600 font-bold cursor-pointer">點擊上傳</span>你的照片</p>
-              <div
-                className="inline-flex items-center gap-2 text-xs rounded-full px-3 py-1.5 font-medium"
-                style={{ background: 'var(--color-paper-100)', color: 'var(--color-paper-600)' }}
-              >
-                <span>支援 JPG · PNG · WEBP</span>
-                <span>·</span>
-                <span>透明背景自動補白</span>
-              </div>
+              ><Icon name="brand-mark" size={24} className="sm:hidden" /><Icon name="brand-mark" size={28} className="hidden sm:inline-block" /></div>
+              <p className="text-paper-900 text-base font-extrabold text-center">把圖片拖到這裡</p>
+              <p className="text-paper-700 text-xs text-center">或 <span className="text-brand-600 font-bold cursor-pointer">點擊上傳</span> 你的照片</p>
+              <p className="text-paper-500 text-[11px] text-center mt-0.5">JPG · PNG · WEBP · 透明背景自動補白</p>
             </div>
           )}
           <input
@@ -158,11 +154,28 @@ export default function ImageUpload() {
           {/* Preset images button */}
           <button
             onClick={() => setShowPresetModal(true)}
-            className="btn-secondary w-full py-3 text-sm"
+            className="btn-secondary w-full py-2 text-sm"
           >
             <Icon name="ic-image" size={16} />
             選用內建圖片
           </button>
+        </div>
+        </div>
+
+        <div className="flex flex-col items-center gap-1 pt-2 pb-1 text-xs text-paper-500">
+          <p>© 2026 拼圖樂. All rights reserved.</p>
+          <p className="inline-flex items-center gap-1.5">
+            <span>僅供個人學習使用，非商業用途</span>
+            <a
+              href="https://github.com/YPINPIN"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 hover:text-paper-700 transition-colors"
+            >
+              <Icon name="ic-github" size={14} />
+              <span className="translate-y-px">YPINPIN</span>
+            </a>
+          </p>
         </div>
       </div>
 

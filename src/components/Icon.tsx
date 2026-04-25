@@ -26,6 +26,7 @@ export const ICON_NAMES = [
   'ic-refresh', 'ic-undo', 'ic-redo',
   'ic-puzzle', 'ic-grid', 'ic-list', 'ic-drag',
   'ic-crop', 'ic-rotate', 'ic-spinner',
+  'ic-github',
 ] as const;
 
 export type IconName = (typeof ICON_NAMES)[number];

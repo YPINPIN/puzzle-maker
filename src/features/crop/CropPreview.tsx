@@ -451,27 +451,29 @@ export default function CropPreview({ canvasMapRef, pathMapRef }: Props) {
     <div className="flex flex-col w-full h-full" style={{ background: '#0D0906' }}>
       {/* 頂部 toolbar（非 fixed，不擋圖片） */}
       <div
-        className="flex items-center justify-between px-4 py-3 backdrop-blur-sm flex-shrink-0"
+        className="px-4 py-3 backdrop-blur-sm flex-shrink-0"
         style={{
           background: 'linear-gradient(180deg, #251E15 0%, rgba(26,20,13,.9) 100%)',
           borderBottom: '1px solid #3A2F25',
         }}
       >
-        <button
-          onClick={() => history.back()}
-          className="inline-flex items-center gap-1.5 text-paper-400 text-sm font-bold px-4 py-2 rounded-lg hover:brightness-110 transition-all"
-          style={{ background: '#3A2F25', border: '1px solid #5A4B38' }}
-        >
-          <Icon name="ic-arrow-left" size={16} />
-          返回難度選擇
-        </button>
-        <button
-          onClick={handleConfirm}
-          className="btn-primary text-sm px-5 py-2"
-        >
-          <Icon name="ic-play" size={16} />
-          開始拼圖
-        </button>
+        <div className="max-w-[1440px] mx-auto w-full flex items-center justify-between">
+          <button
+            onClick={() => history.back()}
+            className="inline-flex items-center gap-1.5 text-paper-400 text-sm font-bold px-4 py-2 rounded-lg hover:brightness-110 transition-all"
+            style={{ background: '#3A2F25', border: '1px solid #5A4B38' }}
+          >
+            <Icon name="ic-arrow-left" size={16} />
+            返回難度選擇
+          </button>
+          <button
+            onClick={handleConfirm}
+            className="btn-primary text-sm px-5 py-2"
+          >
+            <Icon name="ic-play" size={16} />
+            開始拼圖
+          </button>
+        </div>
       </div>
 
       {/* 裁切畫布（佔滿剩餘高度） */}
