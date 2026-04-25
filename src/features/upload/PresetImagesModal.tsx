@@ -8,10 +8,14 @@ type Props = {
 
 const BASE = import.meta.env.BASE_URL;
 const PRESET_IMAGES = [
-  { url: `${BASE}presets/puzzle-1.png`, name: '奇幻自然' },
-  { url: `${BASE}presets/puzzle-2.png`, name: '復古機械' },
-  { url: `${BASE}presets/puzzle-3.png`, name: '貓咪咖啡館' },
-  { url: `${BASE}presets/puzzle-4.png`, name: '賽博街景' },
+  { url: `${BASE}presets/puzzle-1.png`, name: '虹彩貓頭鷹' },
+  { url: `${BASE}presets/puzzle-2.png`, name: '漫步星塵海' },
+  { url: `${BASE}presets/puzzle-3.png`, name: '祕境樹之屋' },
+  { url: `${BASE}presets/puzzle-4.png`, name: '賽博不夜城' },
+  { url: `${BASE}presets/puzzle-5.png`, name: '萌貓午茶時' },
+  { url: `${BASE}presets/puzzle-6.png`, name: '幻境古木林' },
+  { url: `${BASE}presets/puzzle-7.png`, name: '星際觀測站' },
+  { url: `${BASE}presets/puzzle-8.png`, name: '魔法藏書閣' },
 ];
 
 export default function PresetImagesModal({ onClose, onSelect }: Props) {

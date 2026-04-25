@@ -377,10 +377,14 @@ const url = `${import.meta.env.BASE_URL}presets/puzzle-1.png`;
 
 | 檔案 | 主題 |
 |------|------|
-| `puzzle-1.png` | 奇幻自然（發光古樹與虹彩蘑菇）|
-| `puzzle-2.png` | 復古機械（鐘錶匠車間與齒輪）|
-| `puzzle-3.png` | 貓咪咖啡館 |
-| `puzzle-4.png` | 賽博街景（夜晚）|
+| `puzzle-1.png` | 虹彩貓頭鷹 |
+| `puzzle-2.png` | 漫步星塵海 |
+| `puzzle-3.png` | 祕境樹之屋 |
+| `puzzle-4.png` | 賽博不夜城 |
+| `puzzle-5.png` | 萌貓午茶時 |
+| `puzzle-6.png` | 幻境古木林 |
+| `puzzle-7.png` | 星際觀測站 |
+| `puzzle-8.png` | 魔法藏書閣 |
 
 ## 完成流程
 
