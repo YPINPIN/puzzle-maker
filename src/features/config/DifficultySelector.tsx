@@ -10,7 +10,7 @@ import PageFooter from '../../components/PageFooter';
 type GridPreset = { cols: number; rows: number; label: string };
 
 const DIFFICULTIES: { value: Difficulty; label: string; count: number; device: string }[] = [
-  { value: 'easy',   label: '簡單', count: 20,  device: '手機 / 平板 / 桌機' },
+  { value: 'easy',   label: '簡單', count: 25,  device: '手機 / 平板 / 桌機' },
   { value: 'normal', label: '普通', count: 50,  device: '平板 / 桌機' },
   { value: 'hard',   label: '困難', count: 100, device: '建議平板或桌機' },
   { value: 'expert', label: '專家', count: 150, device: '建議桌機' },
@@ -18,23 +18,24 @@ const DIFFICULTIES: { value: Difficulty; label: string; count: number; device: s
 
 const GRID_PRESETS: Record<Difficulty, GridPreset[]> = {
   easy:   [
-    { cols: 4, rows: 5,  label: '4 × 5'  },
-    { cols: 5, rows: 4,  label: '5 × 4'  },
+    { cols: 5,  rows: 5,  label: '5 × 5'  },
+    { cols: 4,  rows: 6,  label: '4 × 6'  },
+    { cols: 6,  rows: 4,  label: '6 × 4'  },
   ],
   normal: [
-    { cols: 5,  rows: 10, label: '5 × 10' },
-    { cols: 10, rows: 5,  label: '10 × 5' },
     { cols: 7,  rows: 7,  label: '7 × 7'  },
+    { cols: 6,  rows: 8,  label: '6 × 8'  },
+    { cols: 8,  rows: 6,  label: '8 × 6'  },
   ],
   hard: [
     { cols: 10, rows: 10, label: '10 × 10' },
-    { cols: 8,  rows: 13, label: '8 × 13'  },
-    { cols: 13, rows: 8,  label: '13 × 8'  },
+    { cols: 9,  rows: 12, label: '9 × 12'  },
+    { cols: 12, rows: 9,  label: '12 × 9'  },
   ],
   expert: [
+    { cols: 12, rows: 12, label: '12 × 12' },
     { cols: 10, rows: 15, label: '10 × 15' },
     { cols: 15, rows: 10, label: '15 × 10' },
-    { cols: 13, rows: 12, label: '13 × 12' },
   ],
 };
 
@@ -91,16 +92,16 @@ export default function DifficultySelector() {
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto flex flex-col items-center p-6">
-        <div className="flex-1 flex flex-col items-center justify-center gap-6 w-full">
-        <h1 className="text-3xl sm:text-4xl font-black text-paper-900 tracking-tight">選擇難度</h1>
+        <div className="flex-1 flex flex-col items-center justify-center gap-3 w-full">
+        <h1 className="text-2xl font-black text-paper-900 tracking-tight">選擇難度</h1>
 
         {/* 難度選擇 */}
-        <div className="flex gap-2 justify-center">
+        <div className="grid grid-cols-2 gap-2 w-full max-w-[220px] sm:max-w-[280px]">
           {DIFFICULTIES.map(({ value, label, count }) => (
             <button
               key={value}
               onClick={() => handleDifficultyChange(value)}
-              className={`relative flex flex-col items-center gap-1 sm:gap-2 px-3 py-3 sm:px-6 sm:py-5 rounded-2xl text-sm sm:text-base font-extrabold border-2 transition-all card-lift ${
+              className={`aspect-square relative flex flex-col items-center justify-center gap-1.5 rounded-2xl text-sm font-extrabold border-2 transition-all card-lift ${
                 selectedDifficulty === value
                   ? 'border-brand-700 text-paper-900 -translate-y-0.5'
                   : 'border-paper-300 bg-paper-100 text-paper-900 hover:border-brand-500'
@@ -110,11 +111,11 @@ export default function DifficultySelector() {
                 boxShadow: 'inset 0 1px 0 rgba(255,255,255,.5), 0 6px 0 #9E5A00, 0 10px 18px rgba(185,106,0,.3)',
               } : undefined}
             >
-              <span className="block w-6 h-6 sm:w-10 sm:h-10">
+              <span className="w-8 h-8 sm:w-10 sm:h-10">
                 <Icon name={CREST[value]} size="100%" />
               </span>
               <div>{label}</div>
-              <div className="text-xs font-bold font-mono opacity-80">{count} 片</div>
+              <div className="text-xs font-bold font-mono opacity-80">約 {count} 片</div>
               {selectedDifficulty === value && (
                 <div
                   className="absolute -top-2 -right-2 w-5 h-5 rounded-full text-[10px] font-black flex items-center justify-center"

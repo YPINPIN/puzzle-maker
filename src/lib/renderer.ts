@@ -155,6 +155,7 @@ export function renderFrame(opts: RenderOptions): void {
     if (!draggingIds.has(piece.id)) continue;
     const offscreen = canvasMap.get(piece.id);
     if (!offscreen) continue;
+    const path = pathMap.get(piece.id);
 
     const logicX = dragBasePositions[piece.id] !== undefined
       ? dragBasePositions[piece.id].x + dragDelta.x
@@ -174,9 +175,18 @@ export function renderFrame(opts: RenderOptions): void {
     ctx.drawImage(offscreen, px, py, scaledOffW, scaledOffH);
     ctx.restore();
 
+    // 白色邊框：格線外才顯示（格線上改以綠光為主，不疊加）
+    if (path && !overlapsGrid(logicX, logicY)) {
+      ctx.save();
+      ctx.translate(px, py);
+      ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+      ctx.lineWidth = 2;
+      ctx.stroke(path);
+      ctx.restore();
+    }
+
     // 綠光：拖曳中懸停在格線上（放下前的預覽提示）
     if (overlapsGrid(logicX, logicY)) {
-      const path = pathMap.get(piece.id);
       drawGlow(path, px, py, 'green');
     }
   }
