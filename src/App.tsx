@@ -7,6 +7,7 @@ import HomePage from './features/home/HomePage';
 import AppHeader from './features/layout/AppHeader';
 import { useGameDraft } from './features/game/useGameDraft';
 import { usePhaseHistory } from './features/game/usePhaseHistory';
+import { useBackgroundMusic } from './features/game/useBackgroundMusic';
 
 const ImageUpload = lazy(() => import('./features/upload/ImageUpload'));
 const DifficultySelector = lazy(() => import('./features/config/DifficultySelector'));
@@ -30,6 +31,7 @@ export default function App() {
   }, [dispatch, saveNow]);
 
   usePhaseHistory({ onInterceptBackFromPlaying: handleExitRequest });
+  useBackgroundMusic();
 
   return (
     <div className="flex flex-col w-screen overflow-hidden overscroll-none" style={{ height: '100dvh' }}>

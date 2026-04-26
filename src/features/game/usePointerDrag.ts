@@ -12,6 +12,7 @@ import {
 import type { PuzzlePiece } from '../../types/puzzle';
 import { shouldMerge, findSnapCandidate } from '../../lib/snapLogic';
 import { TAB_RATIO, ZOOM_MIN, ZOOM_MAX } from '../../lib/constants';
+import { playPickup, playMerge, playSnap, playComplete } from '../../lib/soundEngine';
 
 type Props = {
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
@@ -181,6 +182,7 @@ export function usePointerDrag({
       dragStartMouseRef.current = { x, y };
 
       dispatch(setDraggingGroup({ groupId }));
+      playPickup();
       canvas!.setPointerCapture(e.pointerId);
     }
 
@@ -346,8 +348,13 @@ export function usePointerDrag({
         return p.isSnapped;
       });
       if (allSnapped && snapCandidate) {
+        playComplete();
         const elapsed = startTime ? Date.now() - startTime - pauseOffsetRef.current : 0;
         dispatch(setComplete(elapsed));
+      } else if (snapCandidate) {
+        playSnap();
+      } else if (toMerge.length > 0) {
+        playMerge();
       }
     }
 

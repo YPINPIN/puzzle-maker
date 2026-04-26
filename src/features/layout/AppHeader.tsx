@@ -16,6 +16,7 @@ import { Icon } from '../../components/Icon';
 import { DIFFICULTY_LABEL, CREST } from '../../lib/difficulty';
 import { formatTimer } from '../../lib/format';
 import { generateThumbnail } from '../../lib/imageUtils';
+import { setMuted as setSoundMuted, isMuted, startMusic, stopMusic } from '../../lib/soundEngine';
 
 export default function AppHeader({ onExitRequest }: { onExitRequest?: () => void }) {
   const dispatch = useDispatch<AppDispatch>();
@@ -29,6 +30,7 @@ export default function AppHeader({ onExitRequest }: { onExitRequest?: () => voi
 
   const [, setTick] = useState(0);
   const [showSavePanel, setShowSavePanel] = useState(false);
+  const [muted, setMuted] = useState(() => isMuted());
   const thumbnailRef = useRef<string>('');
 
   // 每次 render 同步最新值，讓 handleSaveToSlot 永遠拿到最新狀態
@@ -134,11 +136,11 @@ export default function AppHeader({ onExitRequest }: { onExitRequest?: () => voi
         boxShadow: 'inset 0 -1px 0 rgba(244,165,43,.2), 0 2px 8px rgba(0,0,0,.3)',
       }}
     >
-      <div className="max-w-[1440px] mx-auto w-full flex flex-wrap items-center gap-x-3 gap-y-1.5 h-full">
+      <div className="max-w-[1440px] mx-auto w-full flex flex-wrap items-center gap-x-2 gap-y-1.5 h-full">
       {/* App 名稱 */}
       <span className="flex items-center gap-2 mr-1">
         <Icon name="brand-mark" size={24} />
-        <span className="text-base font-black tracking-wide text-paper-100">拼圖樂</span>
+        <span className={`text-base font-black tracking-wide text-paper-100${isPlaying ? ' max-sm:hidden' : ''}`}>拼圖樂</span>
       </span>
 
       {/* 難度 + 格數 */}
@@ -158,13 +160,34 @@ export default function AppHeader({ onExitRequest }: { onExitRequest?: () => voi
 
       <div className="flex-1" />
 
-      {/* 計時器 */}
-      {isPlaying && (
-        <div className="timer-box whitespace-nowrap">
-          <Icon name="ic-timer" size={16} style={{ color: '#F5B13F' }} />
-          <span className="translate-y-px">{formatTimer(displayElapsed)}</span>
-        </div>
-      )}
+      {/* 計時器（playing）+ 靜音按鈕（所有頁面） */}
+      <div className="flex items-center gap-2">
+        {isPlaying && (
+          <div className="timer-box whitespace-nowrap">
+            <Icon name="ic-timer" size={16} style={{ color: '#F5B13F' }} />
+            <span className="translate-y-px">{formatTimer(displayElapsed)}</span>
+          </div>
+        )}
+        <button
+          onClick={() => {
+            const next = !muted;
+            setSoundMuted(next);
+            setMuted(next);
+            if (next) stopMusic();
+            else startMusic();
+          }}
+          title={muted ? '開啟音效' : '關閉音效'}
+          className="inline-flex items-center justify-center px-2.5 py-1.5 rounded-xl transition-all hover:brightness-110 active:scale-95"
+          style={{
+            background: 'linear-gradient(180deg, #2AA39A 0%, #1E8A82 100%)',
+            color: '#fff',
+            boxShadow: 'inset 0 1px 0 rgba(255,255,255,.3), 0 2px 6px rgba(20,100,90,.3)',
+            opacity: muted ? 0.65 : 1,
+          }}
+        >
+          <Icon name={muted ? 'ic-volume-off' : 'ic-volume'} size={16} />
+        </button>
+      </div>
 
       {/* 遊戲控制按鈕（playing phase） */}
       {phase === 'playing' && (

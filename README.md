@@ -72,6 +72,13 @@
 - 遊戲進度**自動暫存**至本機，手機返回手勢離開後可從首頁「繼續上局」恢復
 - 支援 iOS **Safe Area**（`env(safe-area-inset-bottom)`），防止 Home Indicator 遮擋按鈕
 
+### 🔊 音效與背景音樂
+
+- 鋼琴風格**程序化背景音樂**（C 大調、150 BPM、~25.6 秒循環），無需外部音頻檔，完全由 Web Audio API 合成
+- 操作音效：抓起、合組、吸附、完成各有獨立音效提示
+- Header 靜音按鈕（所有頁面均顯示），靜音偏好自動保存至本機
+- 遊戲暫停時背景音樂持續播放，不影響沉浸體驗
+
 ### 📦 PWA 支援
 
 - 可**安裝至主畫面**（Android / iOS / 桌面 Chrome），以 standalone 模式開啟
@@ -92,6 +99,7 @@
 | [lz-string](https://github.com/pieroxy/lz-string)    | 分享代碼壓縮   |
 | [vite-plugin-pwa](https://vite-pwa-org.netlify.app/) | PWA / 離線支援 |
 | Canvas 2D API                                        | 拼圖渲染與互動 |
+| Web Audio API                                        | 程序化音效與背景音樂合成 |
 
 ---
 
