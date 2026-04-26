@@ -15,6 +15,7 @@ import SavePanel from '../game/SavePanel';
 import { Icon } from '../../components/Icon';
 import { DIFFICULTY_LABEL, CREST } from '../../lib/difficulty';
 import { formatTimer } from '../../lib/format';
+import { generateThumbnail } from '../../lib/imageUtils';
 
 export default function AppHeader({ onExitRequest }: { onExitRequest?: () => void }) {
   const dispatch = useDispatch<AppDispatch>();
@@ -48,21 +49,9 @@ export default function AppHeader({ onExitRequest }: { onExitRequest?: () => voi
 
   useEffect(() => {
     if (!referenceDataUrl) { thumbnailRef.current = ''; return; }
-    const img = new Image();
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      canvas.width = 200;
-      canvas.height = 200;
-      const ctx = canvas.getContext('2d')!;
-      const aspect = img.width / img.height;
-      const tw = aspect > 1 ? 200 : Math.round(200 * aspect);
-      const th = aspect > 1 ? Math.round(200 / aspect) : 200;
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, 200, 200);
-      ctx.drawImage(img, Math.round((200 - tw) / 2), Math.round((200 - th) / 2), tw, th);
-      thumbnailRef.current = canvas.toDataURL('image/jpeg', 0.7);
-    };
-    img.src = referenceDataUrl;
+    generateThumbnail(referenceDataUrl)
+      .then(dataUrl => { thumbnailRef.current = dataUrl; })
+      .catch(() => { thumbnailRef.current = ''; });
   }, [referenceDataUrl]);
 
   const computeElapsed = useCallback(() => {

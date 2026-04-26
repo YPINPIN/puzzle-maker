@@ -1,17 +1,18 @@
-import { useRef, useState, useCallback } from 'react';
+import { useRef, useState, useCallback, lazy, Suspense } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import type { RootState, AppDispatch } from './store';
 import { resetGame, pauseGame, resumeGame } from './store/puzzleSlice';
 import ConfirmDialog, { HiAccent } from './components/ConfirmDialog';
 import HomePage from './features/home/HomePage';
-import ImageUpload from './features/upload/ImageUpload';
-import DifficultySelector from './features/config/DifficultySelector';
-import CropPreview from './features/crop/CropPreview';
-import PuzzleBoard from './features/game/PuzzleBoard';
-import CompletionOverlay from './features/complete/CompletionOverlay';
 import AppHeader from './features/layout/AppHeader';
 import { useGameDraft } from './features/game/useGameDraft';
 import { usePhaseHistory } from './features/game/usePhaseHistory';
+
+const ImageUpload = lazy(() => import('./features/upload/ImageUpload'));
+const DifficultySelector = lazy(() => import('./features/config/DifficultySelector'));
+const CropPreview = lazy(() => import('./features/crop/CropPreview'));
+const PuzzleBoard = lazy(() => import('./features/game/PuzzleBoard'));
+const CompletionOverlay = lazy(() => import('./features/complete/CompletionOverlay'));
 
 export default function App() {
   const dispatch = useDispatch<AppDispatch>();
@@ -34,18 +35,20 @@ export default function App() {
     <div className="flex flex-col w-screen overflow-hidden overscroll-none" style={{ height: '100dvh' }}>
       <AppHeader onExitRequest={handleExitRequest} />
       <div className="flex-1 overflow-hidden min-h-0">
-        {phase === 'home' && (
-          <HomePage canvasMapRef={canvasMapRef} pathMapRef={pathMapRef} />
-        )}
-        {phase === 'upload' && <ImageUpload />}
-        {phase === 'config' && <DifficultySelector />}
-        {phase === 'crop' && (
-          <CropPreview canvasMapRef={canvasMapRef} pathMapRef={pathMapRef} />
-        )}
-        {(phase === 'playing' || phase === 'complete') && (
-          <PuzzleBoard canvasMapRef={canvasMapRef} pathMapRef={pathMapRef} />
-        )}
-        {phase === 'complete' && <CompletionOverlay />}
+        <Suspense fallback={null}>
+          {phase === 'home' && (
+            <HomePage canvasMapRef={canvasMapRef} pathMapRef={pathMapRef} />
+          )}
+          {phase === 'upload' && <ImageUpload />}
+          {phase === 'config' && <DifficultySelector />}
+          {phase === 'crop' && (
+            <CropPreview canvasMapRef={canvasMapRef} pathMapRef={pathMapRef} />
+          )}
+          {(phase === 'playing' || phase === 'complete') && (
+            <PuzzleBoard canvasMapRef={canvasMapRef} pathMapRef={pathMapRef} />
+          )}
+          {phase === 'complete' && <CompletionOverlay />}
+        </Suspense>
       </div>
 
       {showExitConfirm && (

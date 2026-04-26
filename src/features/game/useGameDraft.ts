@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef } from 'react';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../../store';
 import { saveDraft, clearDraft } from '../../lib/gameDraft';
+import { generateThumbnail } from '../../lib/imageUtils';
 
 export function useGameDraft() {
   const state = useSelector((s: RootState) => s.puzzle);
@@ -14,21 +15,9 @@ export function useGameDraft() {
   useEffect(() => {
     const url = state.referenceDataUrl;
     if (!url) { thumbnailRef.current = ''; return; }
-    const img = new Image();
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      canvas.width = 200;
-      canvas.height = 200;
-      const ctx = canvas.getContext('2d')!;
-      const aspect = img.width / img.height;
-      const tw = aspect > 1 ? 200 : Math.round(200 * aspect);
-      const th = aspect > 1 ? Math.round(200 / aspect) : 200;
-      ctx.fillStyle = '#F8F5F0';
-      ctx.fillRect(0, 0, 200, 200);
-      ctx.drawImage(img, Math.round((200 - tw) / 2), Math.round((200 - th) / 2), tw, th);
-      thumbnailRef.current = canvas.toDataURL('image/jpeg', 0.7);
-    };
-    img.src = url;
+    generateThumbnail(url)
+      .then(dataUrl => { thumbnailRef.current = dataUrl; })
+      .catch(() => { thumbnailRef.current = ''; });
   }, [state.referenceDataUrl]);
 
   function buildAndSave() {

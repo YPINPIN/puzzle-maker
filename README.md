@@ -34,12 +34,13 @@
 
 - 四種難度：**簡單**（約25片）、**普通**（約50片）、**困難**（約100片）、**專家**（約150片）
 
-  | 難度 | 約片數 | 建議裝置 |
-  |------|--------|---------|
-  | 簡單 | 約 25 片 | 手機 / 平板 / 桌機 |
-  | 普通 | 約 50 片 | 平板 / 桌機 |
-  | 困難 | 約 100 片 | 建議平板或桌機 |
-  | 專家 | 約 150 片 | 建議桌機 |
+  | 難度 | 約片數    | 建議裝置           |
+  | ---- | --------- | ------------------ |
+  | 簡單 | 約 25 片  | 手機 / 平板 / 桌機 |
+  | 普通 | 約 50 片  | 平板 / 桌機        |
+  | 困難 | 約 100 片 | 建議平板或桌機     |
+  | 專家 | 約 150 片 | 建議桌機           |
+
 - 每個難度提供 3 種格數形狀選擇：**正方形**（1:1）、**直式**（3:4 或 2:3）、**橫式**（4:3 或 3:2）
 - 每片拼圖具有凹凸契合的 tab/blank 邊緣，形狀由演算法隨機生成
 - 抓住拼圖片時顯示**白色邊框**；拖放時提供**吸附**預覽（綠光）與**錯位警示**（紅光）
@@ -71,19 +72,26 @@
 - 遊戲進度**自動暫存**至本機，手機返回手勢離開後可從首頁「繼續上局」恢復
 - 支援 iOS **Safe Area**（`env(safe-area-inset-bottom)`），防止 Home Indicator 遮擋按鈕
 
+### 📦 PWA 支援
+
+- 可**安裝至主畫面**（Android / iOS / 桌面 Chrome），以 standalone 模式開啟
+- Service Worker 預快取 app shell，**離線仍可遊玩**已保存的拼圖進度
+- 曾瀏覽過的內建圖片會被 NetworkFirst 快取，離線時同樣可選用
+
 ---
 
 ## 🛠️ Tech Stack
 
-| 技術                                              | 說明           |
-| ------------------------------------------------- | -------------- |
-| [React 19](https://react.dev/)                    | UI 框架        |
-| [TypeScript](https://www.typescriptlang.org/)     | 靜態型別       |
-| [Vite 8](https://vite.dev/)                       | 建置工具       |
-| [Redux Toolkit](https://redux-toolkit.js.org/)    | 全域狀態管理   |
-| [Tailwind CSS v4](https://tailwindcss.com/)       | 樣式框架       |
-| [lz-string](https://github.com/pieroxy/lz-string) | 分享代碼壓縮   |
-| Canvas 2D API                                     | 拼圖渲染與互動 |
+| 技術                                                 | 說明           |
+| ---------------------------------------------------- | -------------- |
+| [React 19](https://react.dev/)                       | UI 框架        |
+| [TypeScript](https://www.typescriptlang.org/)        | 靜態型別       |
+| [Vite 8](https://vite.dev/)                          | 建置工具       |
+| [Redux Toolkit](https://redux-toolkit.js.org/)       | 全域狀態管理   |
+| [Tailwind CSS v4](https://tailwindcss.com/)          | 樣式框架       |
+| [lz-string](https://github.com/pieroxy/lz-string)    | 分享代碼壓縮   |
+| [vite-plugin-pwa](https://vite-pwa-org.netlify.app/) | PWA / 離線支援 |
+| Canvas 2D API                                        | 拼圖渲染與互動 |
 
 ---
 

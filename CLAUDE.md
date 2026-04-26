@@ -18,6 +18,7 @@ npm run preview  # 預覽 production 建置結果
 - **Tailwind CSS v4**，透過 `@tailwindcss/vite` plugin 整合（無獨立設定檔）
 - CSS 入口為 `src/index.css`，以 `@import "tailwindcss"` 引入 Tailwind
 - **lz-string**：分享代碼壓縮用（`compressToBase64` / `decompressFromBase64`）
+- **vite-plugin-pwa**（`--legacy-peer-deps` 安裝，Vite 8 尚未正式支援）：Service Worker 生成（Workbox `generateSW` 模式）與 manifest 注入；`devOptions.enabled: true` 讓 dev server 也能測試 SW
 
 ### Redux State 關鍵欄位說明
 
@@ -47,7 +48,7 @@ npm run preview  # 預覽 production 建置結果
 home → upload → config → crop → playing → complete
 ```
 
-`resetGame()` 回到 `home`。`App.tsx` 根據 `phase` 條件渲染對應元件；`canvasMapRef`（offscreen canvas）與 `pathMapRef`（Path2D 形狀）在 App 層建立並向下傳遞，貫穿整個遊戲生命週期。
+`resetGame()` 回到 `home`。`App.tsx` 根據 `phase` 條件渲染對應元件，以 `Suspense` 包裹；`HomePage` 為靜態 import（首頁無白屏），其餘 5 個 phase 元件（`ImageUpload`、`DifficultySelector`、`CropPreview`、`PuzzleBoard`、`CompletionOverlay`）均為 `React.lazy`（使用者互動後才下載對應 chunk）。`canvasMapRef`（offscreen canvas）與 `pathMapRef`（Path2D 形狀）在 App 層建立並向下傳遞，貫穿整個遊戲生命週期。
 
 | Phase      | 元件                                | 說明                                         |
 |------------|-------------------------------------|----------------------------------------------|
@@ -184,7 +185,7 @@ Props 需傳入：
 - key：`puzzle-game-draft`，最多 1 筆 `GameDraft`（隨時覆蓋）
 - 欄位：`gameId`、`configId`、難度、格數、`croppedImageDataUrl`、`thumbnailDataUrl?`（200×200 JPEG，置中生成）、`savedAt?`（ms timestamp）、`savedState`
 - **自動存時機**（`src/features/game/useGameDraft.ts`，掛載於 `App.tsx`）：pieces 變更後 1500ms debounce；`visibilitychange` 頁面隱藏時立刻存；back 攔截 / 「結束」按鈕觸發時也立即呼叫 `saveNow()`
-- **縮圖生成**：`useGameDraft` 監聽 `referenceDataUrl` 變化，以 canvas 非同步生成 200×200 置中縮圖（背景 `paper-100 #F8F5F0`）並快取於 `thumbnailRef`，每次 `buildAndSave` 時一起存入草稿
+- **縮圖生成**：`useGameDraft` 監聽 `referenceDataUrl` 變化，呼叫 `generateThumbnail()`（`src/lib/imageUtils.ts`）非同步生成 200×200 置中縮圖（背景 `paper-100 #F8F5F0`，JPEG 0.7）並快取於 `thumbnailRef`，每次 `buildAndSave` 時一起存入草稿；`AppHeader`、`CompletionOverlay` 也使用同一函式生成存檔縮圖
 - **清除時機**：「結束」確認（`App.tsx` ConfirmDialog `onConfirm`）、「保存並結束」完成（`AppHeader.handleSaveToSlot`）、`phase` 變為 `complete`（`useGameDraft` useEffect）
 - 不會在 `resetGame` 後自動清除——back swipe 離開再回首頁時草稿仍保留，顯示「繼續上局」
 - `useGameDraft` 回傳 `{ saveNow }` 供外部呼叫（`App.tsx` 在 back 攔截時使用）
@@ -380,6 +381,7 @@ import { CREST, DIFFICULTY_LABEL } from '../../lib/difficulty';
 |------|------|------|
 | `src/lib/difficulty.ts` | `DIFFICULTY_LABEL`, `CREST` | 難度顯示名稱（`{ easy: '簡單', ... }`）與徽章 icon 名稱（`{ easy: 'crest-easy', ... }`）；全專案唯一定義，不在各元件重複宣告 |
 | `src/lib/format.ts` | `formatTimer(ms)`, `formatDuration(ms)`, `formatDate(ts)` | 計時器顯示格式（`MM:SS`）、完成用時顯示（`X 分 Y 秒`）與日期格式化（`YYYY/MM/DD HH:mm`）；全專案唯一定義 |
+| `src/lib/imageUtils.ts` | `generateThumbnail(url, opts?)` | 200×200 置中縮圖生成，回傳 `Promise<string>`（JPEG data URL）；預設 `background='#F8F5F0'`、`quality=0.7`；含 `img.onerror` 錯誤處理；由 `useGameDraft`、`AppHeader`、`CompletionOverlay` 共用 |
 
 ## 分享代碼系統（`src/lib/shareCode.ts`）
 
@@ -413,13 +415,31 @@ const url = `${import.meta.env.BASE_URL}presets/puzzle-1.png`;
 
 `import.meta.env.BASE_URL` 已含尾部斜線（production: `/puzzle-maker/`，dev: `/`），路徑不需加前綴 `/`。
 
-### 靜態 SVG 資源
+### 靜態圖示資源
 
 | 檔案 | 說明 |
 |------|------|
 | `public/favicon.svg` | 4 路徑品牌標誌（琥珀 `#F5B13F` × 奶油 `#F4ECDE`），viewBox 0 0 24 24 |
-| `public/apple-touch-icon.svg` | iOS 主畫面圖示，180×180，深色背景 + 5× 放大品牌標誌 |
+| `public/favicon.ico` | 48×48 ICO，由 `@vite-pwa/assets-generator` 從 favicon.svg 生成 |
+| `public/apple-touch-icon-180x180.png` | iOS 主畫面圖示（PNG），由 assets-generator 生成；取代舊的 apple-touch-icon.svg |
+| `public/pwa-64x64.png` | PWA 圖示 64px |
+| `public/pwa-192x192.png` | PWA 圖示 192px（Chrome 安裝必要） |
+| `public/pwa-512x512.png` | PWA 圖示 512px（Chrome 安裝必要） |
+| `public/maskable-icon-512x512.png` | PWA maskable 圖示（Android 自適應圖示） |
 | `public/icons.svg` | SVG sprite，78 個 `<symbol>`（`brand-mark*`、`ic-*`、`crest-*`）；JS 中須以 `${import.meta.env.BASE_URL}icons.svg` 引用 |
+
+若需重新生成 PNG 圖示（修改 favicon.svg 後）：
+
+```bash
+npx pwa-assets-generator --preset minimal-2023 public/favicon.svg
+```
+
+### PWA 設定（`vite.config.ts`）
+
+- `registerType: 'autoUpdate'`：SW 靜默更新，無需使用者介入
+- **預快取**（`globPatterns`）：所有 JS/CSS/HTML/SVG/woff2，app shell 完整離線可用
+- **Runtime cache**（preset 圖片）：NetworkFirst 策略，cacheName `preset-images`，最多 8 筆、30 天；首次瀏覽後離線可用
+- `devOptions.enabled: true`：開發模式下也會注入 SW，可在 Chrome DevTools → Application 驗證
 
 ### 內建拼圖圖片
 
