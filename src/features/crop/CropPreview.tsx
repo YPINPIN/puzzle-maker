@@ -348,22 +348,6 @@ export default function CropPreview({ canvasMapRef, pathMapRef }: Props) {
       height: Math.min(img.height - Math.round(crop.y), Math.round(crop.h)),
     };
 
-    // 生成裁切後參考圖（最大寬度 600px）
-    const refAspect = cropRegion.width / cropRegion.height;
-    const refW = Math.min(600, cropRegion.width);
-    const refH = Math.round(refW / refAspect);
-    const refCanvas = document.createElement('canvas');
-    refCanvas.width = refW;
-    refCanvas.height = refH;
-    const refCtx = refCanvas.getContext('2d')!;
-    refCtx.drawImage(
-      img,
-      cropRegion.x, cropRegion.y, cropRegion.width, cropRegion.height,
-      0, 0, refW, refH
-    );
-    const referenceDataUrl = refCanvas.toDataURL('image/jpeg', 0.85);
-    dispatch(setReferenceImage(referenceDataUrl));
-
     // 生成 200×200 縮圖
     const thumbCanvas = document.createElement('canvas');
     thumbCanvas.width = 200;
@@ -395,6 +379,7 @@ export default function CropPreview({ canvasMapRef, pathMapRef }: Props) {
       0, 0, replayW, replayH,
     );
     const croppedImageDataUrl = replayCanvas.toDataURL('image/jpeg', 0.75);
+    dispatch(setReferenceImage(croppedImageDataUrl));
 
     const configId = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     saveRecord({

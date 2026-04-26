@@ -24,7 +24,7 @@ npm run preview  # 預覽 production 建置結果
 | 欄位 | 型別 | 說明 |
 |------|------|------|
 | `imageDataUrl` | `string \| null` | 原始上傳圖片（未裁切），僅在 upload→crop 階段使用；`startGame` 觸發時清除 |
-| `referenceDataUrl` | `string \| null` | 裁切後的參考圖（≤600px JPEG），遊戲中「查看參考圖」使用；也是 `doRegenerate` 的圖片來源 |
+| `referenceDataUrl` | `string \| null` | 裁切後的參考圖（≤800px JPEG），遊戲中「查看參考圖」使用；也是 `doRegenerate` 的圖片來源；值與 `croppedImageDataUrl` 相同，所有路徑統一 |
 | `cropRegion` | 物件 | 相對於原圖的裁切座標（x, y, width, height）；`startGame` 觸發時清除 |
 | `draggingGroupId` | `number \| null` | 目前被拖曳的 group ID；renderer 以此決定渲染層次 |
 | `showImagePreview` | `boolean` | 控制 `ImagePreviewOverlay` 顯示 |
@@ -137,7 +137,7 @@ Threshold 乘以 `getEffectiveDPR()` 是為了讓手機與桌機在 **CSS 像素
 
 **呼叫慣例**：`CropPreview.handleConfirm` 與 `HomePage.applyRecord`（新遊戲）傳入 `{ w: ZOOM_BUTTON_AVOID_W * dpr, h: ZOOM_BUTTON_AVOID_H * dpr }`；`PuzzleBoard` resize 與 `continueGame` 不傳（位置由 savedState 或 scale 覆蓋）。
 
-**圖片來源**：所有進入遊戲的路徑（`handleConfirm`、`applyRecord`、`continueGame`）均傳入已裁切的小圖（≤800px JPEG），不再使用原始大圖。`startGame` reducer 會同時清除 Redux 中的 `imageDataUrl` 與 `cropRegion`，確保原始大圖在遊戲開始後立即釋放記憶體。`PuzzleBoard.doRegenerate`（視窗 resize 時觸發）改用 `referenceDataUrl ?? imageDataUrl`，優先使用已裁切的參考圖，確保 iOS safe-area 造成的殘餘 regen 也能正確渲染。
+**圖片來源**：所有進入遊戲的路徑（`handleConfirm`、`applyRecord`、`continueGame`）均傳入已裁切的小圖（≤800px JPEG），不再使用原始大圖。`startGame` reducer 會同時清除 Redux 中的 `imageDataUrl` 與 `cropRegion`，確保原始大圖在遊戲開始後立即釋放記憶體。`PuzzleBoard.doRegenerate`（視窗 resize 時觸發）改用 `referenceDataUrl ?? imageDataUrl`；`referenceDataUrl` 所有路徑均為 800px（CropPreview 不再另外產生 600px 版本，直接以 `croppedImageDataUrl` 設為 `referenceDataUrl`），確保各路徑的 doRegenerate 行為一致。
 
 ## 觸控與縮放（`src/features/game/usePointerDrag.ts`）
 
