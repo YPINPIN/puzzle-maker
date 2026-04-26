@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Icon, type IconName } from '../../components/Icon';
+import { Icon } from '../../components/Icon';
 import { getRecords, deleteRecord, type PuzzleRecord } from '../../lib/records';
 import { getGameHistory, deleteGameHistory } from '../../lib/gameHistory';
 import type { GameHistoryRecord } from '../../types/puzzle';
 import ConfirmDialog from '../../components/ConfirmDialog';
+import { DIFFICULTY_LABEL, CREST } from '../../lib/difficulty';
+import { formatDate, formatDuration } from '../../lib/format';
 
 type Mode = 'quick' | 'history';
 
@@ -16,43 +18,23 @@ type Props = {
   onImportCode?: () => void;
 };
 
-const DIFFICULTY_LABEL: Record<string, string> = {
-  easy: '簡單',
-  normal: '普通',
-  hard: '困難',
-  expert: '專家',
-};
-
-const CREST: Record<string, IconName> = {
-  easy: 'crest-easy',
-  normal: 'crest-normal',
-  hard: 'crest-hard',
-  expert: 'crest-expert',
-};
-
-function formatDate(ts: number): string {
-  const d = new Date(ts);
-  return `${d.getFullYear()}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getDate().toString().padStart(2, '0')} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
-}
-
-function formatTime(ms: number): string {
-  const totalSeconds = Math.floor(ms / 1000);
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-  if (minutes > 0) return `${minutes} 分 ${seconds.toString().padStart(2, '0')} 秒`;
-  return `${seconds} 秒`;
-}
-
 export default function RecordsModal({ mode, onClose, onApply, onContinue, onShare, onImportCode }: Props) {
-  const [quickSettings, setQuickSettings] = useState<PuzzleRecord[]>([]);
-  const [gameHistory, setGameHistory] = useState<GameHistoryRecord[]>([]);
+  const [quickSettings, setQuickSettings] = useState<PuzzleRecord[]>(() =>
+    mode === 'quick' ? getRecords() : []
+  );
+  const [gameHistory, setGameHistory] = useState<GameHistoryRecord[]>(() =>
+    mode === 'history' ? getGameHistory() : []
+  );
   const [pendingDeleteQuick, setPendingDeleteQuick] = useState<string | null>(null);
   const [pendingDeleteHistory, setPendingDeleteHistory] = useState<string | null>(null);
 
   useEffect(() => {
-    if (mode === 'quick') setQuickSettings(getRecords());
-    else setGameHistory(getGameHistory());
-  }, [mode]);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !pendingDeleteQuick && !pendingDeleteHistory) onClose();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [onClose, pendingDeleteQuick, pendingDeleteHistory]);
 
   function confirmDeleteQuick() {
     if (!pendingDeleteQuick) return;
@@ -89,13 +71,16 @@ export default function RecordsModal({ mode, onClose, onApply, onContinue, onSha
       onClick={onClose}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="records-modal-title"
         className="bg-paper-50 rounded-3xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col overflow-hidden border border-paper-300"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-paper-300">
           <div>
-            <h2 className="text-xl font-bold text-paper-900">{title}</h2>
+            <h2 id="records-modal-title" className="text-xl font-bold text-paper-900">{title}</h2>
             <p className="text-xs text-paper-600 mt-0.5">{subtitle}</p>
           </div>
           <div className="flex items-center gap-2">
@@ -150,7 +135,7 @@ export default function RecordsModal({ mode, onClose, onApply, onContinue, onSha
                       <p className="text-xs text-paper-500 truncate">{formatDate(r.createdAt)}</p>
                       {r.isCompleted && r.bestTimeMs > 0 && (
                         <p className="text-sm font-bold text-brand-600">
-                          最快：{formatTime(r.bestTimeMs)}
+                          最快：{formatDuration(r.bestTimeMs)}
                         </p>
                       )}
                     </div>
@@ -230,8 +215,8 @@ export default function RecordsModal({ mode, onClose, onApply, onContinue, onSha
                         </p>
                         <p className="text-xs text-paper-600">
                           {r.isCompleted
-                            ? `完成時間：${formatTime(r.savedState.elapsedAtSave)}`
-                            : `已拼 ${snapped} / ${total} 片・已用 ${formatTime(r.savedState.elapsedAtSave)}`}
+                            ? `完成時間：${formatDuration(r.savedState.elapsedAtSave)}`
+                            : `已拼 ${snapped} / ${total} 片・已用 ${formatDuration(r.savedState.elapsedAtSave)}`}
                         </p>
                       </div>
                       <div className="basis-full sm:basis-auto flex flex-row gap-2 flex-shrink-0 items-center justify-end sm:justify-start">

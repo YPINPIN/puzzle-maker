@@ -25,7 +25,11 @@ export function getRecords(): PuzzleRecord[] {
 export function saveRecord(record: PuzzleRecord): void {
   const records = getRecords();
   records.unshift(record);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(records.slice(0, 10)));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(records.slice(0, 10)));
+  } catch {
+    // storage quota exceeded — silently ignore
+  }
 }
 
 export function updateRecord(id: string, updates: Partial<PuzzleRecord>): void {
@@ -33,10 +37,18 @@ export function updateRecord(id: string, updates: Partial<PuzzleRecord>): void {
   const idx = records.findIndex((r) => r.id === id);
   if (idx === -1) return;
   records[idx] = { ...records[idx], ...updates };
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+  } catch {
+    // storage quota exceeded — silently ignore
+  }
 }
 
 export function deleteRecord(id: string): void {
   const records = getRecords().filter((r) => r.id !== id);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+  } catch {
+    // storage quota exceeded — silently ignore
+  }
 }

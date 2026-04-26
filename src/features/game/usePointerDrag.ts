@@ -88,6 +88,7 @@ export function usePointerDrag({
     const canvas = canvasRef.current;
     if (!canvas) return;
 
+    const pointerCache = pointerCacheRef.current;
     const TAB_SIZE = Math.floor(pieceW * TAB_RATIO);
 
     /** pointer 的 display 座標轉為 canvas 邏輯座標（getBoundingClientRect 已含 pan + cssScale） */
@@ -360,12 +361,12 @@ export function usePointerDrag({
       canvas.removeEventListener('pointermove', onPointerMove);
       canvas.removeEventListener('pointerup', onPointerUp);
       canvas.removeEventListener('pointercancel', onPointerUp);
-      pointerCacheRef.current.clear();
+      pointerCache.clear();
       pinchRef.current = null;
     };
   }, [
     canvasRef, pathMapRef, hoveredPieceIdRef, activePieceIdRef,
-    dragDeltaRef, dragBasePositionsRef,
+    dragDeltaRef, dragBasePositionsRef, zoomPercentRef,
     dispatch, pieceW, pieceH, startTime, isPaused, pauseOffset,
   ]);
 }

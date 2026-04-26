@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from '../../store';
 import { resetGame } from '../../store/puzzleSlice';
@@ -7,14 +7,7 @@ import { getGameHistory, updateGameHistory, saveGameHistoryAtSlot } from '../../
 import type { GameHistoryRecord } from '../../types/puzzle';
 import SavePanel from '../game/SavePanel';
 import { Icon } from '../../components/Icon';
-
-function formatTime(ms: number): string {
-  const totalSeconds = Math.floor(ms / 1000);
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-  if (minutes > 0) return `${minutes} 分 ${seconds.toString().padStart(2, '0')} 秒`;
-  return `${seconds} 秒`;
-}
+import { formatDuration } from '../../lib/format';
 
 export default function CompletionOverlay() {
   const dispatch = useDispatch<AppDispatch>();
@@ -36,9 +29,15 @@ export default function CompletionOverlay() {
   const cols = useSelector((s: RootState) => s.puzzle.cols);
   const rows = useSelector((s: RootState) => s.puzzle.rows);
 
-  const [hasHistoryRecord, setHasHistoryRecord] = useState(false);
+  const [hasHistoryRecord] = useState(() =>
+    Boolean(gameId && getGameHistory().some((r) => r.id === gameId))
+  );
   const [showSavePanel, setShowSavePanel] = useState(false);
   const thumbnailRef = useRef<string>('');
+  const savedStateRef = useRef({ pieces, groups, pieceGroup, nextGroupId, boardW, boardH, pieceW, pieceH, puzzleOffsetX, puzzleOffsetY });
+  useLayoutEffect(() => {
+    savedStateRef.current = { pieces, groups, pieceGroup, nextGroupId, boardW, boardH, pieceW, pieceH, puzzleOffsetX, puzzleOffsetY };
+  });
 
   // Generate thumbnail from reference image
   useEffect(() => {
@@ -76,27 +75,25 @@ export default function CompletionOverlay() {
   useEffect(() => {
     if (!gameId || !elapsedMs) return;
     const existing = getGameHistory().find((r) => r.id === gameId);
-    if (!existing) { setHasHistoryRecord(false); return; }
-
+    if (!existing) return;
+    const s = savedStateRef.current;
     updateGameHistory(gameId, {
       isCompleted: true,
       updatedAt: Date.now(),
       savedState: {
-        pieces,
-        groups,
-        pieceGroup,
-        nextGroupId,
+        pieces: s.pieces,
+        groups: s.groups,
+        pieceGroup: s.pieceGroup,
+        nextGroupId: s.nextGroupId,
         elapsedAtSave: elapsedMs,
-        boardW,
-        boardH,
-        pieceW,
-        pieceH,
-        puzzleOffsetX,
-        puzzleOffsetY,
+        boardW: s.boardW,
+        boardH: s.boardH,
+        pieceW: s.pieceW,
+        pieceH: s.pieceH,
+        puzzleOffsetX: s.puzzleOffsetX,
+        puzzleOffsetY: s.puzzleOffsetY,
       },
     });
-    setHasHistoryRecord(true);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameId, elapsedMs]);
 
   function buildCompletedRecord(): GameHistoryRecord {
@@ -140,6 +137,9 @@ export default function CompletionOverlay() {
         style={{ background: 'rgba(13,9,6,.85)' }}
       >
         <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="completion-title"
           className="amber-glow rounded-3xl p-5 max-w-sm w-full flex flex-col items-center gap-3 relative overflow-y-auto"
           style={{
             background: 'radial-gradient(120% 80% at 50% 0%, var(--color-brand-50), var(--color-paper-200))',
@@ -156,13 +156,13 @@ export default function CompletionOverlay() {
               style={{ boxShadow: '0 0 0 2px #F4A52B, 0 8px 24px rgba(0,0,0,.2)' }}
             />
           )}
-          <h1 className="text-3xl font-black text-paper-900 tracking-tight">拼圖完成！</h1>
+          <h1 id="completion-title" className="text-3xl font-black text-paper-900 tracking-tight">拼圖完成！</h1>
           <div
             className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 font-mono font-bold"
             style={{ background: 'var(--color-paper-100)', color: 'var(--color-brand-700)', border: '1px solid #F4A52B' }}
           >
             <Icon name="ic-timer" size={16} />
-            <span className="leading-none translate-y-px">用時 {formatTime(elapsedMs)}</span>
+            <span className="leading-none translate-y-px">用時 {formatDuration(elapsedMs)}</span>
           </div>
 
           {hasHistoryRecord ? (

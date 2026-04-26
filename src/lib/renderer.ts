@@ -156,17 +156,14 @@ export function renderFrame(opts: RenderOptions): void {
     const offscreen = canvasMap.get(piece.id);
     if (!offscreen) continue;
 
-    let px: number, py: number;
-    let logicX: number, logicY: number;
-    if (dragBasePositions[piece.id] !== undefined) {
-      logicX = dragBasePositions[piece.id].x + dragDelta.x;
-      logicY = dragBasePositions[piece.id].y + dragDelta.y;
-    } else {
-      logicX = piece.currentPosition.x;
-      logicY = piece.currentPosition.y;
-    }
-    px = logicX - TAB_SIZE;
-    py = logicY - TAB_SIZE;
+    const logicX = dragBasePositions[piece.id] !== undefined
+      ? dragBasePositions[piece.id].x + dragDelta.x
+      : piece.currentPosition.x;
+    const logicY = dragBasePositions[piece.id] !== undefined
+      ? dragBasePositions[piece.id].y + dragDelta.y
+      : piece.currentPosition.y;
+    const px = logicX - TAB_SIZE;
+    const py = logicY - TAB_SIZE;
 
     ctx.save();
     ctx.globalAlpha = 0.85;

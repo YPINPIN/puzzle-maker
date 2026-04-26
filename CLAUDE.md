@@ -162,7 +162,7 @@ Props 需傳入：
 
 - **公式**：`elapsed = (isPaused ? pausedAt : Date.now()) - startTime - pauseOffset`
 - `pauseOffset`：累計暫停毫秒數；每次 `resumeGame` 時加上本次暫停時長
-- `AppHeader` 以 `setInterval(500ms)` 更新本地 `displayElapsed` state 做 UI 顯示
+- `AppHeader` 以 `setInterval(500ms)` 定期更新本地 `tick` state 觸發 re-render；`displayElapsed` 於 render 期間呼叫 `computeElapsed()` 直接計算（純粹計算，不存入 state）；暫停／恢復時 Redux 觸發 re-render 即自動更新顯示值
 - 完成時的精確時間由 `usePointerDrag` 在觸發 `setComplete` 前計算並傳入
 
 ## 紀錄系統
@@ -206,7 +206,7 @@ Props 需傳入：
 
 Header 使用 `flex-wrap`，`min-h-[64px]`（= `TOOLBAR_HEIGHT`），窄螢幕上按鈕可能換行導致實際高度 > 64px。因此 `PuzzleBoard.getContainerDims()` 從 `gameAreaRef.current.clientHeight` 讀取真實容器高度，而非 `window.innerHeight - 64`；掛載後若兩者差距 > 4px，`needsInitialRegenRef` 會觸發自動重算。
 
-`handleSaveToSlot` 使用 `saveDataRef` pattern：每次 render 將最新 Redux 狀態同步至 ref，讓 `useCallback` 不需列舉依賴也能讀到最新值，避免 stale closure 導致計時錯誤。
+`handleSaveToSlot` 使用 `saveDataRef` pattern：每次 render 後以 `useLayoutEffect`（無 deps 陣列）將最新 Redux 狀態同步至 ref，讓 `useCallback` 不需列舉依賴也能讀到最新值，避免 stale closure 導致計時錯誤。
 
 ### 暫停行為區分（重要）
 
@@ -286,7 +286,7 @@ import { Icon } from '../../components/Icon';
 ```
 
 - **Sprite 檔**：`public/icons.svg`（78 個 `<symbol>`），路徑以 `import.meta.env.BASE_URL` 前綴（部署子路徑適配）
-- **型別**：`IconName` union type，定義於 `ICON_NAMES` 陣列；IDE 有自動補全
+- **型別**：`IconName` union type 定義於 `src/components/iconNames.ts`（`ICON_NAMES as const` 陣列衍生），`Icon.tsx` 以 `export type { IconName }` 對外暴露；IDE 有自動補全
 - **預設 class**：`inline-block shrink-0 align-[-2px]`；`align-[-2px]` 在 flex 容器內無效，但對行內脈絡（純文字旁）有 2px 下移補償
 - **`spin` prop**：`true` 時加入 `animate-spin`，用於載入動畫
 - **無障礙**：傳入 `title` prop 會設 `role="img"` + `aria-label`；否則 `aria-hidden=true`
@@ -315,7 +315,7 @@ import { Icon } from '../../components/Icon';
 
 ### 響應式 icon 尺寸
 
-`size` prop 接受字串，可傳 `"100%"` 並以響應式 wrapper 控制實際大小，避免重複渲染兩個 icon：
+`size` prop 接受字串，可傳 `"100%"` 並以響應式 wrapper 控制實際大小，**只渲染一個 icon**：
 
 ```tsx
 <span className="block w-6 h-6 sm:w-10 sm:h-10">
@@ -323,15 +323,14 @@ import { Icon } from '../../components/Icon';
 </span>
 ```
 
+**不要**用兩個 icon 搭配 `sm:hidden` / `hidden sm:inline-block` 切換——Icon 元件的預設 `inline-block` class 與 `hidden` 同屬 `display` 屬性，在 Tailwind v4 的 CSS 輸出順序下 `inline-block` 會蓋掉 `hidden`，導致兩個 icon 同時顯示。
+
 ### 難度徽章（crest）套用慣例
 
-所有顯示難度的元件（`AppHeader`、`DifficultySelector`、`RecordsModal`、`SavePanel`）均以相同 mapping 套用徽章：
+`CREST` 與 `DIFFICULTY_LABEL` 集中定義於 `src/lib/difficulty.ts`，所有顯示難度的元件（`AppHeader`、`DifficultySelector`、`RecordsModal`、`SavePanel`）統一從此 import：
 
 ```tsx
-const CREST: Record<string, IconName> = {
-  easy: 'crest-easy', normal: 'crest-normal',
-  hard: 'crest-hard', expert: 'crest-expert',
-};
+import { CREST, DIFFICULTY_LABEL } from '../../lib/difficulty';
 
 // 行內難度標籤
 <span className="inline-flex items-center gap-1 text-xs font-medium text-paper-800">
@@ -360,23 +359,25 @@ const CREST: Record<string, IconName> = {
 
 ### Copyright Footer
 
-`HomePage`、`ImageUpload`、`DifficultySelector` 三個頁面底部共用相同的版權 footer，內容**未抽成元件**，直接複製於各檔案。若需修改版權文字（年份、連結等），三個檔案須同步更新：
-
-- `src/features/home/HomePage.tsx`
-- `src/features/upload/ImageUpload.tsx`
-- `src/features/config/DifficultySelector.tsx`
-
-Footer 格式：`© 2026 拼圖樂. All rights reserved.` + GitHub icon 連結（`ic-github`）+ 非商業聲明。
+三個頁面底部共用版權 footer，統一使用 `<PageFooter />` 元件（`src/components/PageFooter.tsx`）渲染，內容為版權文字 + GitHub icon 連結（`ic-github`）+ 非商業聲明。若需修改版權文字（年份、連結等），只需更新 `PageFooter.tsx` 一個檔案。
 
 ## 共用元件
 
 - `src/components/Icon.tsx`：SVG sprite icon 元件，見上方說明
+- `src/components/PageFooter.tsx`：版權 footer 元件（無 props），含版權文字、GitHub icon 連結與非商業聲明；由 `HomePage`、`ImageUpload`、`DifficultySelector` 使用
 - `src/components/ConfirmDialog.tsx`：通用二次確認對話框，支援 `danger` 紅色模式；`message` 接受 `ReactNode`，同檔案匯出 `Hi`（品牌金）、`HiAccent`（湖水綠）、`HiDanger`（紅）三個 helper span，用於在 dialog 訊息中標記重點文字
 - `src/components/ShareCodeModal.tsx`：分享代碼 Modal，雙模式（`mode='share'` 顯示代碼供複製；`mode='import'` 讓使用者貼入代碼）；匯入前檢查快捷設定是否已達 10 筆上限
 - `src/features/game/SavePanel.tsx`：10 格存檔選位面板；以 `gameId` 比對標示「目前紀錄」格；佔用格點擊前顯示 `ConfirmDialog` 確認覆蓋（原始 slot 除外）
 - `src/features/upload/PresetImagesModal.tsx`：內建圖片選擇 Modal；8 張圖片定義於元件頂部常數（`PRESET_IMAGES`）；點選後以 `fetch → blob → canvas.toDataURL('image/jpeg', 0.92)` 轉換（與 `ImageUpload.processFile` 一致），結果快取於 `useRef<Map>`
 - `src/features/upload/RecordsModal.tsx`：雙模式清單 Modal（`mode='quick'` 顯示快捷設定；`mode='history'` 顯示歷史紀錄）；各筆紀錄可刪除（需 `ConfirmDialog` 確認）；quick 模式的 Header 有「匯入代碼」按鈕，每筆卡片有「分享」按鈕
 - `src/features/game/ImagePreviewOverlay.tsx`：遊戲中查看參考圖的全螢幕覆蓋層；由 `toggleImagePreview` action 控制 `showImagePreview` Redux 欄位；顯示 `referenceDataUrl`（裁切後圖片），點擊背景或 ✕ 鈕關閉
+
+## 共用工具函式（`src/lib/`）
+
+| 檔案 | 匯出 | 說明 |
+|------|------|------|
+| `src/lib/difficulty.ts` | `DIFFICULTY_LABEL`, `CREST` | 難度顯示名稱（`{ easy: '簡單', ... }`）與徽章 icon 名稱（`{ easy: 'crest-easy', ... }`）；全專案唯一定義，不在各元件重複宣告 |
+| `src/lib/format.ts` | `formatTimer(ms)`, `formatDuration(ms)`, `formatDate(ts)` | 計時器顯示格式（`MM:SS`）、完成用時顯示（`X 分 Y 秒`）與日期格式化（`YYYY/MM/DD HH:mm`）；全專案唯一定義 |
 
 ## 分享代碼系統（`src/lib/shareCode.ts`）
 

@@ -1,9 +1,11 @@
 import { useState } from 'react';
-import { Icon, type IconName } from '../../components/Icon';
+import { Icon } from '../../components/Icon';
 import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from '../../store';
 import { confirmConfig } from '../../store/puzzleSlice';
 import type { Difficulty } from '../../types/puzzle';
+import { CREST } from '../../lib/difficulty';
+import PageFooter from '../../components/PageFooter';
 
 type GridPreset = { cols: number; rows: number; label: string };
 
@@ -13,13 +15,6 @@ const DIFFICULTIES: { value: Difficulty; label: string; count: number; device: s
   { value: 'hard',   label: '困難', count: 100, device: '建議平板或桌機' },
   { value: 'expert', label: '專家', count: 150, device: '建議桌機' },
 ];
-
-const CREST: Record<Difficulty, IconName> = {
-  easy: 'crest-easy',
-  normal: 'crest-normal',
-  hard: 'crest-hard',
-  expert: 'crest-expert',
-};
 
 const GRID_PRESETS: Record<Difficulty, GridPreset[]> = {
   easy:   [
@@ -167,21 +162,7 @@ export default function DifficultySelector() {
         </div>
         </div>
 
-        <div className="flex flex-col items-center gap-1 pt-2 pb-1 text-xs text-paper-500">
-          <p>© 2026 拼圖樂. All rights reserved.</p>
-          <p className="inline-flex items-center gap-1.5">
-            <span>僅供個人學習使用，非商業用途</span>
-            <a
-              href="https://github.com/YPINPIN"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 hover:text-paper-700 transition-colors"
-            >
-              <Icon name="ic-github" size={14} />
-              <span className="translate-y-px">YPINPIN</span>
-            </a>
-          </p>
-        </div>
+        <PageFooter />
       </div>
     </div>
   );

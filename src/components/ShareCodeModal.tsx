@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Icon } from './Icon';
 import { encodeShareCode, decodeShareCode, shareDataToRecord } from '../lib/shareCode';
 import { saveRecord, getRecords, type PuzzleRecord } from '../lib/records';
@@ -13,6 +13,12 @@ export default function ShareCodeModal(props: Props) {
   const [inputCode, setInputCode] = useState('');
   const [error, setError] = useState('');
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [onClose]);
 
   const shareCode = mode === 'share' ? encodeShareCode(props.record) : '';
 
@@ -47,12 +53,15 @@ export default function ShareCodeModal(props: Props) {
       onClick={onClose}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="share-code-modal-title"
         className="bg-paper-50 rounded-3xl shadow-2xl w-full max-w-lg flex flex-col overflow-hidden border border-paper-300"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-paper-300">
-          <h2 className="text-xl font-bold text-paper-900">
+          <h2 id="share-code-modal-title" className="text-xl font-bold text-paper-900">
             {mode === 'share' ? '分享拼圖' : '匯入拼圖代碼'}
           </h2>
           <button

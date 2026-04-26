@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import type { RootState, AppDispatch } from '../../store';
 import { goToHome, goToUpload, backToConfig, resetGame } from '../../store/puzzleSlice';
@@ -11,13 +11,13 @@ export function usePhaseHistory(opts?: {
   const dispatch = useDispatch<AppDispatch>();
   const phase = useSelector((s: RootState) => s.puzzle.phase);
   const phaseRef = useRef(phase);
-  phaseRef.current = phase;
+  useLayoutEffect(() => { phaseRef.current = phase; }, [phase]);
 
   const isBackNav = useRef(false);
   // 正在 undo 一段 forward/stale entries，需連續往回走直到找到合法 entry
   const isUndoingForward = useRef(false);
   const interceptCallbackRef = useRef(opts?.onInterceptBackFromPlaying);
-  interceptCallbackRef.current = opts?.onInterceptBackFromPlaying;
+  useLayoutEffect(() => { interceptCallbackRef.current = opts?.onInterceptBackFromPlaying; });
 
   // 每次向前進入非 home phase 各 push 一筆 entry（含 phase 供方向偵測）
   // back 觸發的 phase 變化由 isBackNav flag 跳過，避免重複 push

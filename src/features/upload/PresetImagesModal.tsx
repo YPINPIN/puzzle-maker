@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Icon } from '../../components/Icon';
 
 type Props = {
@@ -21,6 +21,12 @@ const PRESET_IMAGES = [
 export default function PresetImagesModal({ onClose, onSelect }: Props) {
   const cacheRef = useRef<Map<string, string>>(new Map());
   const [loadingUrl, setLoadingUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [onClose]);
 
   async function handleSelect(url: string) {
     if (loadingUrl) return;
@@ -62,13 +68,16 @@ export default function PresetImagesModal({ onClose, onSelect }: Props) {
       onClick={onClose}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="preset-images-modal-title"
         className="bg-paper-50 rounded-3xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col overflow-hidden border border-paper-300"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-paper-300 flex-shrink-0">
           <div>
-            <h2 className="text-xl font-bold text-paper-900">內建圖片</h2>
+            <h2 id="preset-images-modal-title" className="text-xl font-bold text-paper-900">內建圖片</h2>
             <p className="text-xs text-paper-600 mt-0.5">點擊圖片即可選用</p>
           </div>
           <button

@@ -1,41 +1,12 @@
-import { useState } from 'react';
-import { Icon, type IconName } from '../../components/Icon';
+import { useEffect, useState } from 'react';
+import { Icon } from '../../components/Icon';
 import { getGameHistory } from '../../lib/gameHistory';
 import type { GameHistoryRecord } from '../../types/puzzle';
 import ConfirmDialog from '../../components/ConfirmDialog';
-
-const DIFFICULTY_LABEL: Record<string, string> = {
-  easy: '簡單',
-  normal: '普通',
-  hard: '困難',
-  expert: '專家',
-};
-
-const CREST: Record<string, IconName> = {
-  easy: 'crest-easy',
-  normal: 'crest-normal',
-  hard: 'crest-hard',
-  expert: 'crest-expert',
-};
+import { DIFFICULTY_LABEL, CREST } from '../../lib/difficulty';
+import { formatDate, formatDuration } from '../../lib/format';
 
 const MAX_SLOTS = 10;
-
-function formatDate(ts: number): string {
-  const d = new Date(ts);
-  return `${d.getFullYear()}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d
-    .getDate()
-    .toString()
-    .padStart(2, '0')} ${d.getHours().toString().padStart(2, '0')}:${d
-    .getMinutes()
-    .toString()
-    .padStart(2, '0')}`;
-}
-
-function formatTime(ms: number): string {
-  const s = Math.floor(ms / 1000);
-  const m = Math.floor(s / 60);
-  return m > 0 ? `${m} 分 ${(s % 60).toString().padStart(2, '0')} 秒` : `${s} 秒`;
-}
 
 type Props = {
   gameId: string | null;
@@ -46,6 +17,14 @@ type Props = {
 export default function SavePanel({ gameId, onSave, onClose }: Props) {
   const history = getGameHistory();
   const [pendingSlot, setPendingSlot] = useState<{ record: GameHistoryRecord; index: number } | null>(null);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !pendingSlot) onClose();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [onClose, pendingSlot]);
 
   const slots: (GameHistoryRecord | null)[] = Array.from({ length: MAX_SLOTS }, (_, i) =>
     history[i] ?? null
@@ -71,13 +50,16 @@ export default function SavePanel({ gameId, onSave, onClose }: Props) {
         onClick={onClose}
       >
         <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="save-panel-title"
           className="bg-paper-50 rounded-3xl shadow-2xl w-full max-w-lg max-h-[85vh] flex flex-col overflow-hidden border border-paper-300"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-paper-300 flex-shrink-0">
             <div>
-              <h2 className="text-xl font-bold text-paper-900">選擇保存位置</h2>
+              <h2 id="save-panel-title" className="text-xl font-bold text-paper-900">選擇保存位置</h2>
               <p className="text-xs text-paper-600 mt-0.5">最多保留 10 筆，點選空位直接保存，點選已有紀錄可覆蓋</p>
             </div>
             <button
@@ -162,8 +144,8 @@ export default function SavePanel({ gameId, onSave, onClose }: Props) {
                           <p className="text-xs text-paper-600">儲存於 {formatDate(record.updatedAt)}</p>
                           <p className="text-xs text-paper-600">
                             {record.isCompleted
-                              ? `完成時間：${formatTime(record.savedState.elapsedAtSave)}`
-                              : `已拼 ${record.savedState.pieces.filter((p) => p.isSnapped).length} / ${record.savedState.pieces.length} 片・已用 ${formatTime(record.savedState.elapsedAtSave)}`}
+                              ? `完成時間：${formatDuration(record.savedState.elapsedAtSave)}`
+                              : `已拼 ${record.savedState.pieces.filter((p) => p.isSnapped).length} / ${record.savedState.pieces.length} 片・已用 ${formatDuration(record.savedState.elapsedAtSave)}`}
                           </p>
                         </div>
                         <span

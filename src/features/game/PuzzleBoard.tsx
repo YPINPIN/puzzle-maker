@@ -37,7 +37,9 @@ export default function PuzzleBoard({ canvasMapRef, pathMapRef }: Props) {
 
   // Sync latest state for async resize handler
   const boardDataRef = useRef({ imageDataUrl, referenceDataUrl, cropRegion, cols, rows, pieces, pieceW, pieceH, puzzleOffsetX, puzzleOffsetY, boardW, boardH });
-  boardDataRef.current = { imageDataUrl, referenceDataUrl, cropRegion, cols, rows, pieces, pieceW, pieceH, puzzleOffsetX, puzzleOffsetY, boardW, boardH };
+  useLayoutEffect(() => {
+    boardDataRef.current = { imageDataUrl, referenceDataUrl, cropRegion, cols, rows, pieces, pieceW, pieceH, puzzleOffsetX, puzzleOffsetY, boardW, boardH };
+  });
 
   const isRegeneratingRef = useRef(false);
   // 掛載後若 canvas 尺寸與 Redux 存的 boardW/boardH 不符（header 換行導致），需重新生成
@@ -136,7 +138,6 @@ export default function PuzzleBoard({ canvasMapRef, pathMapRef }: Props) {
     const { boardW, boardH, pieces } = boardDataRef.current;
     if (pieces.length > 0 && boardW > 0 && (Math.abs(w - boardW) > 4 || Math.abs(h - boardH) > 4)) {
       needsInitialRegenRef.current = { w, h };
-      setIsResizing(true);
     }
   }, [getContainerDims]);
 
@@ -164,6 +165,7 @@ export default function PuzzleBoard({ canvasMapRef, pathMapRef }: Props) {
         return;
       }
 
+      setIsResizing(true);
       isRegeneratingRef.current = true;
       const { imageDataUrl, referenceDataUrl, cropRegion, cols, rows, pieces,
               pieceW: oldPieceW, pieceH: oldPieceH,
@@ -250,7 +252,6 @@ export default function PuzzleBoard({ canvasMapRef, pathMapRef }: Props) {
       baseDimsRef.current = { w: newW, h: newH };
       fitScaleRef.current = 1 / getEffectiveDPR();
       clampPan(zoomPercentRef.current);
-      setZoomPercent((z) => z);
       setIsResizing(true);
       if (resizeTimerRef.current) clearTimeout(resizeTimerRef.current);
 
@@ -271,7 +272,7 @@ export default function PuzzleBoard({ canvasMapRef, pathMapRef }: Props) {
       if (resizeTimerRef.current) clearTimeout(resizeTimerRef.current);
       if (regenerateDebounceRef.current) clearTimeout(regenerateDebounceRef.current);
     };
-  }, [clampPan, dispatch, getContainerDims]);
+  }, [canvasMapRef, clampPan, dispatch, getContainerDims, pathMapRef]);
 
   // 滾輪縮放
   useEffect(() => {
@@ -310,8 +311,9 @@ export default function PuzzleBoard({ canvasMapRef, pathMapRef }: Props) {
   });
 
   // 公式：100% → scale=0.5 → fit-to-canvas；200% → scale=1.0 → fit-to-grid
-  const actualCssScale = fitScaleRef.current * zoomPercent / 100;
-  const { w: baseW, h: baseH } = baseDimsRef.current;
+  const actualCssScale = (1 / getEffectiveDPR()) * zoomPercent / 100;
+  const baseW = boardW;
+  const baseH = boardH;
 
   const canPan = zoomPercent > ZOOM_MIN;
 

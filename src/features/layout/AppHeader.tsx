@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
+import { useDispatch, useSelector, shallowEqual } from 'react-redux';
 import type { AppDispatch, RootState } from '../../store';
 import {
   pauseGame,
@@ -12,53 +12,21 @@ import { getGameHistory, saveGameHistoryAtSlot } from '../../lib/gameHistory';
 import { clearDraft } from '../../lib/gameDraft';
 import type { GameHistoryRecord, InProgressGameState } from '../../types/puzzle';
 import SavePanel from '../game/SavePanel';
-import { Icon, type IconName } from '../../components/Icon';
-
-const DIFFICULTY_LABEL: Record<string, string> = {
-  easy: '簡單',
-  normal: '普通',
-  hard: '困難',
-  expert: '專家',
-};
-
-const CREST: Record<string, IconName> = {
-  easy: 'crest-easy',
-  normal: 'crest-normal',
-  hard: 'crest-hard',
-  expert: 'crest-expert',
-};
-
-function formatTime(ms: number): string {
-  const s = Math.floor(ms / 1000);
-  const m = Math.floor(s / 60);
-  return `${m.toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`;
-}
+import { Icon } from '../../components/Icon';
+import { DIFFICULTY_LABEL, CREST } from '../../lib/difficulty';
+import { formatTimer } from '../../lib/format';
 
 export default function AppHeader({ onExitRequest }: { onExitRequest?: () => void }) {
   const dispatch = useDispatch<AppDispatch>();
-  const phase = useSelector((s: RootState) => s.puzzle.phase);
-  const difficulty = useSelector((s: RootState) => s.puzzle.difficulty);
-  const cols = useSelector((s: RootState) => s.puzzle.cols);
-  const rows = useSelector((s: RootState) => s.puzzle.rows);
-  const startTime = useSelector((s: RootState) => s.puzzle.startTime);
-  const isPaused = useSelector((s: RootState) => s.puzzle.isPaused);
-  const pausedAt = useSelector((s: RootState) => s.puzzle.pausedAt);
-  const pauseOffset = useSelector((s: RootState) => s.puzzle.pauseOffset);
-  const gameId = useSelector((s: RootState) => s.puzzle.gameId);
-  const configId = useSelector((s: RootState) => s.puzzle.configId);
-  const referenceDataUrl = useSelector((s: RootState) => s.puzzle.referenceDataUrl);
-  const pieces = useSelector((s: RootState) => s.puzzle.pieces);
-  const groups = useSelector((s: RootState) => s.puzzle.groups);
-  const pieceGroup = useSelector((s: RootState) => s.puzzle.pieceGroup);
-  const nextGroupId = useSelector((s: RootState) => s.puzzle.nextGroupId);
-  const boardW = useSelector((s: RootState) => s.puzzle.boardW);
-  const boardH = useSelector((s: RootState) => s.puzzle.boardH);
-  const pieceW = useSelector((s: RootState) => s.puzzle.pieceW);
-  const pieceH = useSelector((s: RootState) => s.puzzle.pieceH);
-  const puzzleOffsetX = useSelector((s: RootState) => s.puzzle.puzzleOffsetX);
-  const puzzleOffsetY = useSelector((s: RootState) => s.puzzle.puzzleOffsetY);
+  const {
+    phase, difficulty, cols, rows,
+    startTime, isPaused, pausedAt, pauseOffset,
+    gameId, configId, referenceDataUrl,
+    pieces, groups, pieceGroup, nextGroupId,
+    boardW, boardH, pieceW, pieceH, puzzleOffsetX, puzzleOffsetY,
+  } = useSelector((s: RootState) => s.puzzle, shallowEqual);
 
-  const [displayElapsed, setDisplayElapsed] = useState(0);
+  const [, setTick] = useState(0);
   const [showSavePanel, setShowSavePanel] = useState(false);
   const thumbnailRef = useRef<string>('');
 
@@ -69,12 +37,14 @@ export default function AppHeader({ onExitRequest }: { onExitRequest?: () => voi
     boardW, boardH, pieceW, pieceH, puzzleOffsetX, puzzleOffsetY,
     difficulty, cols, rows,
   });
-  saveDataRef.current = {
-    gameId, configId, startTime, isPaused, pausedAt, pauseOffset,
-    referenceDataUrl, pieces, groups, pieceGroup, nextGroupId,
-    boardW, boardH, pieceW, pieceH, puzzleOffsetX, puzzleOffsetY,
-    difficulty, cols, rows,
-  };
+  useLayoutEffect(() => {
+    saveDataRef.current = {
+      gameId, configId, startTime, isPaused, pausedAt, pauseOffset,
+      referenceDataUrl, pieces, groups, pieceGroup, nextGroupId,
+      boardW, boardH, pieceW, pieceH, puzzleOffsetX, puzzleOffsetY,
+      difficulty, cols, rows,
+    };
+  });
 
   useEffect(() => {
     if (!referenceDataUrl) { thumbnailRef.current = ''; return; }
@@ -103,13 +73,11 @@ export default function AppHeader({ onExitRequest }: { onExitRequest?: () => voi
 
   useEffect(() => {
     if (!startTime || isPaused) return;
-    const id = setInterval(() => setDisplayElapsed(computeElapsed()), 500);
+    const id = setInterval(() => setTick((n) => n + 1), 500);
     return () => clearInterval(id);
-  }, [startTime, isPaused, computeElapsed]);
+  }, [startTime, isPaused]);
 
-  useEffect(() => {
-    setDisplayElapsed(computeElapsed());
-  }, [isPaused, computeElapsed]);
+  const displayElapsed = computeElapsed();
 
   const buildRecord = useCallback((): GameHistoryRecord | null => {
     const {
@@ -205,7 +173,7 @@ export default function AppHeader({ onExitRequest }: { onExitRequest?: () => voi
       {isPlaying && (
         <div className="timer-box whitespace-nowrap">
           <Icon name="ic-timer" size={16} style={{ color: '#F5B13F' }} />
-          <span className="translate-y-px">{formatTime(displayElapsed)}</span>
+          <span className="translate-y-px">{formatTimer(displayElapsed)}</span>
         </div>
       )}
 

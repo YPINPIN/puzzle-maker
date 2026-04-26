@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef } from 'react';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../../store';
 import { saveDraft, clearDraft } from '../../lib/gameDraft';
@@ -6,7 +6,7 @@ import { saveDraft, clearDraft } from '../../lib/gameDraft';
 export function useGameDraft() {
   const state = useSelector((s: RootState) => s.puzzle);
   const stateRef = useRef(state);
-  stateRef.current = state;
+  useLayoutEffect(() => { stateRef.current = state; });
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const thumbnailRef = useRef<string>('');
 
@@ -65,9 +65,8 @@ export function useGameDraft() {
   }
 
   // Debounced save when pieces change during playing
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
-    if (state.phase !== 'playing') return;
+    if (stateRef.current.phase !== 'playing') return;
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(buildAndSave, 1500);
     return () => {
@@ -87,7 +86,7 @@ export function useGameDraft() {
     };
     document.addEventListener('visibilitychange', onHide);
     return () => document.removeEventListener('visibilitychange', onHide);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   return { saveNow: buildAndSave };
 }

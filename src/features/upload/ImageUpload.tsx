@@ -1,5 +1,6 @@
 import { useRef, useState, type DragEvent, type ChangeEvent } from 'react';
 import { Icon } from '../../components/Icon';
+import PageFooter from '../../components/PageFooter';
 import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from '../../store';
 import { setImage } from '../../store/puzzleSlice';
@@ -130,7 +131,7 @@ export default function ImageUpload() {
                   boxShadow: '0 6px 14px rgba(0,0,0,.3)',
                   border: '1px solid #5A4B38',
                 }}
-              ><Icon name="brand-mark" size={24} className="sm:hidden" /><Icon name="brand-mark" size={28} className="hidden sm:inline-block" /></div>
+              ><span className="block w-6 h-6 sm:w-7 sm:h-7"><Icon name="brand-mark" size="100%" /></span></div>
               <p className="text-paper-900 text-base font-extrabold text-center">把圖片拖到這裡</p>
               <p className="text-paper-700 text-xs text-center">或 <span className="text-brand-600 font-bold cursor-pointer">點擊上傳</span> 你的照片</p>
               <p className="text-paper-500 text-[11px] text-center mt-0.5">JPG · PNG · WEBP · 透明背景自動補白</p>
@@ -162,21 +163,7 @@ export default function ImageUpload() {
         </div>
         </div>
 
-        <div className="flex flex-col items-center gap-1 pt-2 pb-1 text-xs text-paper-500">
-          <p>© 2026 拼圖樂. All rights reserved.</p>
-          <p className="inline-flex items-center gap-1.5">
-            <span>僅供個人學習使用，非商業用途</span>
-            <a
-              href="https://github.com/YPINPIN"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 hover:text-paper-700 transition-colors"
-            >
-              <Icon name="ic-github" size={14} />
-              <span className="translate-y-px">YPINPIN</span>
-            </a>
-          </p>
-        </div>
+        <PageFooter />
       </div>
 
       {showPresetModal && (

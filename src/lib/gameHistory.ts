@@ -15,7 +15,11 @@ export function getGameHistory(): GameHistoryRecord[] {
 export function saveGameHistory(record: GameHistoryRecord): void {
   const history = getGameHistory();
   history.unshift(record);
-  localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(0, 10)));
+  try {
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(0, 10)));
+  } catch {
+    // storage quota exceeded — silently ignore
+  }
 }
 
 export function saveGameHistoryAtSlot(record: GameHistoryRecord, slotIndex: number): void {
@@ -25,7 +29,11 @@ export function saveGameHistoryAtSlot(record: GameHistoryRecord, slotIndex: numb
   } else {
     history.push(record);
   }
-  localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(0, 10)));
+  try {
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(0, 10)));
+  } catch {
+    // storage quota exceeded — silently ignore
+  }
 }
 
 export function updateGameHistory(id: string, updates: Partial<GameHistoryRecord>): void {
@@ -33,10 +41,18 @@ export function updateGameHistory(id: string, updates: Partial<GameHistoryRecord
   const idx = history.findIndex((r) => r.id === id);
   if (idx === -1) return;
   history[idx] = { ...history[idx], ...updates };
-  localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+  try {
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+  } catch {
+    // storage quota exceeded — silently ignore
+  }
 }
 
 export function deleteGameHistory(id: string): void {
   const history = getGameHistory().filter((r) => r.id !== id);
-  localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+  try {
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+  } catch {
+    // storage quota exceeded — silently ignore
+  }
 }
