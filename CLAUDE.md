@@ -18,7 +18,7 @@ npm run preview  # 預覽 production 建置結果
 - **Tailwind CSS v4**，透過 `@tailwindcss/vite` plugin 整合（無獨立設定檔）
 - CSS 入口為 `src/index.css`，以 `@import "tailwindcss"` 引入 Tailwind
 - **lz-string**：分享代碼壓縮用（`compressToBase64` / `decompressFromBase64`）
-- **vite-plugin-pwa**（`--legacy-peer-deps` 安裝，Vite 8 尚未正式支援）：Service Worker 生成（Workbox `generateSW` 模式）與 manifest 注入；`devOptions.enabled: true` 讓 dev server 也能測試 SW
+- **vite-plugin-pwa**（Vite 8 尚未正式支援，根目錄 `.npmrc` 已設定 `legacy-peer-deps=true`，`npm install` / `npm ci` 無需另加 flag）：Service Worker 生成（Workbox `generateSW` 模式）與 manifest 注入；`devOptions.enabled: true` 讓 dev server 也能測試 SW
 
 ### Redux State 關鍵欄位說明
 

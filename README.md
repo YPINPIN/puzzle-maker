@@ -110,7 +110,7 @@
 git clone https://github.com/YPINPIN/puzzle-maker.git
 cd puzzle-maker
 
-# 安裝依賴
+# 安裝依賴（.npmrc 已設定 legacy-peer-deps=true，直接執行即可）
 npm install
 
 # 啟動開發伺服器
@@ -119,6 +119,8 @@ npm run dev
 # 建置 production
 npm run build
 ```
+
+> **注意**：`vite-plugin-pwa` 的 peer dependency 尚未正式支援 Vite 8，專案根目錄的 `.npmrc` 已設定 `legacy-peer-deps=true` 自動處理此相容性問題，無需手動加 flag。
 
 ---
 
