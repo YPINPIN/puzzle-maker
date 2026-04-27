@@ -26,7 +26,10 @@ export function usePhaseHistory(opts?: {
       isBackNav.current = false;
       return;
     }
-    if (phase === 'home') return;
+    if (phase === 'home') {
+      history.replaceState(null, '', location.pathname + location.search);
+      return;
+    }
     history.pushState({ puzzle: true, phase }, '', '#app');
   }, [phase]);
 
@@ -49,6 +52,13 @@ export function usePhaseHistory(opts?: {
 
       // 抵達 app_url（無 puzzle state）
       if (!state?.puzzle) {
+        if (phaseRef.current === 'playing') {
+          // 直接從首頁進入遊戲（快速開局 / 讀取存檔）只有一筆 {playing} entry，
+          // 按返回時前一筆為 null entry，仍需觸發離開確認，而非直接回首頁
+          history.pushState({ puzzle: true, phase: 'playing' }, '', '#app');
+          interceptCallbackRef.current?.();
+          return;
+        }
         if (phaseRef.current !== 'home') {
           isBackNav.current = true;
           dispatch(goToHome());
