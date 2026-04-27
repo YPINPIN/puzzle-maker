@@ -16,7 +16,8 @@ import { Icon } from '../../components/Icon';
 import { DIFFICULTY_LABEL, CREST } from '../../lib/difficulty';
 import { formatTimer } from '../../lib/format';
 import { generateThumbnail } from '../../lib/imageUtils';
-import { setMuted as setSoundMuted, isMuted, startMusic, stopMusic } from '../../lib/soundEngine';
+import { isMuted } from '../../lib/soundEngine';
+import VolumeModal from '../../components/VolumeModal';
 
 export default function AppHeader({ onExitRequest }: { onExitRequest?: () => void }) {
   const dispatch = useDispatch<AppDispatch>();
@@ -30,6 +31,7 @@ export default function AppHeader({ onExitRequest }: { onExitRequest?: () => voi
 
   const [, setTick] = useState(0);
   const [showSavePanel, setShowSavePanel] = useState(false);
+  const [showVolumeModal, setShowVolumeModal] = useState(false);
   const [muted, setMuted] = useState(() => isMuted());
   const thumbnailRef = useRef<string>('');
 
@@ -169,14 +171,8 @@ export default function AppHeader({ onExitRequest }: { onExitRequest?: () => voi
           </div>
         )}
         <button
-          onClick={() => {
-            const next = !muted;
-            setSoundMuted(next);
-            setMuted(next);
-            if (next) stopMusic();
-            else startMusic();
-          }}
-          title={muted ? '開啟音效' : '關閉音效'}
+          onClick={() => setShowVolumeModal(true)}
+          title="音量設定"
           className="inline-flex items-center justify-center px-2.5 py-1.5 rounded-xl transition-all hover:brightness-110 active:scale-95"
           style={{
             background: 'linear-gradient(180deg, #2AA39A 0%, #1E8A82 100%)',
@@ -236,6 +232,10 @@ export default function AppHeader({ onExitRequest }: { onExitRequest?: () => voi
           setShowSavePanel(false);
         }}
       />
+    )}
+
+    {showVolumeModal && (
+      <VolumeModal onClose={() => { setMuted(isMuted()); setShowVolumeModal(false); }} />
     )}
 
 </>

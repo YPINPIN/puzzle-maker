@@ -1,58 +1,60 @@
 import type { GameHistoryRecord } from '../types/puzzle';
 
 const HISTORY_KEY = 'puzzle-game-history';
+const SLOT_COUNT = 10;
 
-export function getGameHistory(): GameHistoryRecord[] {
+type Slot = GameHistoryRecord | null;
+
+function readSlots(): Slot[] {
   try {
     const raw = localStorage.getItem(HISTORY_KEY);
     if (!raw) return [];
-    return JSON.parse(raw) as GameHistoryRecord[];
+    return JSON.parse(raw) as Slot[];
   } catch {
     return [];
   }
 }
 
-export function saveGameHistory(record: GameHistoryRecord): void {
-  const history = getGameHistory();
-  history.unshift(record);
+function writeSlots(slots: Slot[]): void {
   try {
-    localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(0, 10)));
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(slots.slice(0, SLOT_COUNT)));
   } catch {
     // storage quota exceeded — silently ignore
   }
+}
+
+export function getGameHistorySlots(): Slot[] {
+  const stored = readSlots();
+  return Array.from({ length: SLOT_COUNT }, (_, i) => stored[i] ?? null);
+}
+
+export function getGameHistory(): GameHistoryRecord[] {
+  return getGameHistorySlots().filter((r): r is GameHistoryRecord => r !== null);
+}
+
+export function saveGameHistory(record: GameHistoryRecord): void {
+  const slots = getGameHistorySlots();
+  slots.unshift(record);
+  writeSlots(slots);
 }
 
 export function saveGameHistoryAtSlot(record: GameHistoryRecord, slotIndex: number): void {
-  const history = getGameHistory();
-  if (slotIndex < history.length) {
-    history[slotIndex] = record;
-  } else {
-    history.push(record);
-  }
-  try {
-    localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(0, 10)));
-  } catch {
-    // storage quota exceeded — silently ignore
-  }
+  const slots = getGameHistorySlots();
+  slots[slotIndex] = record;
+  writeSlots(slots);
 }
 
 export function updateGameHistory(id: string, updates: Partial<GameHistoryRecord>): void {
-  const history = getGameHistory();
-  const idx = history.findIndex((r) => r.id === id);
+  const slots = getGameHistorySlots();
+  const idx = slots.findIndex((r) => r?.id === id);
   if (idx === -1) return;
-  history[idx] = { ...history[idx], ...updates };
-  try {
-    localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
-  } catch {
-    // storage quota exceeded — silently ignore
-  }
+  slots[idx] = { ...slots[idx]!, ...updates };
+  writeSlots(slots);
 }
 
 export function deleteGameHistory(id: string): void {
-  const history = getGameHistory().filter((r) => r.id !== id);
-  try {
-    localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
-  } catch {
-    // storage quota exceeded — silently ignore
-  }
+  const slots = getGameHistorySlots();
+  const idx = slots.findIndex((r) => r?.id === id);
+  if (idx !== -1) slots[idx] = null;
+  writeSlots(slots);
 }

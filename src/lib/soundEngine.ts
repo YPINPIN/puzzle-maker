@@ -1,9 +1,49 @@
 let ctx: AudioContext | null = null;
 let _muted: boolean = localStorage.getItem('puzzle-sound-muted') === 'true';
+let _musicVol: number = parseFloat(localStorage.getItem('puzzle-vol-music') ?? '0.5');
+let _buttonVol: number = parseFloat(localStorage.getItem('puzzle-vol-button') ?? '0.8');
+let _pieceVol: number = parseFloat(localStorage.getItem('puzzle-vol-piece') ?? '0.8');
+
+let musicCatGain: GainNode | null = null;
+let buttonCatGain: GainNode | null = null;
+let pieceCatGain: GainNode | null = null;
 
 function getCtx(): AudioContext {
   if (!ctx) ctx = new AudioContext();
   return ctx;
+}
+
+// slider 0–1 對應 gain 0–2（slider=0.5 時 gain=1.0，即原始音量）
+function toGain(vol: number): number { return vol * 2; }
+
+function getMusicGain(): GainNode {
+  if (!musicCatGain) {
+    const ac = getCtx();
+    musicCatGain = ac.createGain();
+    musicCatGain.gain.value = toGain(_musicVol);
+    musicCatGain.connect(ac.destination);
+  }
+  return musicCatGain;
+}
+
+function getButtonGain(): GainNode {
+  if (!buttonCatGain) {
+    const ac = getCtx();
+    buttonCatGain = ac.createGain();
+    buttonCatGain.gain.value = toGain(_buttonVol);
+    buttonCatGain.connect(ac.destination);
+  }
+  return buttonCatGain;
+}
+
+function getPieceGain(): GainNode {
+  if (!pieceCatGain) {
+    const ac = getCtx();
+    pieceCatGain = ac.createGain();
+    pieceCatGain.gain.value = toGain(_pieceVol);
+    pieceCatGain.connect(ac.destination);
+  }
+  return pieceCatGain;
 }
 
 function tone(
@@ -13,6 +53,7 @@ function tone(
   attackMs: number,
   decayMs: number,
   startTime: number,
+  dest?: AudioNode,
 ): void {
   const ac = getCtx();
   const osc = ac.createOscillator();
@@ -23,7 +64,7 @@ function tone(
   gain.gain.linearRampToValueAtTime(gainPeak, startTime + attackMs / 1000);
   gain.gain.linearRampToValueAtTime(0, startTime + (attackMs + decayMs) / 1000);
   osc.connect(gain);
-  gain.connect(ac.destination);
+  gain.connect(dest ?? ac.destination);
   osc.start(startTime);
   osc.stop(startTime + (attackMs + decayMs) / 1000);
 }
@@ -31,21 +72,27 @@ function tone(
 export function playPickup(): void {
   if (_muted) return;
   const t = getCtx().currentTime;
-  tone(350, 'triangle', 0.08, 5, 80, t);
+  tone(350, 'triangle', 0.08, 5, 80, t, getPieceGain());
 }
 
 export function playMerge(): void {
   if (_muted) return;
   const t = getCtx().currentTime;
-  tone(440, 'triangle', 0.15, 5, 120, t);
-  tone(880, 'sine', 0.07, 5, 100, t);
+  tone(440, 'triangle', 0.15, 5, 120, t, getPieceGain());
+  tone(880, 'sine', 0.07, 5, 100, t, getPieceGain());
 }
 
 export function playSnap(): void {
   if (_muted) return;
   const t = getCtx().currentTime;
-  tone(523, 'sine', 0.20, 5, 180, t);
-  tone(784, 'sine', 0.10, 5, 150, t);
+  tone(523, 'sine', 0.20, 5, 180, t, getPieceGain());
+  tone(784, 'sine', 0.10, 5, 150, t, getPieceGain());
+}
+
+export function playClick(): void {
+  if (_muted) return;
+  const t = getCtx().currentTime;
+  tone(900, 'triangle', 0.15, 3, 50, t, getButtonGain());
 }
 
 export function playComplete(): void {
@@ -53,7 +100,7 @@ export function playComplete(): void {
   const t = getCtx().currentTime;
   const notes = [523, 659, 784, 1047]; // C5 E5 G5 C6
   notes.forEach((freq, i) => {
-    tone(freq, 'sine', 0.20, 10, 200, t + i * 0.12);
+    tone(freq, 'sine', 0.20, 10, 200, t + i * 0.12, getPieceGain());
   });
 }
 
@@ -64,6 +111,30 @@ export function setMuted(muted: boolean): void {
 
 export function isMuted(): boolean {
   return _muted;
+}
+
+// ─── 音量控制 ────────────────────────────────────────────────────────────────
+
+export function getMusicVolume(): number { return _musicVol; }
+export function getButtonVolume(): number { return _buttonVol; }
+export function getPieceVolume(): number { return _pieceVol; }
+
+export function setMusicVolume(vol: number): void {
+  _musicVol = vol;
+  localStorage.setItem('puzzle-vol-music', String(vol));
+  if (musicCatGain) musicCatGain.gain.value = toGain(vol);
+}
+
+export function setButtonVolume(vol: number): void {
+  _buttonVol = vol;
+  localStorage.setItem('puzzle-vol-button', String(vol));
+  if (buttonCatGain) buttonCatGain.gain.value = toGain(vol);
+}
+
+export function setPieceVolume(vol: number): void {
+  _pieceVol = vol;
+  localStorage.setItem('puzzle-vol-piece', String(vol));
+  if (pieceCatGain) pieceCatGain.gain.value = toGain(vol);
 }
 
 // ─── Background Music ────────────────────────────────────────────────────────
@@ -142,7 +213,7 @@ function _buildMusic(): void {
   pianoMasterGain = ac.createGain();
   pianoMasterGain.gain.setValueAtTime(0, ac.currentTime);
   pianoMasterGain.gain.linearRampToValueAtTime(0.5, ac.currentTime + 2.0);
-  pianoMasterGain.connect(ac.destination);
+  pianoMasterGain.connect(getMusicGain());
   melodyIdx = 0;
   _musicActive = true;
   melodyTimeoutId = setTimeout(playMelodyStep, 100);
@@ -159,6 +230,19 @@ export function startMusic(): void {
     return;
   }
   _buildMusic();
+}
+
+export function pauseForBackground(): void {
+  if (!_musicActive || !ctx) return;
+  if (melodyTimeoutId !== null) { clearTimeout(melodyTimeoutId); melodyTimeoutId = null; }
+  ctx.suspend();
+}
+
+export function resumeFromBackground(): void {
+  if (!_musicActive || _muted || !ctx) return;
+  ctx.resume().then(() => {
+    if (_musicActive && !_muted) playMelodyStep();
+  });
 }
 
 export function stopMusic(): void {

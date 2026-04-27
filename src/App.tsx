@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback, lazy, Suspense } from 'react';
+import { useRef, useState, useCallback, useEffect, lazy, Suspense } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import type { RootState, AppDispatch } from './store';
 import { resetGame, pauseGame, resumeGame } from './store/puzzleSlice';
@@ -8,6 +8,7 @@ import AppHeader from './features/layout/AppHeader';
 import { useGameDraft } from './features/game/useGameDraft';
 import { usePhaseHistory } from './features/game/usePhaseHistory';
 import { useBackgroundMusic } from './features/game/useBackgroundMusic';
+import { playClick } from './lib/soundEngine';
 
 const ImageUpload = lazy(() => import('./features/upload/ImageUpload'));
 const DifficultySelector = lazy(() => import('./features/config/DifficultySelector'));
@@ -32,6 +33,14 @@ export default function App() {
 
   usePhaseHistory({ onInterceptBackFromPlaying: handleExitRequest });
   useBackgroundMusic();
+
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if ((e.target as HTMLElement).closest('button')) playClick();
+    };
+    document.addEventListener('click', handleClick, true);
+    return () => document.removeEventListener('click', handleClick, true);
+  }, []);
 
   return (
     <div className="flex flex-col w-screen overflow-hidden overscroll-none" style={{ height: '100dvh' }}>

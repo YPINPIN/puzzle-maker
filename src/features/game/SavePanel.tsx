@@ -1,12 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Icon } from '../../components/Icon';
-import { getGameHistory } from '../../lib/gameHistory';
+import { getGameHistorySlots } from '../../lib/gameHistory';
 import type { GameHistoryRecord } from '../../types/puzzle';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import { DIFFICULTY_LABEL, CREST } from '../../lib/difficulty';
 import { formatDate, formatDuration } from '../../lib/format';
 
-const MAX_SLOTS = 10;
 
 type Props = {
   gameId: string | null;
@@ -15,7 +14,7 @@ type Props = {
 };
 
 export default function SavePanel({ gameId, onSave, onClose }: Props) {
-  const history = getGameHistory();
+  const slots = getGameHistorySlots();
   const [pendingSlot, setPendingSlot] = useState<{ record: GameHistoryRecord; index: number } | null>(null);
 
   useEffect(() => {
@@ -25,10 +24,6 @@ export default function SavePanel({ gameId, onSave, onClose }: Props) {
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, [onClose, pendingSlot]);
-
-  const slots: (GameHistoryRecord | null)[] = Array.from({ length: MAX_SLOTS }, (_, i) =>
-    history[i] ?? null
-  );
 
   const originSlotIndex = gameId
     ? slots.findIndex((r) => r?.id === gameId)

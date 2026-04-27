@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Icon } from '../../components/Icon';
 import { getRecords, deleteRecord, type PuzzleRecord } from '../../lib/records';
-import { getGameHistory, deleteGameHistory } from '../../lib/gameHistory';
+import { getGameHistorySlots, deleteGameHistory } from '../../lib/gameHistory';
 import type { GameHistoryRecord } from '../../types/puzzle';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import { DIFFICULTY_LABEL, CREST } from '../../lib/difficulty';
@@ -22,8 +22,8 @@ export default function RecordsModal({ mode, onClose, onApply, onContinue, onSha
   const [quickSettings, setQuickSettings] = useState<PuzzleRecord[]>(() =>
     mode === 'quick' ? getRecords() : []
   );
-  const [gameHistory, setGameHistory] = useState<GameHistoryRecord[]>(() =>
-    mode === 'history' ? getGameHistory() : []
+  const [gameHistory, setGameHistory] = useState<(GameHistoryRecord | null)[]>(() =>
+    mode === 'history' ? getGameHistorySlots() : []
   );
   const [pendingDeleteQuick, setPendingDeleteQuick] = useState<string | null>(null);
   const [pendingDeleteHistory, setPendingDeleteHistory] = useState<string | null>(null);
@@ -46,7 +46,7 @@ export default function RecordsModal({ mode, onClose, onApply, onContinue, onSha
   function confirmDeleteHistory() {
     if (!pendingDeleteHistory) return;
     deleteGameHistory(pendingDeleteHistory);
-    setGameHistory(getGameHistory());
+    setGameHistory(getGameHistorySlots());
     setPendingDeleteHistory(null);
   }
 
@@ -173,51 +173,59 @@ export default function RecordsModal({ mode, onClose, onApply, onContinue, onSha
           )}
 
           {mode === 'history' && (
-            gameHistory.length === 0 ? (
-              <EmptyState message="尚無歷史紀錄，遊戲中點「保存並結束」即可儲存進度" />
-            ) : (
-              <div className="flex flex-col gap-3">
-                {gameHistory.map((r) => {
-                  const snapped = r.savedState.pieces.filter((p) => p.isSnapped).length;
-                  const total = r.savedState.pieces.length;
-                  const progressPct = total > 0 ? Math.round((snapped / total) * 100) : 0;
+            <div className="flex flex-col gap-2">
+              {gameHistory.map((r, i) => {
+                if (!r) {
                   return (
-                    <div
-                      key={r.id}
-                      className={`flex flex-wrap gap-3 p-3 rounded-xl border transition-colors ${
-                        r.isCompleted
-                          ? 'border-success/30 bg-success-bg/60'
-                          : 'border-paper-300 hover:border-paper-400 hover:bg-paper-100'
-                      }`}
-                    >
-                      <Thumbnail src={r.thumbnailDataUrl} />
-                      <div className="flex flex-col justify-between flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="inline-flex items-center gap-1 text-xs text-paper-600">
-                            <Icon name={CREST[r.difficulty] ?? 'crest-easy'} size={14} />
-                            <span className="translate-y-px">{DIFFICULTY_LABEL[r.difficulty] ?? r.difficulty}</span>
-                          </span>
-                          <span className="text-xs text-paper-600">
-                            {r.cols}×{r.rows}（{total} 片）
-                          </span>
-                          {r.isCompleted ? (
-                            <span className="text-xs px-2 py-0.5 rounded-full font-bold border border-[rgba(34,163,106,.2)]" style={{ background: 'var(--color-success-bg)', color: 'var(--color-success)' }}>
-                              已完成
+                    <div key={i} className="flex items-center gap-3 p-3 rounded-xl border border-dashed border-paper-300">
+                      <SlotBadge index={i} />
+                      <span className="text-xs text-paper-400">空位</span>
+                    </div>
+                  );
+                }
+                const snapped = r.savedState.pieces.filter((p) => p.isSnapped).length;
+                const total = r.savedState.pieces.length;
+                const progressPct = total > 0 ? Math.round((snapped / total) * 100) : 0;
+                return (
+                  <div
+                    key={r.id}
+                    className={`flex flex-wrap gap-3 p-3 rounded-xl border transition-colors ${
+                      r.isCompleted
+                        ? 'border-success/30 bg-success-bg/60'
+                        : 'border-paper-300 hover:border-paper-400 hover:bg-paper-100'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <SlotBadge index={i} />
+                        <Thumbnail src={r.thumbnailDataUrl} />
+                        <div className="flex flex-col justify-between flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="inline-flex items-center gap-1 text-xs text-paper-600">
+                              <Icon name={CREST[r.difficulty] ?? 'crest-easy'} size={14} />
+                              <span className="translate-y-px">{DIFFICULTY_LABEL[r.difficulty] ?? r.difficulty}</span>
                             </span>
-                          ) : (
-                            <span className="text-xs px-2 py-0.5 rounded-full font-bold border border-[rgba(244,165,43,.3)]" style={{ background: 'var(--color-brand-50)', color: 'var(--color-brand-700)' }}>
-                              {progressPct}% 完成
+                            <span className="text-xs text-paper-600">
+                              {r.cols}×{r.rows}（{total} 片）
                             </span>
-                          )}
+                            {r.isCompleted ? (
+                              <span className="text-xs px-2 py-0.5 rounded-full font-bold border border-[rgba(34,163,106,.2)]" style={{ background: 'var(--color-success-bg)', color: 'var(--color-success)' }}>
+                                已完成
+                              </span>
+                            ) : (
+                              <span className="text-xs px-2 py-0.5 rounded-full font-bold border border-[rgba(244,165,43,.3)]" style={{ background: 'var(--color-brand-50)', color: 'var(--color-brand-700)' }}>
+                                {progressPct}% 完成
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-paper-500 truncate">
+                            儲存於 {formatDate(r.updatedAt)}
+                          </p>
+                          <p className="text-xs text-paper-600">
+                            {r.isCompleted
+                              ? `完成時間：${formatDuration(r.savedState.elapsedAtSave)}`
+                              : `已拼 ${snapped} / ${total} 片・已用 ${formatDuration(r.savedState.elapsedAtSave)}`}
+                          </p>
                         </div>
-                        <p className="text-xs text-paper-500 truncate">
-                          儲存於 {formatDate(r.updatedAt)}
-                        </p>
-                        <p className="text-xs text-paper-600">
-                          {r.isCompleted
-                            ? `完成時間：${formatDuration(r.savedState.elapsedAtSave)}`
-                            : `已拼 ${snapped} / ${total} 片・已用 ${formatDuration(r.savedState.elapsedAtSave)}`}
-                        </p>
                       </div>
                       <div className="basis-full sm:basis-auto flex flex-row gap-2 flex-shrink-0 items-center justify-end sm:justify-start">
                         {!r.isCompleted && (
@@ -239,9 +247,8 @@ export default function RecordsModal({ mode, onClose, onApply, onContinue, onSha
                       </div>
                     </div>
                   );
-                })}
-              </div>
-            )
+              })}
+            </div>
           )}
         </div>
       </div>
@@ -269,6 +276,17 @@ export default function RecordsModal({ mode, onClose, onApply, onContinue, onSha
           onCancel={() => setPendingDeleteHistory(null)}
         />
       )}
+    </div>
+  );
+}
+
+function SlotBadge({ index }: { index: number }) {
+  return (
+    <div
+      className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold"
+      style={{ background: 'var(--color-paper-200)', color: 'var(--color-paper-600)' }}
+    >
+      {index + 1}
     </div>
   );
 }

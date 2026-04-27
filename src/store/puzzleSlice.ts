@@ -36,7 +36,7 @@ type PuzzleState = {
 
 const initialState: PuzzleState = {
   phase: 'home',
-  difficulty: 'normal',
+  difficulty: 'easy',
   imageDataUrl: null,
   cropRegion: null,
   referenceDataUrl: null,
