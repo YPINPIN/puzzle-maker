@@ -24,10 +24,23 @@ export function usePhaseHistory(opts?: {
   useEffect(() => {
     if (isBackNav.current) {
       isBackNav.current = false;
+      // 若仍停在 puzzle entry（playing intercept 或 complete back nav），
+      // 觸發清理鏈移除殘留的舊 phase entries，使首頁只需一次返回即可退出
+      if (phase === 'home' && history.state?.puzzle) {
+        isUndoingForward.current = true;
+        history.back();
+      }
       return;
     }
     if (phase === 'home') {
+      const hadPuzzleEntry = !!history.state?.puzzle;
       history.replaceState(null, '', location.pathname + location.search);
+      // 保存並結束等非 back nav 路徑：replaceState 後若曾在 puzzle entry，
+      // 清理 null_replaced 之前的舊 phase entries
+      if (hadPuzzleEntry) {
+        isUndoingForward.current = true;
+        history.back();
+      }
       return;
     }
     history.pushState({ puzzle: true, phase }, '', '#app');
@@ -90,4 +103,5 @@ export function usePhaseHistory(opts?: {
     window.addEventListener('popstate', onPopState);
     return () => window.removeEventListener('popstate', onPopState);
   }, [dispatch]);
+
 }
