@@ -6,7 +6,7 @@
 
 ## public 目錄資源的路徑規則
 
-Vite 的 `base` 設定（`vite.config.ts`：production 為 `/puzzle-maker/`）只會自動轉換：
+Vite 的 `base` 設定（`vite.config.ts`：production 為 `/jigsaw-puzzle-maker/`）只會自動轉換：
 
 - `import` 語句
 - CSS `url()`
@@ -22,7 +22,7 @@ const url = '/presets/puzzle-1.png';
 const url = `${import.meta.env.BASE_URL}presets/puzzle-1.png`;
 ```
 
-`import.meta.env.BASE_URL` 已含尾部斜線（production: `/puzzle-maker/`，dev: `/`），路徑不需另加前綴 `/`。
+`import.meta.env.BASE_URL` 已含尾部斜線（production: `/jigsaw-puzzle-maker/`，dev: `/`），路徑不需另加前綴 `/`。
 
 ---
 

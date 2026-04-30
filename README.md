@@ -5,10 +5,10 @@
 [![Vite](https://img.shields.io/badge/Vite-8.0.48-646CFF?logo=vite&logoColor=white)](https://vite.dev/)
 [![Redux Toolkit](https://img.shields.io/badge/Redux_Toolkit-2.11.2-764ABC?logo=redux&logoColor=white)](https://redux-toolkit.js.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.2.2-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
-[![Deploy](https://img.shields.io/badge/GitHub%20Pages-deployed-3FB950?logo=github&logoColor=white)](https://ypinpin.github.io/puzzle-maker/)
-[![Last Commit](https://img.shields.io/github/last-commit/YPINPIN/puzzle-maker)](https://github.com/YPINPIN/puzzle-maker/commits/main)
+[![Deploy](https://img.shields.io/badge/GitHub%20Pages-deployed-3FB950?logo=github&logoColor=white)](https://ypinpin.github.io/jigsaw-puzzle-maker/)
+[![Last Commit](https://img.shields.io/github/last-commit/YPINPIN/jigsaw-puzzle-maker)](https://github.com/YPINPIN/jigsaw-puzzle-maker/commits/main)
 
-💻 **[線上 Demo](https://ypinpin.github.io/puzzle-maker/)**
+💻 **[線上 Demo](https://ypinpin.github.io/jigsaw-puzzle-maker/)**
 
 ![拼圖樂 遊戲截圖](./screenshot.png)
 
@@ -107,8 +107,8 @@
 
 ```bash
 # 複製專案
-git clone https://github.com/YPINPIN/puzzle-maker.git
-cd puzzle-maker
+git clone https://github.com/YPINPIN/jigsaw-puzzle-maker.git
+cd jigsaw-puzzle-maker
 
 # 安裝依賴（.npmrc 已設定 legacy-peer-deps=true，直接執行即可）
 npm install
