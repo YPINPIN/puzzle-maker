@@ -4,6 +4,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-6.0.2-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Vite](https://img.shields.io/badge/Vite-8.0.48-646CFF?logo=vite&logoColor=white)](https://vite.dev/)
 [![Redux Toolkit](https://img.shields.io/badge/Redux_Toolkit-2.11.2-764ABC?logo=redux&logoColor=white)](https://redux-toolkit.js.org/)
+[![React Router](https://img.shields.io/badge/React_Router-7.14.2-CA4245?logo=reactrouter&logoColor=white)](https://reactrouter.com/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.2.2-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
 [![Deploy](https://img.shields.io/badge/GitHub%20Pages-deployed-3FB950?logo=github&logoColor=white)](https://ypinpin.github.io/jigsaw-puzzle-maker/)
 [![Last Commit](https://img.shields.io/github/last-commit/YPINPIN/jigsaw-puzzle-maker)](https://github.com/YPINPIN/jigsaw-puzzle-maker/commits/main)
