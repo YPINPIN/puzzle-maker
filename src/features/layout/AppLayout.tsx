@@ -4,7 +4,7 @@ import AppHeader from './AppHeader';
 import { usePreventForwardNav } from '../../lib/usePreventForwardNav';
 import { useBackgroundMusic } from '../game/useBackgroundMusic';
 import { playClick } from '../../lib/soundEngine';
-import { initImageCache, migrateToImageCache } from '../../lib/imageCache';
+import { initImageCache } from '../../lib/imageCache';
 
 export type AppLayoutOutletContext = {
   leaveHandlerRef: React.MutableRefObject<(() => void) | null>;
@@ -17,7 +17,6 @@ export default function AppLayout() {
   const leaveHandlerRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
-    migrateToImageCache();
     initImageCache();
   }, []);
 

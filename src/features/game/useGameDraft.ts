@@ -47,7 +47,7 @@ export function useGameDraft() {
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, [state.pieces]); // intentionally only watching pieces
+  }, [state.pieces, buildAndSave]);
 
   // Clear draft when game completes
   useEffect(() => {
@@ -61,7 +61,7 @@ export function useGameDraft() {
     };
     document.addEventListener('visibilitychange', onHide);
     return () => document.removeEventListener('visibilitychange', onHide);
-  }, []);
+  }, [buildAndSave]);
 
   return { saveNow: buildAndSave };
 }

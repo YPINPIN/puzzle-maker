@@ -52,7 +52,7 @@ export default function RecordsModal({ mode, onClose, onApply, onContinue, onSha
   }
 
   function handleApply(record: PuzzleRecord) {
-    if (!getImage(record.id) && !record.croppedImageDataUrl) return;
+    if (!getImage(record.id)) return;
     onApply?.(record);
     onClose();
   }
@@ -141,7 +141,7 @@ export default function RecordsModal({ mode, onClose, onApply, onContinue, onSha
                       )}
                     </div>
                     <div className="basis-full sm:basis-auto flex flex-row gap-2 flex-shrink-0 items-center justify-end sm:justify-start">
-                      {(getImage(r.id) || r.croppedImageDataUrl) && (
+                      {getImage(r.id) && (
                         <button
                           onClick={() => handleApply(r)}
                           className="btn-primary px-3 py-1.5 text-xs"
@@ -150,7 +150,7 @@ export default function RecordsModal({ mode, onClose, onApply, onContinue, onSha
                           重新遊玩
                         </button>
                       )}
-                      {(getImage(r.id) || r.croppedImageDataUrl) && onShare && (
+                      {getImage(r.id) && onShare && (
                         <button
                           onClick={() => onShare(r)}
                           className="btn-secondary px-3 py-1.5 text-xs"

@@ -20,7 +20,7 @@ npm run preview  # 預覽 production 建置結果
 - CSS 入口為 `src/index.css`，以 `@import "tailwindcss"` 引入 Tailwind
 - **lz-string**：分享代碼壓縮用（`compressToBase64` / `decompressFromBase64`）
 - **vite-plugin-pwa**（Vite 8 尚未正式支援，根目錄 `.npmrc` 已設定 `legacy-peer-deps=true`，`npm install` / `npm ci` 無需另加 flag）：Service Worker 生成（Workbox `generateSW` 模式）與 manifest 注入；`devOptions.enabled: true` 讓 dev server 也能測試 SW
-- **本機儲存策略**：圖片（`croppedImageDataUrl`）統一存於 **IndexedDB**（`puzzle-image-db`，`src/lib/imageCache.ts`），啟動時一次載入至記憶體供同步讀取；快捷設定、歷史紀錄、草稿等文字紀錄（合計 ~100 KB）仍存於 **localStorage**
+- **本機儲存策略**：圖片（裁切後 JPEG base64）統一存於 **IndexedDB**（`puzzle-image-db`，`src/lib/imageCache.ts`），啟動時一次載入至記憶體供同步讀取；快捷設定、歷史紀錄、草稿等文字紀錄（合計 ~100 KB）仍存於 **localStorage**
 
 ## TypeScript 設定
 

@@ -1,5 +1,5 @@
 import { useNavigate, useBlocker, Navigate, useOutletContext } from 'react-router';
-import { useCallback, useEffect, useRef, lazy, Suspense } from 'react';
+import { useCallback, useEffect, useRef, useState, lazy, Suspense } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import type { RootState, AppDispatch } from '../../store';
 import { pauseGame, resumeGame, resetGame } from '../../store/puzzleSlice';
@@ -23,8 +23,14 @@ export default function PlayRoute({ canvasMapRef, pathMapRef }: Props) {
   const pieces      = useSelector((s: RootState) => s.puzzle.pieces);
   const { leaveHandlerRef } = useOutletContext<AppLayoutOutletContext>();
 
-  // 用 ref 標記「使用者已確認離開」，讓 blocker callback 放行下一次 navigate
+  // ref 供 blocker callback（非 render 路徑）讀取；state 供 render guard 讀取
   const confirmedLeaveRef = useRef(false);
+  const [confirmedLeave, setConfirmedLeave] = useState(false);
+
+  const markConfirmedLeave = useCallback(() => {
+    confirmedLeaveRef.current = true;
+    setConfirmedLeave(true);
+  }, []);
 
   // 離開確認：僅在遊戲未完成且未確認離開時攔截
   const blocker = useBlocker(
@@ -45,26 +51,26 @@ export default function PlayRoute({ canvasMapRef, pathMapRef }: Props) {
   // 向 AppHeader 暴露 leave handler（先設確認旗標再 navigate，讓 blocker 放行）
   useEffect(() => {
     leaveHandlerRef.current = () => {
-      confirmedLeaveRef.current = true;
+      markConfirmedLeave();
       const idx = (window.history.state as { idx?: number } | null)?.idx ?? 0;
       if (idx > 0) navigate(-idx); else navigate('/');
     };
     return () => { leaveHandlerRef.current = null; };
-  }, [navigate, leaveHandlerRef]);
+  }, [navigate, leaveHandlerRef, markConfirmedLeave]);
 
-  // Guard：無遊戲狀態時重導回首頁（confirmedLeaveRef 為 true 時代表正在主動離開，不觸發）
-  if (!pieces.length && !isComplete && !confirmedLeaveRef.current) return <Navigate to="/" replace />;
+  // Guard：無遊戲狀態時重導回首頁（confirmedLeave 為 true 時代表正在主動離開，不觸發）
+  if (!pieces.length && !isComplete && !confirmedLeave) return <Navigate to="/" replace />;
 
   const handleConfirm = () => {
     saveNow();
-    confirmedLeaveRef.current = true;
+    markConfirmedLeave();
     dispatch(resetGame());
     blocker.reset?.();
     const idx = (window.history.state as { idx?: number } | null)?.idx ?? 0;
     if (idx > 0) navigate(-idx); else navigate('/');
   };
 
-  const handleLeave = () => { confirmedLeaveRef.current = true; };
+  const handleLeave = () => { markConfirmedLeave(); };
 
   const handleCancel = () => {
     dispatch(resumeGame());

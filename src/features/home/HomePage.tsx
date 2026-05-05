@@ -12,13 +12,15 @@ import { getRecords } from '../../lib/records';
 import type { PuzzleRecord } from '../../lib/records';
 import { getDraft, clearDraft } from '../../lib/gameDraft';
 import type { GameDraft } from '../../lib/gameDraft';
-import { getImage, saveImage } from '../../lib/imageCache';
+import { getImage } from '../../lib/imageCache';
 import type { GameHistoryRecord, InProgressGameState, Difficulty } from '../../types/puzzle';
 import RecordsModal from '../upload/RecordsModal';
 import ConfirmDialog, { Hi, HiAccent, HiDanger } from '../../components/ConfirmDialog';
 import ShareCodeModal from '../../components/ShareCodeModal';
-import { Icon, type IconName } from '../../components/Icon';
+import { Icon } from '../../components/Icon';
 import PageFooter from '../../components/PageFooter';
+import { DIFFICULTY_LABEL, CREST } from '../../lib/difficulty';
+import { formatDate, formatDuration } from '../../lib/format';
 
 type Props = {
   canvasMapRef: React.RefObject<Map<number, HTMLCanvasElement>>;
@@ -58,10 +60,8 @@ export default function HomePage({ canvasMapRef, pathMapRef }: Props) {
   }
 
   const applyRecord = useCallback(async (record: PuzzleRecord) => {
-    const image = getImage(record.id) ?? record.croppedImageDataUrl;
+    const image = getImage(record.id);
     if (!image || isLoading) return;
-    // Ensure image is in cache (e.g. share code import before first saveImage call)
-    if (!getImage(record.id)) saveImage(record.id, image);
     setIsLoading(true);
     try {
       const displayW = Math.min(window.innerWidth, MAX_CANVAS_WIDTH);
@@ -108,7 +108,7 @@ export default function HomePage({ canvasMapRef, pathMapRef }: Props) {
   }, [canvasMapRef, pathMapRef, dispatch, navigate, isLoading]);
 
   const continueGame = useCallback(async (historyRecord: GameHistoryRecord) => {
-    const image = getImage(historyRecord.configId) ?? historyRecord.croppedImageDataUrl;
+    const image = getImage(historyRecord.configId);
     if (!image || isLoading) return;
     setIsLoading(true);
     try {
@@ -187,8 +187,7 @@ export default function HomePage({ canvasMapRef, pathMapRef }: Props) {
   const resumeDraft = useCallback(async () => {
     const draft = getDraft();
     if (!draft || isLoading) return;
-    // Look up image from cache; fall back to embedded field (old drafts before migration)
-    const image = getImage(draft.configId) ?? draft.croppedImageDataUrl;
+    const image = getImage(draft.configId);
     if (!image) {
       clearDraft();
       setCurrentDraft(null);
@@ -202,7 +201,6 @@ export default function HomePage({ canvasMapRef, pathMapRef }: Props) {
       difficulty: draft.difficulty,
       cols: draft.cols,
       rows: draft.rows,
-      croppedImageDataUrl: image,
       savedState: draft.savedState,
       isCompleted: false,
     };
@@ -311,27 +309,6 @@ export default function HomePage({ canvasMapRef, pathMapRef }: Props) {
   );
 }
 
-const DIFFICULTY_LABEL: Record<string, string> = {
-  easy: '簡單', normal: '普通', hard: '困難', expert: '專家',
-};
-
-const CREST: Record<string, IconName> = {
-  easy: 'crest-easy', normal: 'crest-normal',
-  hard: 'crest-hard', expert: 'crest-expert',
-};
-
-function formatDate(ts: number): string {
-  const d = new Date(ts);
-  return `${d.getFullYear()}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getDate().toString().padStart(2, '0')} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
-}
-
-function formatTime(ms: number): string {
-  const totalSeconds = Math.floor(ms / 1000);
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-  if (minutes > 0) return `${minutes} 分 ${seconds.toString().padStart(2, '0')} 秒`;
-  return `${seconds} 秒`;
-}
 
 function DraftCard({ draft, onClick }: { draft: import('../../lib/gameDraft').GameDraft; onClick: () => void }) {
   const snapped = draft.savedState.pieces.filter((p) => p.isSnapped).length;
@@ -364,7 +341,7 @@ function DraftCard({ draft, onClick }: { draft: import('../../lib/gameDraft').Ga
           <p className="text-xs text-paper-500 truncate">暫存於 {formatDate(draft.savedAt)}</p>
         )}
         <p className="text-xs text-paper-600">
-          已拼 {snapped} / {total} 片・已用 {formatTime(draft.savedState.elapsedAtSave)}
+          已拼 {snapped} / {total} 片・已用 {formatDuration(draft.savedState.elapsedAtSave)}
         </p>
       </div>
     </button>

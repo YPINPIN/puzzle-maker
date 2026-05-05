@@ -8,8 +8,6 @@ export type PuzzleRecord = {
   difficulty: string;
   cols: number;
   rows: number;
-  thumbnailDataUrl?: string;
-  croppedImageDataUrl?: string;
   isCompleted: boolean;
   bestTimeMs: number;
 };

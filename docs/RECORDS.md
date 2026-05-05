@@ -15,23 +15,20 @@
 | 儲存方式 | **IndexedDB**（資料庫 `puzzle-image-db`，object store `images`） |
 | 資料型別 | `key: configId → value: croppedImageDataUrl`（IDB key-value） |
 | 記憶體層 | `_mem: Record<configId, dataUrl>`，App 啟動時由 `initImageCache()` 從 IDB 一次載入，後續所有讀取走記憶體，無 async 開銷 |
-| 主要 API | `initImageCache()`, `saveImage(configId, dataUrl)`, `getImage(configId)`, `pruneImageCache()`, `migrateToImageCache()` |
+| 主要 API | `initImageCache()`, `saveImage(configId, dataUrl)`, `getImage(configId)`, `pruneImageCache()` |
 
 **選用 IndexedDB 的原因**：localStorage 為 UTF-16 編碼，圖片 base64 字元佔雙倍空間（每張 ~500 KB），10 張即逼近 5 MB 上限；IndexedDB quota 通常 50 MB 以上，從根本解決問題。文字紀錄（records / history / draft，合計 ~100 KB）仍保留於 localStorage。
 
 **Key 設計**：使用 `configId` 作為圖片 ID。同一 `configId` 永遠對應同一張裁切圖（由 CropPreview 同時產生），因此零重複。
 
 **初始化流程**（`AppLayout` 啟動時）：
-1. `migrateToImageCache()`（同步）：掃描舊格式 localStorage 紀錄，將嵌入式 `croppedImageDataUrl` / `thumbnailDataUrl` 提取並寫入 IDB，重存不含圖片欄位的精簡版本；已遷移後為 no-op
-2. `initImageCache()`（非同步）：從 IDB 讀取全部圖片至 `_mem`；同時處理 localStorage `puzzle-image-cache` 舊版遷移（刪除該 key，釋放空間）
+1. `initImageCache()`（非同步）：從 IDB 讀取全部圖片至 `_mem`
 
 **圖片寫入時機**：
 1. CropPreview 確認開始時：`saveImage(configId, croppedImageDataUrl)`（同步更新 `_mem`，fire-and-forget 寫入 IDB）
-2. `applyRecord()` 載入 share code 匯入的紀錄時：確保圖片已在快取
+2. 分享代碼匯入時：`shareDataToRecord()` 呼叫 `saveImage()` 直接將圖片存入快取
 
-**圖片讀取順序**（各讀取入口）：
-1. `getImage(configId)` ← 主要路徑（從 `_mem` 同步讀取）
-2. `record.croppedImageDataUrl` ← fallback（遷移前的舊資料向下相容）
+**圖片讀取**：`getImage(configId)` 從 `_mem` 同步讀取
 
 **Prune 時機**：`deleteRecord()`、`deleteGameHistory()`、`clearDraft()` 後自動呼叫，掃描三個 localStorage key 收集仍在使用的 `configId`，同步從 `_mem` 刪除孤立項目，並 fire-and-forget 從 IDB 刪除。
 
@@ -47,7 +44,7 @@
 | 上限 | 最多 10 筆 `PuzzleRecord` |
 | 主要 API | `getRecords()`, `saveRecord()`, `updateBestTime()` |
 
-**欄位**：`croppedImageDataUrl?`（選填，遷移前舊資料向下相容；新資料不寫入）、難度、最佳時間、`isCompleted`
+**欄位**：`id`（`configId`）、難度、格數、`isCompleted`、`bestTimeMs`
 
 **建立入口**有兩處：
 1. CropPreview 確認開始時
@@ -65,7 +62,7 @@
 | 結構 | 固定 10 元素陣列 `(GameHistoryRecord \| null)[]`，空槽為 null |
 | 主要 API | `getGameHistorySlots()`, `getGameHistory()`, `saveGameHistoryAtSlot()`, `deleteGameHistory()` |
 
-**欄位**：`croppedImageDataUrl?`（選填，遷移前舊資料向下相容；新資料不寫入）、難度、`configId`、`savedState`（含所有片位置與 group 狀態）、`isCompleted`
+**欄位**：`id`（`gameId`）、`configId`、難度、格數、`savedState`（含所有片位置與 group 狀態）、`isCompleted`
 
 ### 關鍵 API 說明
 

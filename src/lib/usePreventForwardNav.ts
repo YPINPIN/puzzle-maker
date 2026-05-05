@@ -23,5 +23,5 @@ export function usePreventForwardNav() {
     if (blocker.state === 'blocked') {
       blocker.reset?.();
     }
-  }, [blocker.state]);
+  }, [blocker]);
 }

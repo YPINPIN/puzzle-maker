@@ -9,7 +9,6 @@ export type GameDraft = {
   difficulty: string;
   cols: number;
   rows: number;
-  croppedImageDataUrl?: string;
   savedState: InProgressGameState;
   savedAt?: number;
 };

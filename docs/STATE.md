@@ -10,7 +10,7 @@
 |------|------|------|
 | `isComplete` | `boolean` | 遊戲是否已完成；`setComplete` 設為 `true`，`startGame` / `restoreGame` / `resetGame` 重置為 `false`；取代原有的 `phase` 欄位，頁面狀態改由 React Router 路由管理 |
 | `imageDataUrl` | `string \| null` | 原始上傳圖片（未裁切），僅在 upload→crop 階段使用；`startGame` 觸發時清除 |
-| `referenceDataUrl` | `string \| null` | 裁切後的參考圖（≤800px JPEG），遊戲中「查看參考圖」使用；也是 `doRegenerate` 的圖片來源；值與 `croppedImageDataUrl` 相同，所有路徑統一 |
+| `referenceDataUrl` | `string \| null` | 裁切後的參考圖（≤800px JPEG），遊戲中「查看參考圖」使用；也是 `doRegenerate` 的圖片來源；由 `getImage(configId)` 取得後傳入 Redux |
 | `cropRegion` | 物件 | 相對於原圖的裁切座標（x, y, width, height）；`startGame` 觸發時清除 |
 | `draggingGroupId` | `number \| null` | 目前被拖曳的 group ID；renderer 以此決定渲染層次 |
 | `showImagePreview` | `boolean` | 控制 `ImagePreviewOverlay` 顯示 |

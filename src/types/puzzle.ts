@@ -26,8 +26,6 @@ export type GameHistoryRecord = {
   difficulty: string;
   cols: number;
   rows: number;
-  thumbnailDataUrl?: string;
-  croppedImageDataUrl?: string;
   savedState: InProgressGameState;
   isCompleted?: boolean;
 };
