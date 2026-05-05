@@ -12,7 +12,7 @@ import { getRecords } from '../../lib/records';
 import type { PuzzleRecord } from '../../lib/records';
 import { getDraft, clearDraft } from '../../lib/gameDraft';
 import type { GameDraft } from '../../lib/gameDraft';
-import { getImage } from '../../lib/imageCache';
+import { getImage, waitForImageCache } from '../../lib/imageCache';
 import type { GameHistoryRecord, InProgressGameState, Difficulty } from '../../types/puzzle';
 import RecordsModal from '../upload/RecordsModal';
 import ConfirmDialog, { Hi, HiAccent, HiDanger } from '../../components/ConfirmDialog';
@@ -38,10 +38,15 @@ export default function HomePage({ canvasMapRef, pathMapRef }: Props) {
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [currentDraft, setCurrentDraft] = useState<GameDraft | null>(null);
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
+  const [imageCacheReady, setImageCacheReady] = useState(false);
+
+  useEffect(() => {
+    waitForImageCache().then(() => setImageCacheReady(true));
+  }, []);
 
   useEffect(() => {
     setCurrentDraft(getDraft());
-  }, [locationKey]);
+  }, [locationKey, imageCacheReady]);
 
   function guardDraft(action: () => void) {
     if (getDraft()) {

@@ -6,8 +6,9 @@ const DB_NAME    = 'puzzle-image-db';
 const STORE_NAME = 'images';
 const DB_VERSION = 1;
 
-let _db:  IDBDatabase | null = null;
-let _mem: Record<string, string> | null = null;
+let _db:          IDBDatabase | null = null;
+let _mem:         Record<string, string> | null = null;
+let _initPromise: Promise<void> | null = null;
 
 function openDB(): Promise<IDBDatabase> {
   if (_db) return Promise.resolve(_db);
@@ -19,22 +20,30 @@ function openDB(): Promise<IDBDatabase> {
   });
 }
 
-export async function initImageCache(): Promise<void> {
-  try {
-    const db = await openDB();
-    _mem = await new Promise<Record<string, string>>((resolve) => {
-      const result: Record<string, string> = {};
-      const req = db.transaction(STORE_NAME, 'readonly').objectStore(STORE_NAME).openCursor();
-      req.onsuccess = (e) => {
-        const cur = (e.target as IDBRequest<IDBCursorWithValue | null>).result;
-        if (cur) { result[cur.key as string] = cur.value as string; cur.continue(); }
-        else resolve(result);
-      };
-      req.onerror = () => resolve({});
-    });
-  } catch {
-    _mem = {};
-  }
+export function initImageCache(): Promise<void> {
+  if (_initPromise) return _initPromise;
+  _initPromise = (async () => {
+    try {
+      const db = await openDB();
+      _mem = await new Promise<Record<string, string>>((resolve) => {
+        const result: Record<string, string> = {};
+        const req = db.transaction(STORE_NAME, 'readonly').objectStore(STORE_NAME).openCursor();
+        req.onsuccess = (e) => {
+          const cur = (e.target as IDBRequest<IDBCursorWithValue | null>).result;
+          if (cur) { result[cur.key as string] = cur.value as string; cur.continue(); }
+          else resolve(result);
+        };
+        req.onerror = () => resolve({});
+      });
+    } catch {
+      _mem = {};
+    }
+  })();
+  return _initPromise;
+}
+
+export function waitForImageCache(): Promise<void> {
+  return _initPromise ?? Promise.resolve();
 }
 
 export function getImage(configId: string | null | undefined): string | undefined {

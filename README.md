@@ -84,7 +84,7 @@
 
 - 可**安裝至主畫面**（Android / iOS / 桌面 Chrome），以 standalone 模式開啟
 - Service Worker 預快取 app shell，**離線仍可遊玩**已保存的拼圖進度
-- 曾瀏覽過的內建圖片會被 NetworkFirst 快取，離線時同樣可選用
+- 內建圖片採 **StaleWhileRevalidate** 快取策略，首次載入後再次造訪秒開
 
 ---
 
@@ -100,6 +100,7 @@
 | [Tailwind CSS v4](https://tailwindcss.com/)          | 樣式框架       |
 | [lz-string](https://github.com/pieroxy/lz-string)    | 分享代碼壓縮   |
 | [vite-plugin-pwa](https://vite-pwa-org.netlify.app/) | PWA / 離線支援 |
+| [sharp](https://sharp.pixelplumbing.com/)            | 內建圖片 PNG → WebP 壓縮（devDependency） |
 | Canvas 2D API                                        | 拼圖渲染與互動 |
 | Web Audio API                                        | 程序化音效與背景音樂合成 |
 

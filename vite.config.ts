@@ -37,9 +37,9 @@ export default defineConfig(({ mode }) => {
           globPatterns: ['**/*.{js,css,html,svg,woff2}'],
           runtimeCaching: [
             {
-              // preset 圖片：NetworkFirst（優先網路，離線時讀快取）
+              // preset 圖片：StaleWhileRevalidate（快取即時回應，背景更新）
               urlPattern: ({ url }) => url.pathname.includes('/presets/'),
-              handler: 'NetworkFirst',
+              handler: 'StaleWhileRevalidate',
               options: {
                 cacheName: 'preset-images',
                 expiration: { maxEntries: 8, maxAgeSeconds: 60 * 60 * 24 * 30 },

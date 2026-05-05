@@ -14,10 +14,10 @@
 | `ShareCodeModal` | `src/components/ShareCodeModal.tsx` | 分享代碼 Modal；`mode='share'` 顯示代碼供複製；`mode='import'` 讓使用者貼入代碼；匯入前檢查快捷設定是否已達 10 筆上限 |
 | `VolumeModal` | `src/components/VolumeModal.tsx` | 音量設定 Modal；頂部「全部靜音」toggle switch；靜音時三個 range 均 disabled；三個分類滑桿（背景音樂、按鈕音效、拼圖片，`step={10}`，0–100%）；即時預覽音量 |
 | `SavePanel` | `src/features/game/SavePanel.tsx` | 10 格存檔選位面板；以 `gameId` 比對標示「目前紀錄」格；佔用格點擊前顯示 `ConfirmDialog` 確認覆蓋（原始 slot 除外） |
-| `PresetImagesModal` | `src/features/upload/PresetImagesModal.tsx` | 內建圖片選擇 Modal；8 張圖片定義於元件頂部常數（`PRESET_IMAGES`）；各圖片以 `onLoad` 追蹤載入狀態，未載入時顯示 spinner；點選後以 `fetch → blob → canvas.toDataURL('image/jpeg', 0.92)` 轉換，結果快取於 `useRef<Map>` |
+| `PresetImagesModal` | `src/features/upload/PresetImagesModal.tsx` | 內建圖片選擇 Modal；8 張圖片定義於元件頂部常數（`PRESET_IMAGES`），引用 `public/presets/puzzle-N.webp`；各圖片以 `onLoad` 追蹤載入狀態，未載入時顯示 spinner；點選後以 `fetch → blob → canvas.toDataURL('image/jpeg', 0.92)` 轉換，結果快取於 `useRef<Map>` |
 | `RecordsModal` | `src/features/upload/RecordsModal.tsx` | 雙模式清單 Modal；`mode='quick'` 顯示快捷設定；`mode='history'` 顯示歷史紀錄固定 10 槽（空槽顯示虛線框）；縮圖以 `object-contain` 顯示完整圖片；各筆紀錄可刪除；quick 模式 Header 有「匯入代碼」按鈕，每筆卡片有「分享」按鈕 |
 | `ImagePreviewOverlay` | `src/features/game/ImagePreviewOverlay.tsx` | 遊戲中查看參考圖的全螢幕覆蓋層；由 `toggleImagePreview` action 控制 `showImagePreview` Redux 欄位；顯示 `referenceDataUrl`，點擊背景或 ✕ 鈕關閉 |
-| `AppLayout` | `src/features/layout/AppLayout.tsx` | 所有路由的共用 layout（`<Outlet />`）；掛載 `usePreventForwardNav`、`useBackgroundMusic`、全域按鈕 click 音效；啟動時呼叫 `initImageCache()`（非同步，將 IDB 圖片載入 `_mem`）；渲染 `AppHeader` |
+| `AppLayout` | `src/features/layout/AppLayout.tsx` | 所有路由的共用 layout（`<Outlet />`）；掛載 `usePreventForwardNav`、`useBackgroundMusic`、全域按鈕 click 音效；啟動時呼叫 `initImageCache()`（冪等，將 IDB 圖片載入 `_mem`）；渲染 `AppHeader` |
 | `PlayRoute` | `src/features/game/PlayRoute.tsx` | `/play` 路由元件；以 `useBlocker` 攔截離開確認、Guard 無遊戲狀態時重導回首頁；整合 `PuzzleBoard` 與 `CompletionOverlay` |
 
 ---
@@ -28,7 +28,7 @@
 |------|------|------|
 | `difficulty.ts` | `DIFFICULTY_LABEL`, `CREST` | 難度顯示名稱（`{ easy: '簡單', ... }`）與徽章 icon 名稱（`{ easy: 'crest-easy', ... }`）；全專案唯一定義，不在各元件重複宣告 |
 | `format.ts` | `formatTimer(ms)`, `formatDuration(ms)`, `formatDate(ts)` | 計時器顯示格式（`MM:SS`）、完成用時顯示（`X 分 Y 秒`）與日期格式化（`YYYY/MM/DD HH:mm`）；全專案唯一定義 |
-| `imageCache.ts` | `initImageCache()`, `saveImage()`, `getImage()`, `pruneImageCache()` | 圖片快取層；以 IndexedDB（`puzzle-image-db`）儲存，啟動時載入至 `_mem` 供同步讀取；詳見 [RECORDS.md](RECORDS.md) |
+| `imageCache.ts` | `initImageCache()`, `waitForImageCache()`, `saveImage()`, `getImage()`, `pruneImageCache()` | 圖片快取層；以 IndexedDB（`puzzle-image-db`）儲存，啟動時載入至 `_mem` 供同步讀取；`initImageCache()` 冪等（多次呼叫共享同一 Promise）；`waitForImageCache()` 供需要等待 IDB 初始化完成的元件訂閱；詳見 [RECORDS.md](RECORDS.md) |
 | `imageUtils.ts` | `generateThumbnail(url, opts?)` | 200×200 置中縮圖生成，回傳 `Promise<string>`（JPEG data URL）；預設 `background='#F8F5F0'`、`quality=0.7`；目前無活躍呼叫端（thumbnail 已由圖片快取統一管理） |
 | `soundEngine.ts` | 音效與音樂 API | 音效 SFX + 程序化鋼琴背景音樂引擎；靜音與三種音量分類以 `localStorage` 持久化；詳見 [AUDIO.md](AUDIO.md) |
 | `constants.ts` | 遊戲常數與 `getEffectiveDPR()` | Canvas 尺寸、閾值、縮放常數；詳見 [CANVAS.md](CANVAS.md) |

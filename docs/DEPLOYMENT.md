@@ -53,22 +53,34 @@ npx pwa-assets-generator --preset minimal-2023 public/favicon.svg
 |--------|------|
 | `registerType: 'autoUpdate'` | SW 靜默更新，無需使用者介入 |
 | `globPatterns`（預快取） | 所有 JS/CSS/HTML/SVG/woff2，app shell 完整離線可用 |
-| Runtime cache（preset 圖片） | NetworkFirst 策略，cacheName `preset-images`，最多 8 筆、30 天；首次瀏覽後離線可用 |
+| Runtime cache（preset 圖片） | StaleWhileRevalidate 策略，cacheName `preset-images`，最多 8 筆、30 天；再次造訪立即從快取提供，背景更新 |
 | `devOptions.enabled: true` | 開發模式下也會注入 SW，可在 Chrome DevTools → Application 驗證 |
 
 ---
 
 ## 內建拼圖圖片
 
-放於 `public/presets/`，以 `${import.meta.env.BASE_URL}presets/<檔名>` 引用：
+放於 `public/presets/`，以 `${import.meta.env.BASE_URL}presets/<檔名>` 引用。
 
-| 檔案 | 主題 |
-|------|------|
-| `puzzle-1.png` | 虹彩貓頭鷹 |
-| `puzzle-2.png` | 漫步星塵海 |
-| `puzzle-3.png` | 祕境樹之屋 |
-| `puzzle-4.png` | 賽博不夜城 |
-| `puzzle-5.png` | 萌貓午茶時 |
-| `puzzle-6.png` | 幻境古木林 |
-| `puzzle-7.png` | 星際觀測站 |
-| `puzzle-8.png` | 魔法藏書閣 |
+`PresetImagesModal` 使用 **WebP** 格式（每張 ~230–420 KB，總計 ~2.6 MB），原始 PNG 僅作為來源備存（每張 2.1–4.0 MB，總計 ~23 MB）。
+
+| WebP 檔案 | 主題 | 約大小 |
+|-----------|------|--------|
+| `puzzle-1.webp` | 虹彩貓頭鷹 | 419 KB |
+| `puzzle-2.webp` | 漫步星塵海 | 366 KB |
+| `puzzle-3.webp` | 祕境樹之屋 | 364 KB |
+| `puzzle-4.webp` | 賽博不夜城 | 327 KB |
+| `puzzle-5.webp` | 萌貓午茶時 | 227 KB |
+| `puzzle-6.webp` | 幻境古木林 | 364 KB |
+| `puzzle-7.webp` | 星際觀測站 | 261 KB |
+| `puzzle-8.webp` | 魔法藏書閣 | 265 KB |
+
+### 重新壓縮圖片
+
+若需更換原始 PNG 並重新生成 WebP：
+
+```bash
+npm run compress-presets   # 執行 scripts/compress-presets.mjs（需 sharp devDep）
+```
+
+腳本讀取 `public/presets/puzzle-1.png` ~ `puzzle-8.png`，以 `quality: 88` 輸出對應 `.webp`。完成後 commit WebP 檔案即可。
