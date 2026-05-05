@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate, Navigate } from 'react-router';
 import { Icon } from '../../components/Icon';
 import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from '../../store';
@@ -40,11 +41,16 @@ const GRID_PRESETS: Record<Difficulty, GridPreset[]> = {
 };
 
 export default function DifficultySelector() {
-  const dispatch = useDispatch<AppDispatch>();
-  const difficulty = useSelector((s: RootState) => s.puzzle.difficulty);
+  const dispatch    = useDispatch<AppDispatch>();
+  const navigate    = useNavigate();
+  const difficulty  = useSelector((s: RootState) => s.puzzle.difficulty);
+  const imageDataUrl = useSelector((s: RootState) => s.puzzle.imageDataUrl);
+  const isComplete   = useSelector((s: RootState) => s.puzzle.isComplete);
 
   const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty>(difficulty);
   const [selectedGrid, setSelectedGrid] = useState<GridPreset>(GRID_PRESETS[difficulty][0]);
+
+  if (!imageDataUrl || isComplete) return <Navigate to="/" replace />;
 
   function handleDifficultyChange(value: Difficulty) {
     setSelectedDifficulty(value);
@@ -57,6 +63,7 @@ export default function DifficultySelector() {
       rows: selectedGrid.rows,
       difficulty: selectedDifficulty,
     }));
+    navigate('/crop');
   }
 
   const presets = GRID_PRESETS[selectedDifficulty];
@@ -73,7 +80,7 @@ export default function DifficultySelector() {
       >
         <div className="max-w-[1440px] mx-auto w-full flex items-center justify-between">
           <button
-            onClick={() => history.back()}
+            onClick={() => navigate(-1)}
             className="inline-flex items-center gap-1.5 text-paper-400 text-sm font-bold px-4 py-2 rounded-lg hover:brightness-110 transition-all"
             style={{ background: '#3A2F25', border: '1px solid #5A4B38' }}
           >

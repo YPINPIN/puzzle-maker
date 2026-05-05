@@ -1,4 +1,5 @@
 import type { GameHistoryRecord } from '../types/puzzle';
+import { pruneImageCache } from './imageCache';
 
 const HISTORY_KEY = 'puzzle-game-history';
 const SLOT_COUNT = 10;
@@ -57,4 +58,5 @@ export function deleteGameHistory(id: string): void {
   const idx = slots.findIndex((r) => r?.id === id);
   if (idx !== -1) slots[idx] = null;
   writeSlots(slots);
+  pruneImageCache();
 }

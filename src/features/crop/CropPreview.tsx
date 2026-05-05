@@ -1,4 +1,5 @@
 import { useRef, useEffect, useCallback } from 'react';
+import { useNavigate, Navigate } from 'react-router';
 import { Icon } from '../../components/Icon';
 import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from '../../store';
@@ -6,6 +7,7 @@ import { setPieces, startGame, setReferenceImage, setGameId, setConfigId } from 
 import { generatePieces } from '../../lib/pieceFactory';
 import { TOOLBAR_HEIGHT, MAX_CANVAS_WIDTH, getEffectiveDPR, ZOOM_BUTTON_AVOID_W, ZOOM_BUTTON_AVOID_H, GAME_BOTTOM_BAR_HEIGHT } from '../../lib/constants';
 import { saveRecord } from '../../lib/records';
+import { saveImage } from '../../lib/imageCache';
 
 type Props = {
   canvasMapRef: React.RefObject<Map<number, HTMLCanvasElement>>;
@@ -17,10 +19,13 @@ type CropRect = { x: number; y: number; w: number; h: number };
 
 export default function CropPreview({ canvasMapRef, pathMapRef }: Props) {
   const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
   const imageDataUrl = useSelector((s: RootState) => s.puzzle.imageDataUrl);
   const cols = useSelector((s: RootState) => s.puzzle.cols);
   const rows = useSelector((s: RootState) => s.puzzle.rows);
   const difficulty = useSelector((s: RootState) => s.puzzle.difficulty);
+  const isComplete  = useSelector((s: RootState) => s.puzzle.isComplete);
+  const pieces      = useSelector((s: RootState) => s.puzzle.pieces);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imgRef = useRef<HTMLImageElement | null>(null);
@@ -348,24 +353,7 @@ export default function CropPreview({ canvasMapRef, pathMapRef }: Props) {
       height: Math.min(img.height - Math.round(crop.y), Math.round(crop.h)),
     };
 
-    // 生成 200×200 縮圖
-    const thumbCanvas = document.createElement('canvas');
-    thumbCanvas.width = 200;
-    thumbCanvas.height = 200;
-    const thumbCtx = thumbCanvas.getContext('2d')!;
-    const thumbAspect = cropRegion.width / cropRegion.height;
-    const tw = thumbAspect > 1 ? 200 : Math.round(200 * thumbAspect);
-    const th = thumbAspect > 1 ? Math.round(200 / thumbAspect) : 200;
-    thumbCtx.fillStyle = '#ffffff';
-    thumbCtx.fillRect(0, 0, 200, 200);
-    thumbCtx.drawImage(
-      img,
-      cropRegion.x, cropRegion.y, cropRegion.width, cropRegion.height,
-      Math.round((200 - tw) / 2), Math.round((200 - th) / 2), tw, th,
-    );
-    const thumbnailDataUrl = thumbCanvas.toDataURL('image/jpeg', 0.7);
-
-    // 生成壓縮裁切圖（供重新遊玩用，≤800px JPEG 0.75）
+    // 生成壓縮裁切圖（≤800px JPEG 0.75）存入 image cache 供後續重新遊玩與顯示縮圖使用
     const REPLAY_MAX = 800;
     const replayAspect = cropRegion.width / cropRegion.height;
     const replayW = Math.min(REPLAY_MAX, cropRegion.width);
@@ -388,11 +376,10 @@ export default function CropPreview({ canvasMapRef, pathMapRef }: Props) {
       difficulty,
       cols,
       rows,
-      thumbnailDataUrl,
-      croppedImageDataUrl,
       isCompleted: false,
       bestTimeMs: 0,
     });
+    saveImage(configId, croppedImageDataUrl);
     dispatch(setConfigId(configId));
     dispatch(setGameId(crypto.randomUUID()));
 
@@ -427,10 +414,15 @@ export default function CropPreview({ canvasMapRef, pathMapRef }: Props) {
         puzzleOffsetY: result.puzzleOffsetY,
       }));
       dispatch(startGame());
+      navigate('/play', { replace: true });
     } finally {
       isConfirmingRef.current = false;
     }
-  }, [imageDataUrl, cols, rows, difficulty, canvasMapRef, pathMapRef, dispatch]);
+  }, [imageDataUrl, cols, rows, difficulty, canvasMapRef, pathMapRef, dispatch, navigate]);
+
+  // Guard（所有 hooks 之後）
+  // pieces 已設定代表 startGame 已 dispatch（imageDataUrl 被 startGame 清空），正在跳轉至 /play，不應重導
+  if (isComplete || (!pieces.length && (!imageDataUrl || !cols))) return <Navigate to="/" replace />;
 
   return (
     <div className="flex flex-col w-full h-full" style={{ background: '#0D0906' }}>
@@ -444,7 +436,7 @@ export default function CropPreview({ canvasMapRef, pathMapRef }: Props) {
       >
         <div className="max-w-[1440px] mx-auto w-full flex items-center justify-between">
           <button
-            onClick={() => history.back()}
+            onClick={() => navigate(-1)}
             className="inline-flex items-center gap-1.5 text-paper-400 text-sm font-bold px-4 py-2 rounded-lg hover:brightness-110 transition-all"
             style={{ background: '#3A2F25', border: '1px solid #5A4B38' }}
           >

@@ -21,6 +21,7 @@ const PRESET_IMAGES = [
 export default function PresetImagesModal({ onClose, onSelect }: Props) {
   const cacheRef = useRef<Map<string, string>>(new Map());
   const [loadingUrl, setLoadingUrl] = useState<string | null>(null);
+  const [loadedUrls, setLoadedUrls] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -102,6 +103,7 @@ export default function PresetImagesModal({ onClose, onSelect }: Props) {
                   src={preset.url}
                   alt={preset.name}
                   className="w-full aspect-square object-cover"
+                  onLoad={() => setLoadedUrls((prev) => new Set(prev).add(preset.url))}
                 />
                 {/* Hover overlay */}
                 <div className="absolute inset-0 bg-brand-500/0 group-hover:bg-brand-500/15 transition-all" />
@@ -112,10 +114,16 @@ export default function PresetImagesModal({ onClose, onSelect }: Props) {
                 >
                   {preset.name}
                 </div>
-                {/* Loading spinner */}
+                {/* Initial image loading spinner */}
+                {!loadedUrls.has(preset.url) && loadingUrl !== preset.url && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-paper-100">
+                    <div className="w-1/2 aspect-square rounded-full border-8 border-paper-300 border-t-brand-500 animate-spin" />
+                  </div>
+                )}
+                {/* Selection spinner */}
                 {loadingUrl === preset.url && (
                   <div className="absolute inset-0 flex items-center justify-center bg-paper-50/70">
-                    <div className="w-8 h-8 rounded-full border-2 border-brand-500 border-t-transparent animate-spin" />
+                    <div className="w-1/2 aspect-square rounded-full border-8 border-brand-500 border-t-transparent animate-spin" />
                   </div>
                 )}
               </button>

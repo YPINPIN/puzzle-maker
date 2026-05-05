@@ -1,8 +1,8 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
-import type { Difficulty, GamePhase, InProgressGameState, PuzzlePiece } from '../types/puzzle';
+import type { Difficulty, InProgressGameState, PuzzlePiece } from '../types/puzzle';
 
 type PuzzleState = {
-  phase: GamePhase;
+  isComplete: boolean;
   difficulty: Difficulty;
   imageDataUrl: string | null;
   cropRegion: { x: number; y: number; width: number; height: number } | null;
@@ -35,7 +35,7 @@ type PuzzleState = {
 };
 
 const initialState: PuzzleState = {
-  phase: 'home',
+  isComplete: false,
   difficulty: 'easy',
   imageDataUrl: null,
   cropRegion: null,
@@ -71,7 +71,6 @@ const puzzleSlice = createSlice({
     setImage(state, action: PayloadAction<string>) {
       state.imageDataUrl = action.payload;
       state.cropRegion = null;
-      state.phase = 'config';
     },
 
     setDifficulty(state, action: PayloadAction<Difficulty>) {
@@ -86,7 +85,6 @@ const puzzleSlice = createSlice({
       state.rows = action.payload.rows;
       state.difficulty = action.payload.difficulty;
       state.cropRegion = null;
-      state.phase = 'crop';
     },
 
     saveCropRegion(
@@ -174,10 +172,15 @@ const puzzleSlice = createSlice({
     },
 
     startGame(state) {
-      state.phase = 'playing';
       state.startTime = Date.now();
       state.imageDataUrl = null;
       state.cropRegion = null;
+      state.isComplete = false;
+      state.isPaused = false;
+      state.pausedAt = null;
+      state.pauseOffset = 0;
+      state.elapsedMs = 0;
+      state.showPauseOverlay = false;
     },
 
     setDraggingGroup(
@@ -262,13 +265,9 @@ const puzzleSlice = createSlice({
       }
     },
 
-    backToConfig(state) {
-      state.phase = 'config';
-    },
-
     setComplete(state, action: PayloadAction<number>) {
       state.elapsedMs = action.payload;
-      state.phase = 'complete';
+      state.isComplete = true;
     },
 
     pauseGame(state) {
@@ -340,19 +339,14 @@ const puzzleSlice = createSlice({
       state.elapsedMs = 0;
       state.draggingGroupId = null;
       state.showImagePreview = false;
-      state.phase = 'playing';
+      state.isComplete = false;
     },
 
     toggleImagePreview(state) {
       state.showImagePreview = !state.showImagePreview;
     },
 
-    goToUpload(state) {
-      state.phase = 'upload';
-    },
-
     goToHome(state) {
-      state.phase = 'home';
       state.imageDataUrl = null;
     },
 
@@ -415,14 +409,12 @@ export const {
   endDragGroup,
   mergeGroups,
   snapGroupToBoard,
-  backToConfig,
   setComplete,
   pauseGame,
   userPauseGame,
   resumeGame,
   restoreGame,
   toggleImagePreview,
-  goToUpload,
   goToHome,
   setGameId,
   setConfigId,

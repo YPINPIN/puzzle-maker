@@ -1,4 +1,5 @@
 import type { InProgressGameState } from '../types/puzzle';
+import { pruneImageCache } from './imageCache';
 
 const DRAFT_KEY = 'puzzle-game-draft';
 
@@ -8,8 +9,7 @@ export type GameDraft = {
   difficulty: string;
   cols: number;
   rows: number;
-  croppedImageDataUrl: string;
-  thumbnailDataUrl?: string;
+  croppedImageDataUrl?: string;
   savedState: InProgressGameState;
   savedAt?: number;
 };
@@ -34,4 +34,5 @@ export function getDraft(): GameDraft | null {
 
 export function clearDraft(): void {
   localStorage.removeItem(DRAFT_KEY);
+  pruneImageCache();
 }

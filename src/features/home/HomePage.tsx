@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useNavigate, useLocation } from 'react-router';
 import { useDispatch } from 'react-redux';
 import type { AppDispatch } from '../../store';
 import {
   setReferenceImage, setPieces, setGameId, setConfigId,
-  startGame, restoreGame, goToUpload,
+  startGame, restoreGame,
 } from '../../store/puzzleSlice';
 import { generatePieces } from '../../lib/pieceFactory';
 import { TOOLBAR_HEIGHT, MAX_CANVAS_WIDTH, TAB_RATIO, getEffectiveDPR, ZOOM_BUTTON_AVOID_W, ZOOM_BUTTON_AVOID_H, GAME_BOTTOM_BAR_HEIGHT } from '../../lib/constants';
@@ -11,6 +12,7 @@ import { getRecords } from '../../lib/records';
 import type { PuzzleRecord } from '../../lib/records';
 import { getDraft, clearDraft } from '../../lib/gameDraft';
 import type { GameDraft } from '../../lib/gameDraft';
+import { getImage, saveImage } from '../../lib/imageCache';
 import type { GameHistoryRecord, InProgressGameState, Difficulty } from '../../types/puzzle';
 import RecordsModal from '../upload/RecordsModal';
 import ConfirmDialog, { Hi, HiAccent, HiDanger } from '../../components/ConfirmDialog';
@@ -25,6 +27,8 @@ type Props = {
 
 export default function HomePage({ canvasMapRef, pathMapRef }: Props) {
   const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
+  const { key: locationKey } = useLocation();
   const [showRecords, setShowRecords] = useState<'quick' | 'history' | null>(null);
   const [showFullWarning, setShowFullWarning] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -35,7 +39,7 @@ export default function HomePage({ canvasMapRef, pathMapRef }: Props) {
 
   useEffect(() => {
     setCurrentDraft(getDraft());
-  }, []);
+  }, [locationKey]);
 
   function guardDraft(action: () => void) {
     if (getDraft()) {
@@ -50,11 +54,14 @@ export default function HomePage({ canvasMapRef, pathMapRef }: Props) {
       setShowFullWarning(true);
       return;
     }
-    guardDraft(() => dispatch(goToUpload()));
+    guardDraft(() => navigate('/upload'));
   }
 
   const applyRecord = useCallback(async (record: PuzzleRecord) => {
-    if (!record.croppedImageDataUrl || isLoading) return;
+    const image = getImage(record.id) ?? record.croppedImageDataUrl;
+    if (!image || isLoading) return;
+    // Ensure image is in cache (e.g. share code import before first saveImage call)
+    if (!getImage(record.id)) saveImage(record.id, image);
     setIsLoading(true);
     try {
       const displayW = Math.min(window.innerWidth, MAX_CANVAS_WIDTH);
@@ -64,7 +71,7 @@ export default function HomePage({ canvasMapRef, pathMapRef }: Props) {
       const canvasH = displayH * dpr;
 
       const result = await generatePieces(
-        record.croppedImageDataUrl,
+        image,
         record.cols,
         record.rows,
         canvasW,
@@ -79,7 +86,7 @@ export default function HomePage({ canvasMapRef, pathMapRef }: Props) {
       pathMapRef.current.clear();
       result.pathMap.forEach((p, id) => pathMapRef.current.set(id, p));
 
-      dispatch(setReferenceImage(record.croppedImageDataUrl));
+      dispatch(setReferenceImage(image));
       dispatch(setPieces({
         pieces: result.pieces,
         rows: result.rows,
@@ -94,13 +101,15 @@ export default function HomePage({ canvasMapRef, pathMapRef }: Props) {
       dispatch(setConfigId(record.id));
       dispatch(setGameId(crypto.randomUUID()));
       dispatch(startGame());
+      navigate('/play');
     } finally {
       setIsLoading(false);
     }
-  }, [canvasMapRef, pathMapRef, dispatch, isLoading]);
+  }, [canvasMapRef, pathMapRef, dispatch, navigate, isLoading]);
 
   const continueGame = useCallback(async (historyRecord: GameHistoryRecord) => {
-    if (isLoading) return;
+    const image = getImage(historyRecord.configId) ?? historyRecord.croppedImageDataUrl;
+    if (!image || isLoading) return;
     setIsLoading(true);
     try {
       const { savedState } = historyRecord;
@@ -111,7 +120,7 @@ export default function HomePage({ canvasMapRef, pathMapRef }: Props) {
       const canvasH = displayH * dpr;
 
       const result = await generatePieces(
-        historyRecord.croppedImageDataUrl,
+        image,
         historyRecord.cols,
         historyRecord.rows,
         canvasW,
@@ -162,21 +171,29 @@ export default function HomePage({ canvasMapRef, pathMapRef }: Props) {
       dispatch(restoreGame({
         pieces: result.pieces,
         savedState: scaledSavedState,
-        referenceDataUrl: historyRecord.croppedImageDataUrl,
+        referenceDataUrl: image,
         difficulty: historyRecord.difficulty as Difficulty,
         cols: historyRecord.cols,
         rows: historyRecord.rows,
         gameId: historyRecord.id,
         configId: historyRecord.configId ?? null,
       }));
+      navigate('/play');
     } finally {
       setIsLoading(false);
     }
-  }, [canvasMapRef, pathMapRef, dispatch, isLoading]);
+  }, [canvasMapRef, pathMapRef, dispatch, navigate, isLoading]);
 
   const resumeDraft = useCallback(async () => {
     const draft = getDraft();
     if (!draft || isLoading) return;
+    // Look up image from cache; fall back to embedded field (old drafts before migration)
+    const image = getImage(draft.configId) ?? draft.croppedImageDataUrl;
+    if (!image) {
+      clearDraft();
+      setCurrentDraft(null);
+      return;
+    }
     const fakeRecord: GameHistoryRecord = {
       id: draft.gameId,
       configId: draft.configId,
@@ -185,8 +202,7 @@ export default function HomePage({ canvasMapRef, pathMapRef }: Props) {
       difficulty: draft.difficulty,
       cols: draft.cols,
       rows: draft.rows,
-      thumbnailDataUrl: '',
-      croppedImageDataUrl: draft.croppedImageDataUrl,
+      croppedImageDataUrl: image,
       savedState: draft.savedState,
       isCompleted: false,
     };
@@ -227,9 +243,6 @@ export default function HomePage({ canvasMapRef, pathMapRef }: Props) {
             variant="secondary"
           />
 
-          {isLoading && (
-            <p className="text-sm text-brand-600 animate-pulse text-center mt-2">正在載入遊戲…</p>
-          )}
         </div>
       </div>
 
@@ -329,12 +342,8 @@ function DraftCard({ draft, onClick }: { draft: import('../../lib/gameDraft').Ga
       onClick={onClick}
       className="w-full flex gap-3 p-3 rounded-2xl border-2 text-left transition-all active:scale-[0.99] card-lift bg-accent-500/10 hover:bg-accent-500/15 border-accent-500/40 hover:border-accent-500/70 shadow-sm"
     >
-      <div className="w-16 h-16 flex-shrink-0 rounded-xl overflow-hidden bg-paper-100">
-        <img
-          src={draft.thumbnailDataUrl ?? draft.croppedImageDataUrl}
-          alt=""
-          className={`w-full h-full ${draft.thumbnailDataUrl ? 'object-cover' : 'object-contain'}`}
-        />
+      <div className="w-16 h-16 flex-shrink-0 rounded-xl overflow-hidden bg-paper-200">
+        <img src={getImage(draft.configId) ?? ''} alt="" className="w-full h-full object-contain" />
       </div>
       <div className="flex flex-col justify-between flex-1 min-w-0 gap-0.5">
         <p className="text-sm font-extrabold text-accent-500">繼續上局</p>

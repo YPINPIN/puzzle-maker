@@ -1,6 +1,8 @@
 import { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
+import { useNavigate } from 'react-router';
 import { useDispatch, useSelector, shallowEqual } from 'react-redux';
 import type { AppDispatch, RootState } from '../../store';
+import { usePhase } from '../../lib/usePhase';
 import {
   pauseGame,
   userPauseGame,
@@ -15,14 +17,17 @@ import SavePanel from '../game/SavePanel';
 import { Icon } from '../../components/Icon';
 import { DIFFICULTY_LABEL, CREST } from '../../lib/difficulty';
 import { formatTimer } from '../../lib/format';
-import { generateThumbnail } from '../../lib/imageUtils';
 import { isMuted } from '../../lib/soundEngine';
 import VolumeModal from '../../components/VolumeModal';
 
-export default function AppHeader({ onExitRequest }: { onExitRequest?: () => void }) {
+type Props = { leaveHandlerRef: React.MutableRefObject<(() => void) | null> };
+
+export default function AppHeader({ leaveHandlerRef }: Props) {
   const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
+  const phase = usePhase();
   const {
-    phase, difficulty, cols, rows,
+    isComplete, difficulty, cols, rows,
     startTime, isPaused, pausedAt, pauseOffset,
     gameId, configId, referenceDataUrl,
     pieces, groups, pieceGroup, nextGroupId,
@@ -33,7 +38,6 @@ export default function AppHeader({ onExitRequest }: { onExitRequest?: () => voi
   const [showSavePanel, setShowSavePanel] = useState(false);
   const [showVolumeModal, setShowVolumeModal] = useState(false);
   const [muted, setMuted] = useState(() => isMuted());
-  const thumbnailRef = useRef<string>('');
 
   // 每次 render 同步最新值，讓 handleSaveToSlot 永遠拿到最新狀態
   const saveDataRef = useRef({
@@ -50,13 +54,6 @@ export default function AppHeader({ onExitRequest }: { onExitRequest?: () => voi
       difficulty, cols, rows,
     };
   });
-
-  useEffect(() => {
-    if (!referenceDataUrl) { thumbnailRef.current = ''; return; }
-    generateThumbnail(referenceDataUrl)
-      .then(dataUrl => { thumbnailRef.current = dataUrl; })
-      .catch(() => { thumbnailRef.current = ''; });
-  }, [referenceDataUrl]);
 
   const computeElapsed = useCallback(() => {
     if (!startTime) return 0;
@@ -100,8 +97,6 @@ export default function AppHeader({ onExitRequest }: { onExitRequest?: () => voi
       difficulty,
       cols,
       rows,
-      thumbnailDataUrl: thumbnailRef.current || referenceDataUrl,
-      croppedImageDataUrl: referenceDataUrl,
       savedState,
     };
   }, []);
@@ -124,9 +119,15 @@ export default function AppHeader({ onExitRequest }: { onExitRequest?: () => voi
     clearDraft();
     setShowSavePanel(false);
     dispatch(resetGame());
-  }, [buildRecord, dispatch]);
+    if (leaveHandlerRef.current) {
+      leaveHandlerRef.current();
+    } else {
+      const idx = (window.history.state as { idx?: number } | null)?.idx ?? 0;
+      if (idx > 0) navigate(-idx); else navigate('/');
+    }
+  }, [buildRecord, dispatch, navigate, leaveHandlerRef]);
 
-  const isPlaying = phase === 'playing' || phase === 'complete';
+  const isPlaying = phase === 'playing';
 
   return (
     <>
@@ -185,8 +186,8 @@ export default function AppHeader({ onExitRequest }: { onExitRequest?: () => voi
         </button>
       </div>
 
-      {/* 遊戲控制按鈕（playing phase） */}
-      {phase === 'playing' && (
+      {/* 遊戲控制按鈕（playing phase，完成後隱藏） */}
+      {phase === 'playing' && !isComplete && (
         <div className="flex flex-wrap gap-2 flex-shrink-0">
           <button
             onClick={() => dispatch(toggleImagePreview())}
@@ -212,7 +213,7 @@ export default function AppHeader({ onExitRequest }: { onExitRequest?: () => voi
             <Icon name="ic-save" size={16} /> 保存並結束
           </button>
           <button
-            onClick={() => onExitRequest?.()}
+            onClick={() => navigate('/')}
             className="btn-danger px-3 py-1.5 text-xs"
           >
             結束

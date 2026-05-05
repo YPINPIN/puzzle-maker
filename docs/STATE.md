@@ -8,6 +8,7 @@
 
 | 欄位 | 型別 | 說明 |
 |------|------|------|
+| `isComplete` | `boolean` | 遊戲是否已完成；`setComplete` 設為 `true`，`startGame` / `restoreGame` / `resetGame` 重置為 `false`；取代原有的 `phase` 欄位，頁面狀態改由 React Router 路由管理 |
 | `imageDataUrl` | `string \| null` | 原始上傳圖片（未裁切），僅在 upload→crop 階段使用；`startGame` 觸發時清除 |
 | `referenceDataUrl` | `string \| null` | 裁切後的參考圖（≤800px JPEG），遊戲中「查看參考圖」使用；也是 `doRegenerate` 的圖片來源；值與 `croppedImageDataUrl` 相同，所有路徑統一 |
 | `cropRegion` | 物件 | 相對於原圖的裁切座標（x, y, width, height）；`startGame` 觸發時清除 |
@@ -24,7 +25,7 @@ cropRegion       → 裁切後設定  → startGame 時清除
 referenceDataUrl → CropPreview 確認後設定 → 遊戲中持續使用
 ```
 
-`startGame` reducer 同時清除 `imageDataUrl` 與 `cropRegion`，確保原始大圖在遊戲開始後立即釋放記憶體。
+`startGame` reducer 同時清除 `imageDataUrl` 與 `cropRegion`，並重置 `isComplete`、計時器相關欄位（`isPaused`、`pausedAt`、`pauseOffset`、`elapsedMs`、`showPauseOverlay`），確保原始大圖在遊戲開始後立即釋放記憶體。
 
 ---
 

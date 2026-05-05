@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Icon } from '../../components/Icon';
 import { getGameHistorySlots } from '../../lib/gameHistory';
 import type { GameHistoryRecord } from '../../types/puzzle';
+import { getImage } from '../../lib/imageCache';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import { DIFFICULTY_LABEL, CREST } from '../../lib/difficulty';
 import { formatDate, formatDuration } from '../../lib/format';
@@ -100,7 +101,7 @@ export default function SavePanel({ gameId, onSave, onClose }: Props) {
                       <>
                         {/* Thumbnail */}
                         <div className="w-12 h-12 flex-shrink-0 rounded-lg overflow-hidden bg-paper-200">
-                          <img src={record.thumbnailDataUrl} alt="縮圖" className="w-full h-full object-cover" />
+                          <img src={getImage(record.configId) ?? ''} alt="縮圖" className="w-full h-full object-contain" />
                         </div>
                         {/* Info */}
                         <div className="flex flex-col gap-0.5 flex-1 min-w-0">

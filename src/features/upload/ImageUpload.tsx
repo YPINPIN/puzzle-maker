@@ -1,18 +1,27 @@
 import { useRef, useState, type DragEvent, type ChangeEvent } from 'react';
+import { useNavigate, useNavigationType, Navigate } from 'react-router';
 import { Icon } from '../../components/Icon';
 import PageFooter from '../../components/PageFooter';
 import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from '../../store';
-import { setImage } from '../../store/puzzleSlice';
+import { setImage, goToHome } from '../../store/puzzleSlice';
 import PresetImagesModal from './PresetImagesModal';
 
 export default function ImageUpload() {
   const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
+  const navType  = useNavigationType();
   const imageDataUrl = useSelector((s: RootState) => s.puzzle.imageDataUrl);
+  const isComplete   = useSelector((s: RootState) => s.puzzle.isComplete);
+
   const inputRef = useRef<HTMLInputElement>(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const [pendingImageUrl, setPendingImageUrl] = useState<string | null>(imageDataUrl);
   const [showPresetModal, setShowPresetModal] = useState(false);
+
+  if (isComplete || (navType !== 'PUSH' && !imageDataUrl)) {
+    return <Navigate to="/" replace />;
+  }
 
   function processFile(file: File) {
     if (!file.type.startsWith('image/')) return;
@@ -47,7 +56,10 @@ export default function ImageUpload() {
   }
 
   function handleConfirm() {
-    if (pendingImageUrl) dispatch(setImage(pendingImageUrl));
+    if (pendingImageUrl) {
+      dispatch(setImage(pendingImageUrl));
+      navigate('/config');
+    }
   }
 
   return (
@@ -62,7 +74,7 @@ export default function ImageUpload() {
       >
         <div className="max-w-[1440px] mx-auto w-full flex items-center justify-between">
           <button
-            onClick={() => history.back()}
+            onClick={() => { dispatch(goToHome()); navigate(-1); }}
             className="inline-flex items-center gap-1.5 text-paper-400 text-sm font-bold px-4 py-2 rounded-lg hover:brightness-110 transition-all"
             style={{ background: '#3A2F25', border: '1px solid #5A4B38' }}
           >

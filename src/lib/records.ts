@@ -1,3 +1,5 @@
+import { pruneImageCache } from './imageCache';
+
 const STORAGE_KEY = 'puzzle-quick-settings';
 
 export type PuzzleRecord = {
@@ -6,8 +8,8 @@ export type PuzzleRecord = {
   difficulty: string;
   cols: number;
   rows: number;
-  thumbnailDataUrl: string;
-  croppedImageDataUrl?: string;  // 壓縮裁切圖（≤800px JPEG 0.75），用於重新遊玩
+  thumbnailDataUrl?: string;
+  croppedImageDataUrl?: string;
   isCompleted: boolean;
   bestTimeMs: number;
 };
@@ -51,4 +53,5 @@ export function deleteRecord(id: string): void {
   } catch {
     // storage quota exceeded — silently ignore
   }
+  pruneImageCache();
 }

@@ -1,4 +1,5 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router';
 import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from '../../store';
 import { resetGame } from '../../store/puzzleSlice';
@@ -8,10 +9,16 @@ import type { GameHistoryRecord } from '../../types/puzzle';
 import SavePanel from '../game/SavePanel';
 import { Icon } from '../../components/Icon';
 import { formatDuration } from '../../lib/format';
-import { generateThumbnail } from '../../lib/imageUtils';
 
-export default function CompletionOverlay() {
+type Props = { onLeave?: () => void };
+
+export default function CompletionOverlay({ onLeave }: Props) {
   const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
+  const navigateToHome = useCallback(() => {
+    const idx = (window.history.state as { idx?: number } | null)?.idx ?? 0;
+    if (idx > 0) navigate(-idx); else navigate('/');
+  }, [navigate]);
   const elapsedMs = useSelector((s: RootState) => s.puzzle.elapsedMs);
   const referenceDataUrl = useSelector((s: RootState) => s.puzzle.referenceDataUrl);
   const gameId = useSelector((s: RootState) => s.puzzle.gameId);
@@ -34,19 +41,10 @@ export default function CompletionOverlay() {
     Boolean(gameId && getGameHistory().some((r) => r.id === gameId))
   );
   const [showSavePanel, setShowSavePanel] = useState(false);
-  const thumbnailRef = useRef<string>('');
   const savedStateRef = useRef({ pieces, groups, pieceGroup, nextGroupId, boardW, boardH, pieceW, pieceH, puzzleOffsetX, puzzleOffsetY });
   useLayoutEffect(() => {
     savedStateRef.current = { pieces, groups, pieceGroup, nextGroupId, boardW, boardH, pieceW, pieceH, puzzleOffsetX, puzzleOffsetY };
   });
-
-  // Generate thumbnail from reference image
-  useEffect(() => {
-    if (!referenceDataUrl) return;
-    generateThumbnail(referenceDataUrl)
-      .then(dataUrl => { thumbnailRef.current = dataUrl; })
-      .catch(() => { thumbnailRef.current = ''; });
-  }, [referenceDataUrl]);
 
   // Update quick settings best time using configId
   useEffect(() => {
@@ -94,8 +92,6 @@ export default function CompletionOverlay() {
       difficulty,
       cols,
       rows,
-      thumbnailDataUrl: thumbnailRef.current || referenceDataUrl!,
-      croppedImageDataUrl: referenceDataUrl!,
       isCompleted: true,
       savedState: {
         pieces,
@@ -114,9 +110,11 @@ export default function CompletionOverlay() {
   }
 
   function handleSaveToSlot(_existing: GameHistoryRecord | null, slotIndex: number) {
+    onLeave?.();
     saveGameHistoryAtSlot(buildCompletedRecord(), slotIndex);
     setShowSavePanel(false);
     dispatch(resetGame());
+    navigateToHome();
   }
 
   return (
@@ -158,7 +156,7 @@ export default function CompletionOverlay() {
             <div className="flex flex-col items-center gap-3 w-full">
               <p className="text-xs font-bold" style={{ color: 'var(--color-success)' }}>★ 已自動保存至歷史紀錄</p>
               <button
-                onClick={() => dispatch(resetGame())}
+                onClick={() => { onLeave?.(); dispatch(resetGame()); navigateToHome(); }}
                 className="btn-primary w-full text-lg px-8 py-3"
               >
                 再玩一次
@@ -174,7 +172,7 @@ export default function CompletionOverlay() {
                 保存紀錄
               </button>
               <button
-                onClick={() => dispatch(resetGame())}
+                onClick={() => { onLeave?.(); dispatch(resetGame()); navigateToHome(); }}
                 className="btn-secondary w-full text-lg px-8 py-3"
               >
                 離開

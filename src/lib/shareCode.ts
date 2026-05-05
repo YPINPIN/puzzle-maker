@@ -1,5 +1,6 @@
 import { compressToBase64, decompressFromBase64 } from 'lz-string';
 import type { PuzzleRecord } from './records';
+import { getImage } from './imageCache';
 
 const DATA_URL_PREFIX = 'data:image/jpeg;base64,';
 
@@ -12,7 +13,7 @@ type ShareData = {
 };
 
 export function encodeShareCode(record: PuzzleRecord): string {
-  const raw = record.croppedImageDataUrl ?? '';
+  const raw = getImage(record.id) ?? record.croppedImageDataUrl ?? '';
   const img = raw.startsWith(DATA_URL_PREFIX) ? raw.slice(DATA_URL_PREFIX.length) : raw;
   const data: ShareData = { v: 1, difficulty: record.difficulty, cols: record.cols, rows: record.rows, img };
   return compressToBase64(JSON.stringify(data));
@@ -43,7 +44,6 @@ export function shareDataToRecord(data: ShareData): PuzzleRecord {
     difficulty: data.difficulty,
     cols: data.cols,
     rows: data.rows,
-    thumbnailDataUrl: DATA_URL_PREFIX + data.img,
     croppedImageDataUrl: DATA_URL_PREFIX + data.img,
     isCompleted: false,
     bestTimeMs: 0,

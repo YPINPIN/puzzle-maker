@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Icon } from '../../components/Icon';
 import { getRecords, deleteRecord, type PuzzleRecord } from '../../lib/records';
 import { getGameHistorySlots, deleteGameHistory } from '../../lib/gameHistory';
+import { getImage } from '../../lib/imageCache';
 import type { GameHistoryRecord } from '../../types/puzzle';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import { DIFFICULTY_LABEL, CREST } from '../../lib/difficulty';
@@ -51,7 +52,7 @@ export default function RecordsModal({ mode, onClose, onApply, onContinue, onSha
   }
 
   function handleApply(record: PuzzleRecord) {
-    if (!record.croppedImageDataUrl) return;
+    if (!getImage(record.id) && !record.croppedImageDataUrl) return;
     onApply?.(record);
     onClose();
   }
@@ -114,7 +115,7 @@ export default function RecordsModal({ mode, onClose, onApply, onContinue, onSha
                     key={r.id}
                     className="flex flex-wrap gap-3 p-3 rounded-xl border border-paper-300 hover:border-paper-400 hover:bg-paper-100 transition-colors"
                   >
-                    <Thumbnail src={r.thumbnailDataUrl} />
+                    <Thumbnail src={getImage(r.id) ?? ''} />
                     <div className="flex flex-col justify-between flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className={`text-xs px-2 py-0.5 rounded-full font-bold border ${
@@ -140,7 +141,7 @@ export default function RecordsModal({ mode, onClose, onApply, onContinue, onSha
                       )}
                     </div>
                     <div className="basis-full sm:basis-auto flex flex-row gap-2 flex-shrink-0 items-center justify-end sm:justify-start">
-                      {r.croppedImageDataUrl && (
+                      {(getImage(r.id) || r.croppedImageDataUrl) && (
                         <button
                           onClick={() => handleApply(r)}
                           className="btn-primary px-3 py-1.5 text-xs"
@@ -149,7 +150,7 @@ export default function RecordsModal({ mode, onClose, onApply, onContinue, onSha
                           重新遊玩
                         </button>
                       )}
-                      {r.croppedImageDataUrl && onShare && (
+                      {(getImage(r.id) || r.croppedImageDataUrl) && onShare && (
                         <button
                           onClick={() => onShare(r)}
                           className="btn-secondary px-3 py-1.5 text-xs"
@@ -197,7 +198,7 @@ export default function RecordsModal({ mode, onClose, onApply, onContinue, onSha
                   >
                     <div className="flex items-center gap-3 flex-1 min-w-0">
                       <SlotBadge index={i} />
-                        <Thumbnail src={r.thumbnailDataUrl} />
+                        <Thumbnail src={getImage(r.configId) ?? ''} />
                         <div className="flex flex-col justify-between flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className="inline-flex items-center gap-1 text-xs text-paper-600">
@@ -294,7 +295,7 @@ function SlotBadge({ index }: { index: number }) {
 function Thumbnail({ src }: { src: string }) {
   return (
     <div className="w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden bg-paper-200">
-      <img src={src} alt="縮圖" className="w-full h-full object-cover" />
+      <img src={src} alt="縮圖" className="w-full h-full object-contain" />
     </div>
   );
 }

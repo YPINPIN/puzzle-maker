@@ -95,6 +95,7 @@
 | [TypeScript](https://www.typescriptlang.org/)        | 靜態型別       |
 | [Vite 8](https://vite.dev/)                          | 建置工具       |
 | [Redux Toolkit](https://redux-toolkit.js.org/)       | 全域狀態管理   |
+| [React Router v7](https://reactrouter.com/)          | 客戶端路由     |
 | [Tailwind CSS v4](https://tailwindcss.com/)          | 樣式框架       |
 | [lz-string](https://github.com/pieroxy/lz-string)    | 分享代碼壓縮   |
 | [vite-plugin-pwa](https://vite-pwa-org.netlify.app/) | PWA / 離線支援 |
