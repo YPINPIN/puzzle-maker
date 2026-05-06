@@ -1,6 +1,6 @@
 export const TOOLBAR_HEIGHT = 64;
 export const MAX_CANVAS_WIDTH = 1440;
-export const TAB_RATIO = 0.2;
+export const TAB_RATIO = 0.3;
 export const SNAP_THRESHOLD = 20;
 export const GROUP_THRESHOLD = 6;
 export const ZOOM_MIN = 100;

@@ -57,13 +57,23 @@
 - `src/lib/edgeGenerator.ts`：生成 `rows × cols` 的邊緣矩陣，確保相鄰片凹凸互補（`EdgeType`: -1=凹, 0=平, 1=凸）
 - `src/lib/pathGenerator.ts`：將邊緣描述轉為 Path2D 曲線
 
+**`getTab(dir, size)` 輔助函式**（`pathGenerator.ts`）
+
+| 參數 | 說明 |
+|------|------|
+| `height = size × TAB_RATIO × dir` | 凸起高度，帶方向符號。水平邊以 `y − height` 偏移（正值向上），垂直邊以 `x + height` 偏移（正值向右） |
+| `neck = size × 0.1` | 頸部半寬（邊長 10%），帶符號，負值時自動對應反向繪製 |
+| `head = size × 0.35` | 頭部 bezier 控制點展開量（邊長 35%），帶符號 |
+
+繪製流程（以上邊 tab 為例）：直線到頸部左端 → 第一段 bezier（頸部左 → 弧頂中心）→ 第二段 bezier（弧頂中心 → 頸部右）→ 直線到邊終點。兩段 bezier 的控制點分別在 `cx ± head` 處，使弧頂向外擴張。底邊與左邊藉由 W / H 的負號，無需額外 flip 參數即可自動處理方向。
+
 ### 重要常數（`src/lib/constants.ts`）
 
 | 常數／函式 | 值／說明 |
 |-----------|---------|
 | `TOOLBAR_HEIGHT` | 64 — 全域 Header **最小**高度（px）；實際高度可能因 flex-wrap 而更高 |
 | `MAX_CANVAS_WIDTH` | 1440 — canvas 容器最大寬度（px），超寬螢幕上限 |
-| `TAB_RATIO` | 0.2 — tab 大小 = pieceW × 0.2 |
+| `TAB_RATIO` | 0.3 — tab 大小 = pieceW × 0.3；offscreen canvas padding = `TAB_SIZE = ⌊pieceW × TAB_RATIO⌋`，凸起最大高度 = `pieceW × TAB_RATIO`，恰好填滿留白 |
 | `SNAP_THRESHOLD` | 20 — snap 至板子的吸附距離（canvas px）；實際使用時乘以 DPR |
 | `GROUP_THRESHOLD` | 6 — 兩片合組的位置容差（canvas px）；實際使用時乘以 DPR |
 | `ZOOM_MIN` | 100 — 最小縮放比例（%） |
