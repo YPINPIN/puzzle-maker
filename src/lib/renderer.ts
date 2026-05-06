@@ -18,6 +18,7 @@ export type RenderOptions = {
   activePieceId: number | null;
   dragDelta: { x: number; y: number };
   dragBasePositions: Record<number, { x: number; y: number }>;
+  completionProgress?: number;
 };
 
 export function renderFrame(opts: RenderOptions): void {
@@ -28,6 +29,7 @@ export function renderFrame(opts: RenderOptions): void {
     draggingGroupId, groups,
     hoveredPieceId, activePieceId,
     dragDelta, dragBasePositions,
+    completionProgress,
   } = opts;
 
   const TAB_SIZE = Math.floor(pieceW * TAB_RATIO);
@@ -109,6 +111,16 @@ export function renderFrame(opts: RenderOptions): void {
     const px = piece.currentPosition.x - TAB_SIZE;
     const py = piece.currentPosition.y - TAB_SIZE;
     ctx.drawImage(offscreen, px, py, scaledOffW, scaledOffH);
+    // 縫隙線：模擬拼圖片之間的物理縫隙
+    const seamPath = pathMap.get(piece.id);
+    if (seamPath) {
+      ctx.save();
+      ctx.translate(px, py);
+      ctx.strokeStyle = 'rgba(0, 0, 0, 0.28)';
+      ctx.lineWidth = 2;
+      ctx.stroke(seamPath);
+      ctx.restore();
+    }
   }
 
   // ── 2. 畫未 snap 且非拖曳中的片 ──
@@ -143,6 +155,16 @@ export function renderFrame(opts: RenderOptions): void {
       ctx.stroke(path);
     }
     ctx.restore();
+
+    // 縫隙線：非 hover 狀態時顯示（hover 時以白色邊框為主）
+    if (path && !isHovered) {
+      ctx.save();
+      ctx.translate(px, py);
+      ctx.strokeStyle = 'rgba(0, 0, 0, 0.28)';
+      ctx.lineWidth = 2;
+      ctx.stroke(path);
+      ctx.restore();
+    }
 
     // 紅光：靜置在格線上但位置錯誤
     if (overlapsGrid(piece.currentPosition.x, piece.currentPosition.y)) {
@@ -189,5 +211,34 @@ export function renderFrame(opts: RenderOptions): void {
     if (overlapsGrid(logicX, logicY)) {
       drawGlow(path, px, py, 'green');
     }
+  }
+
+  // ── 4. 完成掃光動畫（左上→右下斜向光帶，限制在格線矩形內）──
+  if (completionProgress && completionProgress > 0 && completionProgress < 1) {
+    const t = completionProgress;
+    const halfDiag = Math.min(gridW, gridH) * 0.55;
+    const totalRange = gridW + gridH + 2 * halfDiag;
+    const dCenter = t * totalRange - halfDiag;
+
+    const gx0 = gridX + (dCenter - halfDiag) / 2;
+    const gy0 = gridY + (dCenter - halfDiag) / 2;
+    const gx1 = gridX + (dCenter + halfDiag) / 2;
+    const gy1 = gridY + (dCenter + halfDiag) / 2;
+
+    const sweep = ctx.createLinearGradient(gx0, gy0, gx1, gy1);
+    sweep.addColorStop(0,   'rgba(255,255,255,0)');
+    sweep.addColorStop(0.4, 'rgba(255,255,255,0.18)');
+    sweep.addColorStop(0.5, 'rgba(255,255,255,0.45)');
+    sweep.addColorStop(0.6, 'rgba(255,255,255,0.18)');
+    sweep.addColorStop(1,   'rgba(255,255,255,0)');
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(gridX, gridY, gridW, gridH);
+    ctx.clip();
+    ctx.fillStyle = sweep;
+    const cover = gridW + gridH + halfDiag * 2;
+    ctx.fillRect(gridX - halfDiag, gridY - halfDiag, cover, cover);
+    ctx.restore();
   }
 }

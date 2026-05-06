@@ -7,7 +7,7 @@ import {
   startGame, restoreGame,
 } from '../../store/puzzleSlice';
 import { generatePieces } from '../../lib/pieceFactory';
-import { TOOLBAR_HEIGHT, MAX_CANVAS_WIDTH, TAB_RATIO, getEffectiveDPR, ZOOM_BUTTON_AVOID_W, ZOOM_BUTTON_AVOID_H, GAME_BOTTOM_BAR_HEIGHT } from '../../lib/constants';
+import { TOOLBAR_HEIGHT, MAX_CANVAS_WIDTH, TAB_RATIO, getEffectiveDPR, ZOOM_BUTTON_AVOID_W, ZOOM_BUTTON_AVOID_H, GAME_BOTTOM_BAR_HEIGHT, SCATTER_EDGE_PAD_CSS } from '../../lib/constants';
 import { getRecords } from '../../lib/records';
 import type { PuzzleRecord } from '../../lib/records';
 import { getDraft, clearDraft } from '../../lib/gameDraft';
@@ -83,7 +83,8 @@ export default function HomePage({ canvasMapRef, pathMapRef }: Props) {
         canvasH,
         undefined,
         undefined,
-        { w: ZOOM_BUTTON_AVOID_W * dpr, h: ZOOM_BUTTON_AVOID_H * dpr }
+        { w: ZOOM_BUTTON_AVOID_W * dpr, h: ZOOM_BUTTON_AVOID_H * dpr },
+        SCATTER_EDGE_PAD_CSS * dpr
       );
 
       canvasMapRef.current.clear();

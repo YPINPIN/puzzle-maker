@@ -32,7 +32,8 @@ export async function generatePieces(
   canvasH: number,
   cropRegion?: { x: number; y: number; width: number; height: number },
   existingPieces?: PuzzlePiece[],
-  avoidBottomRight?: { w: number; h: number }
+  avoidBottomRight?: { w: number; h: number },
+  scatterEdgePad?: number
 ): Promise<PieceFactoryResult> {
   const image = await loadImage(imageDataUrl);
 
@@ -73,13 +74,14 @@ export async function generatePieces(
   const gridT = puzzleOffsetY;
   const gridR = puzzleOffsetX + cols * pieceW;
   const gridB = puzzleOffsetY + rows * pieceH;
-  const m = TAB_SIZE + 4;
+  const gridM = TAB_SIZE + 4;                        // 離格線矩形的最小間距
+  const edgeM = gridM + (scatterEdgePad ?? 0);       // 離 canvas 邊框的間距（含 padding）
 
   const zones = [
-    { x0: m,         x1: canvasW - pieceW - m, y0: m,         y1: gridT - pieceH - m },  // 上
-    { x0: m,         x1: canvasW - pieceW - m, y0: gridB + m, y1: canvasH - pieceH - m }, // 下
-    { x0: m,         x1: gridL - pieceW - m,   y0: Math.max(m, gridT), y1: Math.min(canvasH - pieceH - m, gridB - pieceH) },  // 左
-    { x0: gridR + m, x1: canvasW - pieceW - m, y0: Math.max(m, gridT), y1: Math.min(canvasH - pieceH - m, gridB - pieceH) }, // 右
+    { x0: edgeM,         x1: canvasW - pieceW - edgeM, y0: edgeM,         y1: gridT - pieceH - gridM },  // 上
+    { x0: edgeM,         x1: canvasW - pieceW - edgeM, y0: gridB + gridM, y1: canvasH - pieceH - edgeM }, // 下
+    { x0: edgeM,         x1: gridL - pieceW - gridM,   y0: Math.max(edgeM, gridT), y1: Math.min(canvasH - pieceH - edgeM, gridB - pieceH) },  // 左
+    { x0: gridR + gridM, x1: canvasW - pieceW - edgeM, y0: Math.max(edgeM, gridT), y1: Math.min(canvasH - pieceH - edgeM, gridB - pieceH) }, // 右
   ].filter(z => z.x1 > z.x0 && z.y1 > z.y0);
 
   const zoneAreas = zones.map(z => (z.x1 - z.x0) * (z.y1 - z.y0));
@@ -103,8 +105,8 @@ export async function generatePieces(
       };
     }
     return {
-      x: m + Math.random() * Math.max(0, canvasW - pieceW - 2 * m),
-      y: m + Math.random() * Math.max(0, canvasH - pieceH - 2 * m),
+      x: edgeM + Math.random() * Math.max(0, canvasW - pieceW - 2 * edgeM),
+      y: edgeM + Math.random() * Math.max(0, canvasH - pieceH - 2 * edgeM),
     };
   };
 

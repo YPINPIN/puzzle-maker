@@ -19,9 +19,10 @@
 每幀依序繪製：
 
 1. 整體背景（深米色）+ 格線矩形（淺米色）+ 虛線格子
-2. 已 snap 的片（row-major 順序）
-3. 未 snap 且非拖曳中的片（含 hover 白色填色+描邊、紅光警示）
-4. 拖曳中的片（最上層，帶陰影）；格線外疊白色描邊，格線上改顯示綠光（兩者不疊加）
+2. 已 snap 的片（row-major 順序）+ 縫隙線描邊
+3. 未 snap 且非拖曳中的片（含縫隙線描邊、hover 白色填色+描邊、紅光警示）；hover 狀態下略過縫隙線（白色描邊優先）
+4. 拖曳中的片（最上層，帶陰影）；格線外疊白色描邊，格線上改顯示綠光（兩者不疊加）；拖曳中不畫縫隙線
+5. 完成掃光動畫（`completionProgress > 0` 時）：斜向白色光帶從左上掃至右下，限制在格線矩形 clip 範圍內
 
 `useGameLoop` 以 `requestAnimationFrame` 驅動渲染；`usePointerDrag` 處理 pointer 事件。兩者都掛載在 `PuzzleBoard`。`usePointerDrag` 讀取 `isPausedRef`，暫停狀態下跳過所有拖曳。
 
@@ -33,10 +34,12 @@
 | 格線矩形 | `#f0ede8` |
 | 格子虛線 | `rgba(150,140,130,0.5)` |
 | 拖曳陰影 | `rgba(0,0,0,0.4)` |
+| 縫隙線（snap 片與非 hover 散片） | stroke `rgba(0,0,0,0.28)`，lineWidth 2 |
 | Hover 填色 | fill `rgba(255,255,255,0.22)` |
 | Hover 描邊 / 拖曳白框（格線外） | stroke `rgba(255,255,255,0.8)`，lineWidth 2 |
 | 紅光（錯位警示） | stroke `rgba(220,50,50,0.75)`，shadow `rgba(255,60,60,0.9)` |
 | 綠光（放下預覽） | stroke `rgba(50,200,80,0.85)`，shadow `rgba(60,255,100,0.9)` |
+| 完成掃光光帶核心 | fill `rgba(255,255,255,0.45)`（峰值），兩側漸淡至 0 |
 
 ### Offscreen Canvas 與 Path2D
 
@@ -68,6 +71,8 @@
 | `ZOOM_STEP` | 25 — 縮放步進（%） |
 | `ZOOM_BUTTON_AVOID_W` | 170 — 散落排除右下角寬度（CSS px）；乘以 DPR 後傳給 `generatePieces` |
 | `ZOOM_BUTTON_AVOID_H` | 140 — 散落排除右下角高度（CSS px）；乘以 DPR 後傳給 `generatePieces` |
+| `SCATTER_EDGE_PAD_CSS` | 50 — 散落區距螢幕邊框的額外 padding（CSS px）；新遊戲時乘以 DPR 後以 `scatterEdgePad` 傳給 `generatePieces`，避免散片靠近邊框觸發手機返回手勢 |
+| `COMPLETION_ANIM_DURATION_MS` | 1500 — 完成掃光動畫持續時間（ms）；`useGameLoop` 以此計算 `completionProgress`，`PuzzleBoard` 在動畫結束後（+200ms 緩衝）觸發 `onAnimationEnd` |
 | `GAME_BOTTOM_BAR_HEIGHT` | 50 — PuzzleBoard 底部控制 bar 的近似高度（CSS px，不含 safe-area inset）；用於在 PuzzleBoard 外計算 `canvasH`，使 `boardH` 與 `gameAreaRef.clientHeight` 一致，避免 `needsInitialRegenRef` 不必要觸發 |
 | `getEffectiveDPR()` | `clamp(ceil(devicePixelRatio), 2, 3)` — 決定 canvas 解析度倍率；所有 canvasW/H 計算均透過此函式 |
 
@@ -85,16 +90,22 @@ Threshold 乘以 `getEffectiveDPR()` 是為了讓手機與桌機在 **CSS 像素
 
 散片初始位置分布在格線矩形外圍的四個區域（按面積加權隨機）。`avoidW/avoidH/pickPosition` 已提升至迴圈外，避免每片重複宣告。
 
-支援可選的 `avoidBottomRight?: { w, h }` 參數（canvas 邏輯像素），用於排除右下角縮放按鈕疊層所在位置；遇到落在排除區內的片會重試最多 8 次。
+Zone 邊界分為兩個概念：
+- `gridM = TAB_SIZE + 4`：散片與格線矩形之間的最小間距
+- `edgeM = gridM + scatterEdgePad`：散片距 canvas 外框的最小間距（避免靠近螢幕邊緣觸發返回手勢）
+
+可選參數：
+- `avoidBottomRight?: { w, h }`（canvas 邏輯像素）：排除右下角縮放按鈕疊層位置，最多重試 8 次
+- `scatterEdgePad?: number`（canvas 邏輯像素）：距螢幕邊框的額外 padding；新遊戲時傳入 `SCATTER_EDGE_PAD_CSS * dpr`
 
 **呼叫慣例**
 
-| 呼叫來源 | `avoidBottomRight` 傳入 |
-|---------|------------------------|
-| `CropPreview.handleConfirm`（新遊戲） | `{ w: ZOOM_BUTTON_AVOID_W * dpr, h: ZOOM_BUTTON_AVOID_H * dpr }` |
-| `HomePage.applyRecord`（新遊戲） | `{ w: ZOOM_BUTTON_AVOID_W * dpr, h: ZOOM_BUTTON_AVOID_H * dpr }` |
-| `PuzzleBoard` resize | 不傳（位置由 scale 覆蓋） |
-| `continueGame` | 不傳（位置由 savedState 覆蓋） |
+| 呼叫來源 | `avoidBottomRight` | `scatterEdgePad` |
+|---------|--------------------|--------------------|
+| `CropPreview.handleConfirm`（新遊戲） | `{ w: ZOOM_BUTTON_AVOID_W * dpr, h: ZOOM_BUTTON_AVOID_H * dpr }` | `SCATTER_EDGE_PAD_CSS * dpr` |
+| `HomePage.applyRecord`（新遊戲） | `{ w: ZOOM_BUTTON_AVOID_W * dpr, h: ZOOM_BUTTON_AVOID_H * dpr }` | `SCATTER_EDGE_PAD_CSS * dpr` |
+| `PuzzleBoard` resize | 不傳（位置由 scale 覆蓋） | 不傳 |
+| `continueGame` | 不傳（位置由 savedState 覆蓋） | 不傳 |
 
 **圖片來源**：所有進入遊戲的路徑均傳入已裁切的小圖（≤800px JPEG）。`PuzzleBoard.doRegenerate` 使用 `referenceDataUrl ?? imageDataUrl`；`referenceDataUrl` 所有路徑均為 800px，確保 doRegenerate 行為一致。
 

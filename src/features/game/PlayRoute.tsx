@@ -6,9 +6,9 @@ import { pauseGame, resumeGame, resetGame } from '../../store/puzzleSlice';
 import { useGameDraft } from './useGameDraft';
 import ConfirmDialog, { HiAccent } from '../../components/ConfirmDialog';
 import type { AppLayoutOutletContext } from '../layout/AppLayout';
+import CompletionOverlay from '../complete/CompletionOverlay';
 
-const PuzzleBoard      = lazy(() => import('./PuzzleBoard'));
-const CompletionOverlay = lazy(() => import('../complete/CompletionOverlay'));
+const PuzzleBoard = lazy(() => import('./PuzzleBoard'));
 
 type Props = {
   canvasMapRef: React.RefObject<Map<number, HTMLCanvasElement>>;
@@ -22,6 +22,8 @@ export default function PlayRoute({ canvasMapRef, pathMapRef }: Props) {
   const isComplete  = useSelector((s: RootState) => s.puzzle.isComplete);
   const pieces      = useSelector((s: RootState) => s.puzzle.pieces);
   const { leaveHandlerRef } = useOutletContext<AppLayoutOutletContext>();
+  const [overlayVisible, setOverlayVisible] = useState(false);
+  const handleAnimationEnd = useCallback(() => setOverlayVisible(true), []);
 
   // ref 供 blocker callback（非 render 路徑）讀取；state 供 render guard 讀取
   const confirmedLeaveRef = useRef(false);
@@ -80,9 +82,9 @@ export default function PlayRoute({ canvasMapRef, pathMapRef }: Props) {
   return (
     <>
       <Suspense fallback={null}>
-        <PuzzleBoard canvasMapRef={canvasMapRef} pathMapRef={pathMapRef} />
-        {isComplete && <CompletionOverlay onLeave={handleLeave} />}
+        <PuzzleBoard canvasMapRef={canvasMapRef} pathMapRef={pathMapRef} onAnimationEnd={handleAnimationEnd} />
       </Suspense>
+      {overlayVisible && <CompletionOverlay onLeave={handleLeave} />}
       {blocker.state === 'blocked' && (
         <ConfirmDialog
           title="確定要離開遊戲嗎？"

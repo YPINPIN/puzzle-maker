@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../../store';
 import { renderFrame } from '../../lib/renderer';
+import { COMPLETION_ANIM_DURATION_MS } from '../../lib/constants';
 
 type Props = {
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
@@ -11,6 +12,7 @@ type Props = {
   activePieceIdRef: React.MutableRefObject<number | null>;
   dragDeltaRef: React.MutableRefObject<{ x: number; y: number }>;
   dragBasePositionsRef: React.MutableRefObject<Record<number, { x: number; y: number }>>;
+  completionAnimStartRef?: React.MutableRefObject<number | null>;
 };
 
 export function useGameLoop({
@@ -21,6 +23,7 @@ export function useGameLoop({
   activePieceIdRef,
   dragDeltaRef,
   dragBasePositionsRef,
+  completionAnimStartRef,
 }: Props) {
   const pieces = useSelector((s: RootState) => s.puzzle.pieces);
   const groups = useSelector((s: RootState) => s.puzzle.groups);
@@ -41,6 +44,10 @@ export function useGameLoop({
 
     let rafId: number;
     function loop() {
+      const animStart = completionAnimStartRef?.current ?? null;
+      const completionProgress = animStart !== null
+        ? Math.min(1, (performance.now() - animStart) / COMPLETION_ANIM_DURATION_MS)
+        : 0;
       renderFrame({
         ctx: ctx2d,
         pieces,
@@ -58,6 +65,7 @@ export function useGameLoop({
         activePieceId: activePieceIdRef.current,
         dragDelta: dragDeltaRef.current,
         dragBasePositions: dragBasePositionsRef.current,
+        completionProgress,
       });
       rafId = requestAnimationFrame(loop);
     }

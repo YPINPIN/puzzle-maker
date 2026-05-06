@@ -6,20 +6,22 @@ import { useGameLoop } from './useGameLoop';
 import { usePointerDrag } from './usePointerDrag';
 import ImagePreviewOverlay from './ImagePreviewOverlay';
 import { Icon } from '../../components/Icon';
-import { MAX_CANVAS_WIDTH, TAB_RATIO, getEffectiveDPR, ZOOM_MIN, ZOOM_MAX, ZOOM_STEP, TOOLBAR_HEIGHT, GAME_BOTTOM_BAR_HEIGHT } from '../../lib/constants';
+import { MAX_CANVAS_WIDTH, TAB_RATIO, getEffectiveDPR, ZOOM_MIN, ZOOM_MAX, ZOOM_STEP, TOOLBAR_HEIGHT, GAME_BOTTOM_BAR_HEIGHT, COMPLETION_ANIM_DURATION_MS } from '../../lib/constants';
 import { generatePieces } from '../../lib/pieceFactory';
 
 type Props = {
   canvasMapRef: React.RefObject<Map<number, HTMLCanvasElement>>;
   pathMapRef: React.RefObject<Map<number, Path2D>>;
+  onAnimationEnd?: () => void;
 };
 
 // 公式：actualCssScale = fitScale × zoom / 100
 // 100% → 0.5×1.0=0.5 → canvas 填滿視窗；200% → 0.5×2.0=1.0 → 1:1 pixel，可平移
 
-export default function PuzzleBoard({ canvasMapRef, pathMapRef }: Props) {
+export default function PuzzleBoard({ canvasMapRef, pathMapRef, onAnimationEnd }: Props) {
   const dispatch = useDispatch<AppDispatch>();
   const showPauseOverlay = useSelector((s: RootState) => s.puzzle.showPauseOverlay);
+  const isComplete = useSelector((s: RootState) => s.puzzle.isComplete);
   const imageDataUrl = useSelector((s: RootState) => s.puzzle.imageDataUrl);
   const referenceDataUrl = useSelector((s: RootState) => s.puzzle.referenceDataUrl);
   const cropRegion = useSelector((s: RootState) => s.puzzle.cropRegion);
@@ -41,6 +43,9 @@ export default function PuzzleBoard({ canvasMapRef, pathMapRef }: Props) {
     boardDataRef.current = { imageDataUrl, referenceDataUrl, cropRegion, cols, rows, pieces, pieceW, pieceH, puzzleOffsetX, puzzleOffsetY, boardW, boardH };
   });
 
+  const [isAnimating, setIsAnimating] = useState(false);
+  const completionAnimStartRef = useRef<number | null>(null);
+
   const isRegeneratingRef = useRef(false);
   // 掛載後若 canvas 尺寸與 Redux 存的 boardW/boardH 不符（header 換行導致），需重新生成
   const needsInitialRegenRef = useRef<{ w: number; h: number } | null>(null);
@@ -49,6 +54,18 @@ export default function PuzzleBoard({ canvasMapRef, pathMapRef }: Props) {
   const activePieceIdRef = useRef<number | null>(null);
   const dragDeltaRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const dragBasePositionsRef = useRef<Record<number, { x: number; y: number }>>({});
+
+  // 完成動畫：isComplete 轉 true 時啟動掃光計時器，結束後通知 PlayRoute 顯示 overlay
+  useEffect(() => {
+    if (!isComplete) return;
+    completionAnimStartRef.current = performance.now();
+    setIsAnimating(true);
+    const timer = setTimeout(() => {
+      setIsAnimating(false);
+      onAnimationEnd?.();
+    }, COMPLETION_ANIM_DURATION_MS + 200);
+    return () => clearTimeout(timer);
+  }, [isComplete, onAnimationEnd]);
 
   // 從實際容器尺寸計算 canvas 邏輯尺寸（= 容器 × 2）
   // fitScale 恆為 0.5，使 100% zoom 時 canvas 恰好填滿容器
@@ -291,6 +308,7 @@ export default function PuzzleBoard({ canvasMapRef, pathMapRef }: Props) {
     canvasRef, canvasMapRef, pathMapRef,
     hoveredPieceIdRef, activePieceIdRef,
     dragDeltaRef, dragBasePositionsRef,
+    completionAnimStartRef,
   });
 
   const onZoomChange = useCallback((z: number) => {
@@ -362,6 +380,11 @@ export default function PuzzleBoard({ canvasMapRef, pathMapRef }: Props) {
             cursor: canPan ? 'grab' : 'default',
           }}
         />
+
+        {/* 動畫期間封鎖所有互動 */}
+        {isAnimating && (
+          <div className="fixed inset-0 z-30 pointer-events-auto" />
+        )}
       </div>
 
       {/* 底部控制 bar：縮放按鈕移出 canvas 疊層，消除遮擋問題 */}

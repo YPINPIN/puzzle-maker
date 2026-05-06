@@ -18,7 +18,7 @@
 | `RecordsModal` | `src/features/upload/RecordsModal.tsx` | 雙模式清單 Modal；`mode='quick'` 顯示快捷設定；`mode='history'` 顯示歷史紀錄固定 10 槽（空槽顯示虛線框）；縮圖以 `object-contain` 顯示完整圖片；各筆紀錄可刪除；quick 模式 Header 有「匯入代碼」按鈕，每筆卡片有「分享」按鈕 |
 | `ImagePreviewOverlay` | `src/features/game/ImagePreviewOverlay.tsx` | 遊戲中查看參考圖的全螢幕覆蓋層；由 `toggleImagePreview` action 控制 `showImagePreview` Redux 欄位；顯示 `referenceDataUrl`，點擊背景或 ✕ 鈕關閉 |
 | `AppLayout` | `src/features/layout/AppLayout.tsx` | 所有路由的共用 layout（`<Outlet />`）；掛載 `usePreventForwardNav`、`useBackgroundMusic`、全域按鈕 click 音效；啟動時呼叫 `initImageCache()`（冪等，將 IDB 圖片載入 `_mem`）；渲染 `AppHeader` |
-| `PlayRoute` | `src/features/game/PlayRoute.tsx` | `/play` 路由元件；以 `useBlocker` 攔截離開確認、Guard 無遊戲狀態時重導回首頁；整合 `PuzzleBoard` 與 `CompletionOverlay` |
+| `PlayRoute` | `src/features/game/PlayRoute.tsx` | `/play` 路由元件；以 `useBlocker` 攔截離開確認、Guard 無遊戲狀態時重導回首頁；整合 `PuzzleBoard`（lazy）與 `CompletionOverlay`（直接 import）；以 `overlayVisible` state 延遲顯示 CompletionOverlay，待 PuzzleBoard 的掃光動畫結束後再渲染 |
 
 ---
 

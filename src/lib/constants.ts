@@ -8,6 +8,8 @@ export const ZOOM_MAX = 200;
 export const ZOOM_STEP = 25;
 export const ZOOM_BUTTON_AVOID_W = 170;
 export const ZOOM_BUTTON_AVOID_H = 140;
+export const SCATTER_EDGE_PAD_CSS = 50;
+export const COMPLETION_ANIM_DURATION_MS = 1500;
 // PuzzleBoard 底部控制 bar 的大約高度（paddingTop 10 + 按鈕 28 + paddingBottom 12 = 50），
 // 不含 iOS safe-area-inset-bottom（無法靜態預知）；用於在 PuzzleBoard 外計算 canvasH
 export const GAME_BOTTOM_BAR_HEIGHT = 50;
