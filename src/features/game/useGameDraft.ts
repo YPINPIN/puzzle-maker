@@ -35,6 +35,7 @@ export function useGameDraft() {
         pieceH: s.pieceH,
         puzzleOffsetX: s.puzzleOffsetX,
         puzzleOffsetY: s.puzzleOffsetY,
+        showPreviewHint: s.showPreviewHint,
       },
     });
   }, []); // stateRef 永遠是最新值，空 deps 安全

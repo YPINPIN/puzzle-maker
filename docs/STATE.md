@@ -14,6 +14,7 @@
 | `cropRegion` | 物件 | 相對於原圖的裁切座標（x, y, width, height）；`startGame` 觸發時清除 |
 | `draggingGroupId` | `number \| null` | 目前被拖曳的 group ID；renderer 以此決定渲染層次 |
 | `showImagePreview` | `boolean` | 控制 `ImagePreviewOverlay` 顯示 |
+| `showPreviewHint` | `boolean` | 控制格線內淡淡預覽圖（22% 透明度）的顯示；預設 `false`，每局獨立儲存於 `InProgressGameState`，不使用 localStorage；`togglePreviewHint` action 切換，可從 AppHeader 燈泡按鈕操作 |
 | `isPaused` | `boolean` | 計時器是否暫停（影響計時計算） |
 | `showPauseOverlay` | `boolean` | 是否顯示半透明暫停覆蓋層（**獨立於 `isPaused`**）；只有「暫停」按鈕觸發的 `userPauseGame()` 才同時設為 true；「保存並結束」、「結束」、back 攔截等系統暫停只呼叫 `pauseGame()`，不顯示 overlay |
 

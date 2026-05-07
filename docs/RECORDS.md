@@ -62,7 +62,7 @@
 | 結構 | 固定 10 元素陣列 `(GameHistoryRecord \| null)[]`，空槽為 null |
 | 主要 API | `getGameHistorySlots()`, `getGameHistory()`, `saveGameHistoryAtSlot()`, `deleteGameHistory()` |
 
-**欄位**：`id`（`gameId`）、`configId`、難度、格數、`savedState`（含所有片位置與 group 狀態）、`isCompleted`
+**欄位**：`id`（`gameId`）、`configId`、難度、格數、`savedState`（含所有片位置、group 狀態與 `showPreviewHint`）、`isCompleted`
 
 ### 關鍵 API 說明
 
@@ -89,7 +89,7 @@
 | 上限 | 最多 1 筆 `GameDraft`（隨時覆蓋） |
 | 主要 API | `getDraft()`, `saveDraft()`, `clearDraft()` |
 
-**欄位**：`gameId`、`configId`、難度、格數、`savedAt?`（ms timestamp）、`savedState`。不儲存圖片（由 `getImage(configId)` 從圖片快取查找）
+**欄位**：`gameId`、`configId`、難度、格數、`savedAt?`（ms timestamp）、`savedState`（含 `showPreviewHint`）。不儲存圖片（由 `getImage(configId)` 從圖片快取查找）
 
 ### 自動存時機（`src/features/game/useGameDraft.ts`，掛載於 `App.tsx`）
 

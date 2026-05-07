@@ -20,7 +20,8 @@
 
 **拼圖互動**（`usePointerDrag.ts`）：
 - `pointerdown` 時呼叫 `playPickup()`
-- `pointerup` 結束後依順序以 `if/else if` 判斷，確保同一次放下最多觸發一個音效：合組（`playMerge`）→ 吸附（`playSnap`）→ 完成（`playComplete`）
+- `pointerup` 結束後依順序以 `if/else if` 判斷，確保同一次放下最多觸發一個音效：合組（`playMerge`）→ 吸附（`playSnap`）
+- 完成（`playComplete`）**不在** `usePointerDrag` 觸發；改由 `PuzzleBoard.tsx` 在縮放置中結束、掃光動畫開始的瞬間呼叫，使音效與視覺完全同步
 
 **按鈕點擊**（`App.tsx`）：全域 **capture-phase** click listener（`addEventListener('click', fn, true)`），對所有 `button` 元素生效，可繞過元件內的 `stopPropagation`。
 

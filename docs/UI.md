@@ -6,7 +6,11 @@
 
 所有 phase 均顯示。右側常駐一顆**音量按鈕**（`ic-volume` / `ic-volume-off`，靜音時 opacity 0.65），點擊開啟 `VolumeModal`；`onClose` callback 同步更新 Header 的 muted state。
 
-`playing` phase 額外顯示難度、格數、計時器與操作按鈕（查看參考圖、暫停/繼續、保存並結束、結束遊戲）。
+`playing` phase 額外顯示：
+- **難度徽章**（`crest-*` icon + `DIFFICULTY_LABEL`・格數）+ **燈泡按鈕**（`ic-lightbulb`）：切換格線內淡淡預覽圖顯示（`togglePreviewHint`）；啟用時按鈕以琥珀色填色 + 邊框高亮；偏好值隨遊戲存檔一同儲存（`InProgressGameState.showPreviewHint`），不使用 localStorage
+  - 小螢幕適配（`< 640px`）：crest icon 加 `max-sm:hidden` 隱藏（省 22px），燈泡按鈕縮為 `w-6 h-6`（省 4px），確保計時器不換行至第二列
+- 計時器、音量按鈕
+- 操作按鈕（查看參考圖、暫停/繼續、保存並結束、結束遊戲）
 
 Header 使用 `flex-wrap`，`min-h-[64px]`（= `TOOLBAR_HEIGHT`），窄螢幕上按鈕可能換行導致實際高度 > 64px。因此 `PuzzleBoard.getContainerDims()` 從 `gameAreaRef.current.clientHeight` 讀取真實容器高度，而非 `window.innerHeight - 64`；掛載後若兩者差距 > 4px，`needsInitialRegenRef` 會觸發自動重算。
 

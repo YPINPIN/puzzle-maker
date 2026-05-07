@@ -6,8 +6,9 @@ import { useGameLoop } from './useGameLoop';
 import { usePointerDrag } from './usePointerDrag';
 import ImagePreviewOverlay from './ImagePreviewOverlay';
 import { Icon } from '../../components/Icon';
-import { MAX_CANVAS_WIDTH, TAB_RATIO, getEffectiveDPR, ZOOM_MIN, ZOOM_MAX, ZOOM_STEP, TOOLBAR_HEIGHT, GAME_BOTTOM_BAR_HEIGHT, COMPLETION_ANIM_DURATION_MS } from '../../lib/constants';
+import { MAX_CANVAS_WIDTH, TAB_RATIO, getEffectiveDPR, ZOOM_MIN, ZOOM_MAX, ZOOM_STEP, TOOLBAR_HEIGHT, GAME_BOTTOM_BAR_HEIGHT, COMPLETION_ANIM_DURATION_MS, ZOOM_IN_DURATION_MS } from '../../lib/constants';
 import { generatePieces } from '../../lib/pieceFactory';
+import { playComplete } from '../../lib/soundEngine';
 
 type Props = {
   canvasMapRef: React.RefObject<Map<number, HTMLCanvasElement>>;
@@ -21,6 +22,7 @@ type Props = {
 export default function PuzzleBoard({ canvasMapRef, pathMapRef, onAnimationEnd }: Props) {
   const dispatch = useDispatch<AppDispatch>();
   const showPauseOverlay = useSelector((s: RootState) => s.puzzle.showPauseOverlay);
+  const showPreviewHint = useSelector((s: RootState) => s.puzzle.showPreviewHint);
   const isComplete = useSelector((s: RootState) => s.puzzle.isComplete);
   const imageDataUrl = useSelector((s: RootState) => s.puzzle.imageDataUrl);
   const referenceDataUrl = useSelector((s: RootState) => s.puzzle.referenceDataUrl);
@@ -44,7 +46,9 @@ export default function PuzzleBoard({ canvasMapRef, pathMapRef, onAnimationEnd }
   });
 
   const [isAnimating, setIsAnimating] = useState(false);
+  const [completionZooming, setCompletionZooming] = useState(false);
   const completionAnimStartRef = useRef<number | null>(null);
+  const sweepTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const isRegeneratingRef = useRef(false);
   // 掛載後若 canvas 尺寸與 Redux 存的 boardW/boardH 不符（header 換行導致），需重新生成
@@ -54,18 +58,25 @@ export default function PuzzleBoard({ canvasMapRef, pathMapRef, onAnimationEnd }
   const activePieceIdRef = useRef<number | null>(null);
   const dragDeltaRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const dragBasePositionsRef = useRef<Record<number, { x: number; y: number }>>({});
+  const previewImageRef = useRef<HTMLImageElement | null>(null);
+  const showPreviewHintRef = useRef(showPreviewHint);
+  showPreviewHintRef.current = showPreviewHint;
 
-  // 完成動畫：isComplete 轉 true 時啟動掃光計時器，結束後通知 PlayRoute 顯示 overlay
+  // 預覽圖：referenceDataUrl 載入為 HTMLImageElement，供 Canvas 渲染使用
   useEffect(() => {
-    if (!isComplete) return;
-    completionAnimStartRef.current = performance.now();
-    setIsAnimating(true);
-    const timer = setTimeout(() => {
-      setIsAnimating(false);
-      onAnimationEnd?.();
-    }, COMPLETION_ANIM_DURATION_MS + 200);
-    return () => clearTimeout(timer);
-  }, [isComplete, onAnimationEnd]);
+    if (!referenceDataUrl) {
+      previewImageRef.current = null;
+      return;
+    }
+    const img = new Image();
+    img.onload = () => {
+      previewImageRef.current = img;
+    };
+    img.onerror = () => {
+      previewImageRef.current = null;
+    };
+    img.src = referenceDataUrl;
+  }, [referenceDataUrl]);
 
   // 從實際容器尺寸計算 canvas 邏輯尺寸（= 容器 × 2）
   // fitScale 恆為 0.5，使 100% zoom 時 canvas 恰好填滿容器
@@ -73,7 +84,7 @@ export default function PuzzleBoard({ canvasMapRef, pathMapRef, onAnimationEnd }
     const dpr = getEffectiveDPR();
     const c = gameAreaRef.current;
     const displayW = c ? Math.min(c.clientWidth, MAX_CANVAS_WIDTH) : Math.min(window.innerWidth, MAX_CANVAS_WIDTH);
-    const displayH = c ? c.clientHeight : (window.innerHeight - TOOLBAR_HEIGHT - GAME_BOTTOM_BAR_HEIGHT);
+    const displayH = c ? c.clientHeight : window.innerHeight - TOOLBAR_HEIGHT - GAME_BOTTOM_BAR_HEIGHT;
     return { w: displayW * dpr, h: displayH * dpr, displayW, displayH };
   }, []);
 
@@ -95,50 +106,104 @@ export default function PuzzleBoard({ canvasMapRef, pathMapRef, onAnimationEnd }
   const panSnapshotRef = useRef({ x: 0, y: 0 });
 
   // 計算目前 zoom 下的最大 pan 範圍（CSS px），以實際容器尺寸為準
-  const computeMaxPan = useCallback((zoom: number) => {
-    const scale = fitScaleRef.current * zoom / 100;
-    const { displayW, displayH } = getContainerDims();
+  const computeMaxPan = useCallback(
+    (zoom: number) => {
+      const scale = (fitScaleRef.current * zoom) / 100;
+      const { displayW, displayH } = getContainerDims();
+      const { w: cW, h: cH } = baseDimsRef.current;
+      return {
+        maxPanX: Math.max(0, (cW * scale - displayW) / 2),
+        maxPanY: Math.max(0, (cH * scale - displayH) / 2),
+      };
+    },
+    [getContainerDims],
+  );
+
+  const updatePan = useCallback(
+    (newX: number, newY: number) => {
+      const { maxPanX, maxPanY } = computeMaxPan(zoomPercentRef.current);
+      const clamped = {
+        x: Math.max(-maxPanX, Math.min(maxPanX, newX)),
+        y: Math.max(-maxPanY, Math.min(maxPanY, newY)),
+      };
+      panRef.current = clamped;
+      setPan(clamped);
+    },
+    [computeMaxPan],
+  );
+
+  const clampPan = useCallback(
+    (zoom: number) => {
+      const { maxPanX, maxPanY } = computeMaxPan(zoom);
+      const clamped = {
+        x: Math.max(-maxPanX, Math.min(maxPanX, panRef.current.x)),
+        y: Math.max(-maxPanY, Math.min(maxPanY, panRef.current.y)),
+      };
+      panRef.current = clamped;
+      setPan(clamped);
+    },
+    [computeMaxPan],
+  );
+
+  const changeZoom = useCallback(
+    (delta: number) => {
+      const next = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, zoomPercentRef.current + delta));
+      zoomPercentRef.current = next;
+      setZoomPercent(next);
+      clampPan(next);
+    },
+    [clampPan],
+  );
+
+  const centerAtZoomMax = useCallback(() => {
+    const gridCenterX = puzzleOffsetX + (cols * pieceW) / 2;
+    const gridCenterY = puzzleOffsetY + (rows * pieceH) / 2;
+    const scale200 = fitScaleRef.current * 2;
     const { w: cW, h: cH } = baseDimsRef.current;
-    return {
-      maxPanX: Math.max(0, (cW * scale - displayW) / 2),
-      maxPanY: Math.max(0, (cH * scale - displayH) / 2),
-    };
-  }, [getContainerDims]);
-
-  const updatePan = useCallback((newX: number, newY: number) => {
-    const { maxPanX, maxPanY } = computeMaxPan(zoomPercentRef.current);
+    const rawPanX = -(gridCenterX - cW / 2) * scale200;
+    const rawPanY = -(gridCenterY - cH / 2) * scale200;
+    const { maxPanX, maxPanY } = computeMaxPan(ZOOM_MAX);
     const clamped = {
-      x: Math.max(-maxPanX, Math.min(maxPanX, newX)),
-      y: Math.max(-maxPanY, Math.min(maxPanY, newY)),
+      x: Math.max(-maxPanX, Math.min(maxPanX, rawPanX)),
+      y: Math.max(-maxPanY, Math.min(maxPanY, rawPanY)),
     };
+    zoomPercentRef.current = ZOOM_MAX;
+    setZoomPercent(ZOOM_MAX);
     panRef.current = clamped;
     setPan(clamped);
-  }, [computeMaxPan]);
-
-  const clampPan = useCallback((zoom: number) => {
-    const { maxPanX, maxPanY } = computeMaxPan(zoom);
-    const clamped = {
-      x: Math.max(-maxPanX, Math.min(maxPanX, panRef.current.x)),
-      y: Math.max(-maxPanY, Math.min(maxPanY, panRef.current.y)),
-    };
-    panRef.current = clamped;
-    setPan(clamped);
-  }, [computeMaxPan]);
-
-  const changeZoom = useCallback((delta: number) => {
-    const next = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, zoomPercentRef.current + delta));
-    zoomPercentRef.current = next;
-    setZoomPercent(next);
-    clampPan(next);
-  }, [clampPan]);
+  }, [cols, rows, pieceW, pieceH, puzzleOffsetX, puzzleOffsetY, computeMaxPan]);
 
   const onPanStart = useCallback(() => {
     panSnapshotRef.current = { ...panRef.current };
   }, []);
 
-  const onPanDelta = useCallback((dxCss: number, dyCss: number) => {
-    updatePan(panSnapshotRef.current.x + dxCss, panSnapshotRef.current.y + dyCss);
-  }, [updatePan]);
+  const onPanDelta = useCallback(
+    (dxCss: number, dyCss: number) => {
+      updatePan(panSnapshotRef.current.x + dxCss, panSnapshotRef.current.y + dyCss);
+    },
+    [updatePan],
+  );
+
+  // 完成動畫：先縮放置中（500ms），再掃光（1500ms），結束後通知 PlayRoute 顯示 overlay
+  useEffect(() => {
+    if (!isComplete) return;
+    setCompletionZooming(true);
+    centerAtZoomMax();
+    const zoomTimer = setTimeout(() => {
+      setCompletionZooming(false);
+      completionAnimStartRef.current = performance.now();
+      setIsAnimating(true);
+      playComplete();
+      sweepTimerRef.current = setTimeout(() => {
+        setIsAnimating(false);
+        onAnimationEnd?.();
+      }, COMPLETION_ANIM_DURATION_MS + 200);
+    }, ZOOM_IN_DURATION_MS);
+    return () => {
+      clearTimeout(zoomTimer);
+      if (sweepTimerRef.current) clearTimeout(sweepTimerRef.current);
+    };
+  }, [isComplete, onAnimationEnd, centerAtZoomMax]);
 
   // 初始 canvas 尺寸：在 DOM 掛載後、首次繪製前以實際容器測量（useLayoutEffect）
   useLayoutEffect(() => {
@@ -166,10 +231,7 @@ export default function PuzzleBoard({ canvasMapRef, pathMapRef, onAnimationEnd }
 
       // 緩衝區已是正確大小，且 Redux 的 boardW/boardH 也一致（pieces 不需要重算）
       const { boardW: currentBoardW, boardH: currentBoardH } = boardDataRef.current;
-      if (
-        canvas.width === curCanvasW && canvas.height === curCanvasH &&
-        currentBoardW === curCanvasW && currentBoardH === curCanvasH
-      ) {
+      if (canvas.width === curCanvasW && canvas.height === curCanvasH && currentBoardW === curCanvasW && currentBoardH === curCanvasH) {
         clampPan(zoomPercentRef.current);
         if (resizeTimerRef.current) clearTimeout(resizeTimerRef.current);
         resizeTimerRef.current = setTimeout(() => setIsResizing(false), 600);
@@ -184,9 +246,7 @@ export default function PuzzleBoard({ canvasMapRef, pathMapRef, onAnimationEnd }
 
       setIsResizing(true);
       isRegeneratingRef.current = true;
-      const { imageDataUrl, referenceDataUrl, cropRegion, cols, rows, pieces,
-              pieceW: oldPieceW, pieceH: oldPieceH,
-              puzzleOffsetX: oldOffsetX, puzzleOffsetY: oldOffsetY } = boardDataRef.current;
+      const { imageDataUrl, referenceDataUrl, cropRegion, cols, rows, pieces, pieceW: oldPieceW, pieceH: oldPieceH, puzzleOffsetX: oldOffsetX, puzzleOffsetY: oldOffsetY } = boardDataRef.current;
 
       // referenceDataUrl 優先（已裁切小圖，避免手機載入原始大圖的記憶體問題）
       const effectiveUrl = referenceDataUrl ?? imageDataUrl;
@@ -194,12 +254,7 @@ export default function PuzzleBoard({ canvasMapRef, pathMapRef, onAnimationEnd }
 
       if (pieces.length > 0 && effectiveUrl) {
         try {
-          const result = await generatePieces(
-            effectiveUrl, cols, rows,
-            curCanvasW, curCanvasH,
-            effectiveCrop,
-            pieces
-          );
+          const result = await generatePieces(effectiveUrl, cols, rows, curCanvasW, curCanvasH, effectiveCrop, pieces);
 
           // resize：依新舊 pieceSize 比例縮放位置（與 continueGame 邏輯一致）
           const TAB_SIZE = Math.floor(result.pieceW * TAB_RATIO);
@@ -237,15 +292,17 @@ export default function PuzzleBoard({ canvasMapRef, pathMapRef, onAnimationEnd }
           canvas.width = curCanvasW;
           canvas.height = curCanvasH;
 
-          dispatch(rescalePieces({
-            piecePositions,
-            boardW: curCanvasW,
-            boardH: curCanvasH,
-            pieceW: result.pieceW,
-            pieceH: result.pieceH,
-            puzzleOffsetX: result.puzzleOffsetX,
-            puzzleOffsetY: result.puzzleOffsetY,
-          }));
+          dispatch(
+            rescalePieces({
+              piecePositions,
+              boardW: curCanvasW,
+              boardH: curCanvasH,
+              pieceW: result.pieceW,
+              pieceH: result.pieceH,
+              puzzleOffsetX: result.puzzleOffsetX,
+              puzzleOffsetY: result.puzzleOffsetY,
+            }),
+          );
         } catch (e) {
           console.error('canvas rescale failed', e);
           canvas.width = curCanvasW;
@@ -305,23 +362,35 @@ export default function PuzzleBoard({ canvasMapRef, pathMapRef, onAnimationEnd }
   }, [changeZoom]);
 
   useGameLoop({
-    canvasRef, canvasMapRef, pathMapRef,
-    hoveredPieceIdRef, activePieceIdRef,
-    dragDeltaRef, dragBasePositionsRef,
+    canvasRef,
+    canvasMapRef,
+    pathMapRef,
+    hoveredPieceIdRef,
+    activePieceIdRef,
+    dragDeltaRef,
+    dragBasePositionsRef,
     completionAnimStartRef,
+    previewImageRef,
+    showPreviewHintRef,
   });
 
-  const onZoomChange = useCallback((z: number) => {
-    const clamped = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, z));
-    zoomPercentRef.current = clamped;
-    setZoomPercent(clamped);
-    clampPan(clamped);
-  }, [clampPan]);
+  const onZoomChange = useCallback(
+    (z: number) => {
+      const clamped = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, z));
+      zoomPercentRef.current = clamped;
+      setZoomPercent(clamped);
+      clampPan(clamped);
+    },
+    [clampPan],
+  );
 
   usePointerDrag({
-    canvasRef, pathMapRef,
-    hoveredPieceIdRef, activePieceIdRef,
-    dragDeltaRef, dragBasePositionsRef,
+    canvasRef,
+    pathMapRef,
+    hoveredPieceIdRef,
+    activePieceIdRef,
+    dragDeltaRef,
+    dragBasePositionsRef,
     onPanStart,
     onPanDelta,
     onZoomChange,
@@ -329,7 +398,7 @@ export default function PuzzleBoard({ canvasMapRef, pathMapRef, onAnimationEnd }
   });
 
   // 公式：100% → scale=0.5 → fit-to-canvas；200% → scale=1.0 → fit-to-grid
-  const actualCssScale = (1 / getEffectiveDPR()) * zoomPercent / 100;
+  const actualCssScale = ((1 / getEffectiveDPR()) * zoomPercent) / 100;
   const baseW = boardW;
   const baseH = boardH;
 
@@ -338,11 +407,7 @@ export default function PuzzleBoard({ canvasMapRef, pathMapRef, onAnimationEnd }
   return (
     <div className="flex flex-col w-full h-full">
       {/* 遊戲區域：深色桌面背景，佔滿剩餘高度 */}
-      <div
-        ref={gameAreaRef}
-        className="flex-1 relative overflow-hidden"
-        style={{ background: 'radial-gradient(140% 100% at 50% 40%, #3A2F25 0%, #1A140D 55%, #0D0906 100%)' }}
-      >
+      <div ref={gameAreaRef} className="flex-1 relative overflow-hidden" style={{ background: 'radial-gradient(140% 100% at 50% 40%, #3A2F25 0%, #1A140D 55%, #0D0906 100%)' }}>
         {isResizing && (
           <div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none" style={{ background: 'rgba(13,9,6,.85)' }}>
             <span className="text-white text-lg font-semibold tracking-wide">調整版面中…</span>
@@ -351,16 +416,12 @@ export default function PuzzleBoard({ canvasMapRef, pathMapRef, onAnimationEnd }
 
         {/* 暫停 overlay */}
         {showPauseOverlay && (
-          <div
-            className="fixed inset-0 flex flex-col items-center justify-center z-40 pointer-events-auto"
-            style={{ background: 'rgba(13,9,6,.85)' }}
-          >
-            <div className="mb-3 text-brand-500" style={{ filter: 'drop-shadow(0 0 20px rgba(244,165,43,.5))' }}><Icon name="ic-pause" size={80} /></div>
+          <div className="fixed inset-0 flex flex-col items-center justify-center z-40 pointer-events-auto" style={{ background: 'rgba(13,9,6,.85)' }}>
+            <div className="mb-3 text-brand-500" style={{ filter: 'drop-shadow(0 0 20px rgba(244,165,43,.5))' }}>
+              <Icon name="ic-pause" size={80} />
+            </div>
             <p className="text-paper-100 text-xl sm:text-2xl font-black mb-5 tracking-wide">遊戲暫停</p>
-            <button
-              onClick={() => dispatch(resumeGame())}
-              className="btn-primary px-6 sm:px-8 py-2.5 sm:py-3 text-sm sm:text-base"
-            >
+            <button onClick={() => dispatch(resumeGame())} className="btn-primary px-6 sm:px-8 py-2.5 sm:py-3 text-sm sm:text-base">
               繼續遊戲
             </button>
           </div>
@@ -378,13 +439,12 @@ export default function PuzzleBoard({ canvasMapRef, pathMapRef, onAnimationEnd }
             transform: `translate(calc(-50% + ${pan.x}px), calc(-50% + ${pan.y}px)) scale(${actualCssScale})`,
             transformOrigin: 'center center',
             cursor: canPan ? 'grab' : 'default',
+            transition: completionZooming ? `transform ${ZOOM_IN_DURATION_MS}ms ease-out` : undefined,
           }}
         />
 
         {/* 動畫期間封鎖所有互動 */}
-        {isAnimating && (
-          <div className="fixed inset-0 z-30 pointer-events-auto" />
-        )}
+        {(completionZooming || isAnimating) && <div className="fixed inset-0 z-30 pointer-events-auto" />}
       </div>
 
       {/* 底部控制 bar：縮放按鈕移出 canvas 疊層，消除遮擋問題 */}
@@ -398,32 +458,19 @@ export default function PuzzleBoard({ canvasMapRef, pathMapRef, onAnimationEnd }
         }}
       >
         <div className="max-w-[1440px] mx-auto w-full flex items-center justify-between">
-          <span
-            className="text-xs font-medium text-brand-500/70 transition-opacity duration-300 select-none"
-            style={{ opacity: canPan ? 1 : 0 }}
-          >
-            雙指或拖曳空白處平移
-          </span>
-
-          <div
-            className="flex items-center gap-1.5 rounded-xl px-2 py-1"
-            style={{ background: 'rgba(58,47,37,0.8)', border: '1px solid #5A4B38' }}
-          >
-            <button
-              onClick={() => changeZoom(-ZOOM_STEP)}
-              disabled={zoomPercent <= ZOOM_MIN}
-              className="w-7 h-7 flex items-center justify-center rounded-lg text-brand-500 hover:bg-white/10 disabled:opacity-30 transition-colors"
-            >
+          <div>
+            <span className="text-xs sm:text-sm font-medium text-brand-500/70 transition-opacity">滾輪或雙指縮放</span>
+            <span className="text-xs sm:text-sm font-medium text-brand-500/70 transition-opacity duration-300 select-none" style={{ opacity: canPan ? 1 : 0 }}>
+              {' '}
+              · 拖曳空白處平移
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5 rounded-xl px-2 py-1" style={{ background: 'rgba(58,47,37,0.8)', border: '1px solid #5A4B38' }}>
+            <button onClick={() => changeZoom(-ZOOM_STEP)} disabled={zoomPercent <= ZOOM_MIN} className="w-7 h-7 flex items-center justify-center rounded-lg text-brand-500 hover:bg-white/10 disabled:opacity-30 transition-colors">
               <Icon name="ic-zoom-out" size={18} />
             </button>
-            <span className="text-xs font-bold text-paper-100 w-10 text-center select-none font-mono">
-              {Math.round(zoomPercent)}%
-            </span>
-            <button
-              onClick={() => changeZoom(ZOOM_STEP)}
-              disabled={zoomPercent >= ZOOM_MAX}
-              className="w-7 h-7 flex items-center justify-center rounded-lg text-brand-500 hover:bg-white/10 disabled:opacity-30 transition-colors"
-            >
+            <span className="text-xs font-bold text-paper-100 w-10 text-center select-none font-mono">{Math.round(zoomPercent)}%</span>
+            <button onClick={() => changeZoom(ZOOM_STEP)} disabled={zoomPercent >= ZOOM_MAX} className="w-7 h-7 flex items-center justify-center rounded-lg text-brand-500 hover:bg-white/10 disabled:opacity-30 transition-colors">
               <Icon name="ic-zoom-in" size={18} />
             </button>
           </div>

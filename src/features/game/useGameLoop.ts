@@ -13,6 +13,8 @@ type Props = {
   dragDeltaRef: React.MutableRefObject<{ x: number; y: number }>;
   dragBasePositionsRef: React.MutableRefObject<Record<number, { x: number; y: number }>>;
   completionAnimStartRef?: React.MutableRefObject<number | null>;
+  previewImageRef?: React.RefObject<HTMLImageElement | null>;
+  showPreviewHintRef?: React.MutableRefObject<boolean>;
 };
 
 export function useGameLoop({
@@ -24,6 +26,8 @@ export function useGameLoop({
   dragDeltaRef,
   dragBasePositionsRef,
   completionAnimStartRef,
+  previewImageRef,
+  showPreviewHintRef,
 }: Props) {
   const pieces = useSelector((s: RootState) => s.puzzle.pieces);
   const groups = useSelector((s: RootState) => s.puzzle.groups);
@@ -66,6 +70,7 @@ export function useGameLoop({
         dragDelta: dragDeltaRef.current,
         dragBasePositions: dragBasePositionsRef.current,
         completionProgress,
+        previewImage: showPreviewHintRef?.current ? (previewImageRef?.current ?? null) : null,
       });
       rafId = requestAnimationFrame(loop);
     }

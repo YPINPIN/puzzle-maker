@@ -30,6 +30,7 @@ type PuzzleState = {
   pauseOffset: number;
   showPauseOverlay: boolean;
   showImagePreview: boolean;
+  showPreviewHint: boolean;
   gameId: string | null;
   configId: string | null;
 };
@@ -60,6 +61,7 @@ const initialState: PuzzleState = {
   pauseOffset: 0,
   showPauseOverlay: false,
   showImagePreview: false,
+  showPreviewHint: false,
   gameId: null,
   configId: null,
 };
@@ -340,10 +342,15 @@ const puzzleSlice = createSlice({
       state.draggingGroupId = null;
       state.showImagePreview = false;
       state.isComplete = false;
+      state.showPreviewHint = savedState.showPreviewHint ?? false;
     },
 
     toggleImagePreview(state) {
       state.showImagePreview = !state.showImagePreview;
+    },
+
+    togglePreviewHint(state) {
+      state.showPreviewHint = !state.showPreviewHint;
     },
 
     goToHome(state) {
@@ -415,6 +422,7 @@ export const {
   resumeGame,
   restoreGame,
   toggleImagePreview,
+  togglePreviewHint,
   goToHome,
   setGameId,
   setConfigId,

@@ -18,7 +18,7 @@
 
 每幀依序繪製：
 
-1. 整體背景（深米色）+ 格線矩形（淺米色）+ 虛線格子
+1. 整體背景（深米色）+ 格線矩形（淺米色）+ 格線預覽圖（`showPreviewHintRef.current` 為 true 且 `previewImageRef.current` 已載入時，以 22% 透明度繪製 `referenceDataUrl` 縮圖）+ 虛線格子
 2. 已 snap 的片（row-major 順序）+ 縫隙線描邊
 3. 未 snap 且非拖曳中的片（含縫隙線描邊、hover 白色填色+描邊、紅光警示）；hover 狀態下略過縫隙線（白色描邊優先）
 4. 拖曳中的片（最上層，帶陰影）；格線外疊白色描邊，格線上改顯示綠光（兩者不疊加）；拖曳中不畫縫隙線
@@ -83,6 +83,7 @@
 | `ZOOM_BUTTON_AVOID_H` | 140 — 散落排除右下角高度（CSS px）；乘以 DPR 後傳給 `generatePieces` |
 | `SCATTER_EDGE_PAD_CSS` | 50 — 散落區距螢幕邊框的額外 padding（CSS px）；新遊戲時乘以 DPR 後以 `scatterEdgePad` 傳給 `generatePieces`，避免散片靠近邊框觸發手機返回手勢 |
 | `COMPLETION_ANIM_DURATION_MS` | 1500 — 完成掃光動畫持續時間（ms）；`useGameLoop` 以此計算 `completionProgress`，`PuzzleBoard` 在動畫結束後（+200ms 緩衝）觸發 `onAnimationEnd` |
+| `ZOOM_IN_DURATION_MS` | 200 — 完成縮放置中的 CSS transition 時間（ms）；`PuzzleBoard` completionZooming state 搭配 `transform` transition 使用 |
 | `GAME_BOTTOM_BAR_HEIGHT` | 50 — PuzzleBoard 底部控制 bar 的近似高度（CSS px，不含 safe-area inset）；用於在 PuzzleBoard 外計算 `canvasH`，使 `boardH` 與 `gameAreaRef.clientHeight` 一致，避免 `needsInitialRegenRef` 不必要觸發 |
 | `getEffectiveDPR()` | `clamp(ceil(devicePixelRatio), 2, 3)` — 決定 canvas 解析度倍率；所有 canvasW/H 計算均透過此函式 |
 

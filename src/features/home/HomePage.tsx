@@ -4,7 +4,7 @@ import { useDispatch } from 'react-redux';
 import type { AppDispatch } from '../../store';
 import {
   setReferenceImage, setPieces, setGameId, setConfigId,
-  startGame, restoreGame,
+  startGame, restoreGame, setDifficulty,
 } from '../../store/puzzleSlice';
 import { generatePieces } from '../../lib/pieceFactory';
 import { TOOLBAR_HEIGHT, MAX_CANVAS_WIDTH, TAB_RATIO, getEffectiveDPR, ZOOM_BUTTON_AVOID_W, ZOOM_BUTTON_AVOID_H, GAME_BOTTOM_BAR_HEIGHT, SCATTER_EDGE_PAD_CSS } from '../../lib/constants';
@@ -92,6 +92,7 @@ export default function HomePage({ canvasMapRef, pathMapRef }: Props) {
       pathMapRef.current.clear();
       result.pathMap.forEach((p, id) => pathMapRef.current.set(id, p));
 
+      dispatch(setDifficulty(record.difficulty as Difficulty));
       dispatch(setReferenceImage(image));
       dispatch(setPieces({
         pieces: result.pieces,

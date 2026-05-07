@@ -16,6 +16,7 @@ export type InProgressGameState = {
   pieceH: number;
   puzzleOffsetX: number;
   puzzleOffsetY: number;
+  showPreviewHint?: boolean;
 };
 
 export type GameHistoryRecord = {

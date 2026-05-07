@@ -19,6 +19,7 @@ export type RenderOptions = {
   dragDelta: { x: number; y: number };
   dragBasePositions: Record<number, { x: number; y: number }>;
   completionProgress?: number;
+  previewImage?: HTMLImageElement | null;
 };
 
 export function renderFrame(opts: RenderOptions): void {
@@ -30,6 +31,7 @@ export function renderFrame(opts: RenderOptions): void {
     hoveredPieceId, activePieceId,
     dragDelta, dragBasePositions,
     completionProgress,
+    previewImage,
   } = opts;
 
   const TAB_SIZE = Math.floor(pieceW * TAB_RATIO);
@@ -88,6 +90,14 @@ export function renderFrame(opts: RenderOptions): void {
   // ── 格線矩形背景（明亮米色）──
   ctx.fillStyle = '#f0ede8';
   ctx.fillRect(gridX, gridY, gridW, gridH);
+
+  // ── 格線預覽圖（低透明度）──
+  if (previewImage) {
+    ctx.save();
+    ctx.globalAlpha = 0.22;
+    ctx.drawImage(previewImage, gridX, gridY, gridW, gridH);
+    ctx.restore();
+  }
 
   // ── 格子虛線 ──
   ctx.save();
