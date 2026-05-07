@@ -37,11 +37,10 @@ export async function generatePieces(
 ): Promise<PieceFactoryResult> {
   const image = await loadImage(imageDataUrl);
 
-  // pieceSize 設計：200% zoom (scale=1.0) 時格線恰好 fit-to-window
-  // canvasW/2 = displayW，pieceSize = min(displayW/cols, displayH/rows)
+  // pieceSize 設計：150% zoom (scale=0.75) 時格線約 fit-to-window
   const pieceSize = Math.min(
-    Math.floor(canvasW / 2 / cols),
-    Math.floor(canvasH / 2 / rows),
+    Math.floor(canvasW * 5 / (8 * cols)),
+    Math.floor(canvasH * 5 / (8 * rows)),
   );
   const pieceW = pieceSize;
   const pieceH = pieceSize;
@@ -104,10 +103,27 @@ export async function generatePieces(
         y: zone.y0 + Math.random() * (zone.y1 - zone.y0),
       };
     }
-    return {
-      x: edgeM + Math.random() * Math.max(0, canvasW - pieceW - 2 * edgeM),
-      y: edgeM + Math.random() * Math.max(0, canvasH - pieceH - 2 * edgeM),
-    };
+    const fallbackZones = [
+      { x0: 0,             x1: canvasW - pieceW, y0: 0,             y1: gridT - pieceH - gridM },
+      { x0: 0,             x1: canvasW - pieceW, y0: gridB + gridM, y1: canvasH - pieceH },
+      { x0: 0,             x1: gridL - pieceW - gridM, y0: 0,       y1: canvasH - pieceH },
+      { x0: gridR + gridM, x1: canvasW - pieceW, y0: 0,             y1: canvasH - pieceH },
+    ].filter(z => z.x1 > z.x0 && z.y1 > z.y0);
+    if (fallbackZones.length > 0) {
+      const areas = fallbackZones.map(z => (z.x1 - z.x0) * (z.y1 - z.y0));
+      const total = areas.reduce((s, a) => s + a, 0);
+      let pick = Math.random() * total;
+      let zone = fallbackZones[0];
+      for (let i = 0; i < fallbackZones.length; i++) {
+        pick -= areas[i];
+        if (pick <= 0) { zone = fallbackZones[i]; break; }
+      }
+      return {
+        x: zone.x0 + Math.random() * (zone.x1 - zone.x0),
+        y: zone.y0 + Math.random() * (zone.y1 - zone.y0),
+      };
+    }
+    return { x: 0, y: 0 };
   };
 
   for (let r = 0; r < rows; r++) {

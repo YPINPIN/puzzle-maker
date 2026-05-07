@@ -8,7 +8,7 @@
 
 - Canvas 邏輯尺寸：**正方形**，邊長 = `effectiveDPR × min(viewportW, viewportH - TOOLBAR_HEIGHT)`；寬度另受 `MAX_CANVAS_WIDTH` 上限（1440px）限制
 - `effectiveDPR = clamp(ceil(devicePixelRatio), 2, 3)`：DPR≤2 用 2（桌機與一般手機），DPR=3 用 3（iPhone Pro 等），避免模糊
-- 縮放範圍：`ZOOM_MIN=100%`（fitScale=1/DPR，canvas 填滿視窗）至 `ZOOM_MAX=200%`（格線填滿視窗）；步進 `ZOOM_STEP=25%`；這三個常數定義於 `src/lib/constants.ts`
+- 縮放範圍：`ZOOM_MIN=100%`（fitScale=1/DPR，canvas 填滿視窗）至 `ZOOM_MAX=150%`（格線約填滿視窗 94%）；步進 `ZOOM_STEP=25%`，級別：100 / 125 / 150%；這三個常數定義於 `src/lib/constants.ts`
 - 公式：`actualCssScale = fitScale × zoom / 100`
 - 拼圖格線在 canvas 內**置中**，偏移量存為 `puzzleOffsetX / puzzleOffsetY`
 
@@ -77,11 +77,11 @@
 | `SNAP_THRESHOLD` | 20 — snap 至板子的吸附距離（canvas px）；實際使用時乘以 DPR |
 | `GROUP_THRESHOLD` | 6 — 兩片合組的位置容差（canvas px）；實際使用時乘以 DPR |
 | `ZOOM_MIN` | 100 — 最小縮放比例（%） |
-| `ZOOM_MAX` | 200 — 最大縮放比例（%） |
-| `ZOOM_STEP` | 25 — 縮放步進（%） |
+| `ZOOM_MAX` | 150 — 最大縮放比例（%）；150% 時格線約填滿視窗（94%），完成動畫縮放目標亦為此值 |
+| `ZOOM_STEP` | 25 — 縮放步進（%）；zoom 級別：100 / 125 / 150% |
 | `ZOOM_BUTTON_AVOID_W` | 170 — 散落排除右下角寬度（CSS px）；乘以 DPR 後傳給 `generatePieces` |
 | `ZOOM_BUTTON_AVOID_H` | 140 — 散落排除右下角高度（CSS px）；乘以 DPR 後傳給 `generatePieces` |
-| `SCATTER_EDGE_PAD_CSS` | 50 — 散落區距螢幕邊框的額外 padding（CSS px）；新遊戲時乘以 DPR 後以 `scatterEdgePad` 傳給 `generatePieces`，避免散片靠近邊框觸發手機返回手勢 |
+| `SCATTER_EDGE_PAD_CSS` | 30 — 散落區距螢幕邊框的額外 padding（CSS px）；新遊戲時乘以 DPR 後以 `scatterEdgePad` 傳給 `generatePieces`，避免散片靠近邊框觸發手機返回手勢 |
 | `COMPLETION_ANIM_DURATION_MS` | 1500 — 完成掃光動畫持續時間（ms）；`useGameLoop` 以此計算 `completionProgress`，`PuzzleBoard` 在動畫結束後（+200ms 緩衝）觸發 `onAnimationEnd` |
 | `ZOOM_IN_DURATION_MS` | 200 — 完成縮放置中的 CSS transition 時間（ms）；`PuzzleBoard` completionZooming state 搭配 `transform` transition 使用 |
 | `GAME_BOTTOM_BAR_HEIGHT` | 50 — PuzzleBoard 底部控制 bar 的近似高度（CSS px，不含 safe-area inset）；用於在 PuzzleBoard 外計算 `canvasH`，使 `boardH` 與 `gameAreaRef.clientHeight` 一致，避免 `needsInitialRegenRef` 不必要觸發 |
@@ -99,11 +99,15 @@ Threshold 乘以 `getEffectiveDPR()` 是為了讓手機與桌機在 **CSS 像素
 
 ### `generatePieces` 散落邏輯（`src/lib/pieceFactory.ts`）
 
+**pieceSize 設計**：`pieceSize = min(⌊canvasW × 5 / (8 × cols)⌋, ⌊canvasH × 5 / (8 × rows)⌋)`。100% zoom（scale=0.5）時格線視覺寬度約為 62.5% 視窗寬，對應舊版 125% zoom 的視覺大小。150% zoom（scale=0.75）時格線約填滿視窗（94%）。
+
 散片初始位置分布在格線矩形外圍的四個區域（按面積加權隨機）。`avoidW/avoidH/pickPosition` 已提升至迴圈外，避免每片重複宣告。
 
 Zone 邊界分為兩個概念：
 - `gridM = TAB_SIZE + 4`：散片與格線矩形之間的最小間距
 - `edgeM = gridM + scatterEdgePad`：散片距 canvas 外框的最小間距（避免靠近螢幕邊緣觸發返回手勢）
+
+當四個 zone 面積均為 0（極小螢幕或大格線比例），fallback 以相同四 zone 結構重新計算但不套 `scatterEdgePad`（邊距降至 0），仍保持 `gridM` 間距確保不落在格線上；最極端情況才退回 `{x:0, y:0}`。
 
 可選參數：
 - `avoidBottomRight?: { w, h }`（canvas 邏輯像素）：排除右下角縮放按鈕疊層位置，最多重試 8 次

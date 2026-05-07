@@ -80,6 +80,7 @@ export function useGameLoop({
     canvasRef, canvasMapRef, pathMapRef,
     hoveredPieceIdRef, activePieceIdRef,
     dragDeltaRef, dragBasePositionsRef,
+    completionAnimStartRef, previewImageRef, showPreviewHintRef,
     pieces, groups, draggingGroupId, pieceW, pieceH,
     puzzleOffsetX, puzzleOffsetY, rows, cols,
   ]);

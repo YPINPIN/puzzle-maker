@@ -43,6 +43,7 @@ export default function PuzzleBoard({ canvasMapRef, pathMapRef, onAnimationEnd }
   const boardDataRef = useRef({ imageDataUrl, referenceDataUrl, cropRegion, cols, rows, pieces, pieceW, pieceH, puzzleOffsetX, puzzleOffsetY, boardW, boardH });
   useLayoutEffect(() => {
     boardDataRef.current = { imageDataUrl, referenceDataUrl, cropRegion, cols, rows, pieces, pieceW, pieceH, puzzleOffsetX, puzzleOffsetY, boardW, boardH };
+    showPreviewHintRef.current = showPreviewHint;
   });
 
   const [isAnimating, setIsAnimating] = useState(false);
@@ -60,7 +61,6 @@ export default function PuzzleBoard({ canvasMapRef, pathMapRef, onAnimationEnd }
   const dragBasePositionsRef = useRef<Record<number, { x: number; y: number }>>({});
   const previewImageRef = useRef<HTMLImageElement | null>(null);
   const showPreviewHintRef = useRef(showPreviewHint);
-  showPreviewHintRef.current = showPreviewHint;
 
   // 預覽圖：referenceDataUrl 載入為 HTMLImageElement，供 Canvas 渲染使用
   useEffect(() => {
@@ -158,10 +158,10 @@ export default function PuzzleBoard({ canvasMapRef, pathMapRef, onAnimationEnd }
   const centerAtZoomMax = useCallback(() => {
     const gridCenterX = puzzleOffsetX + (cols * pieceW) / 2;
     const gridCenterY = puzzleOffsetY + (rows * pieceH) / 2;
-    const scale200 = fitScaleRef.current * 2;
+    const scaleMax = (fitScaleRef.current * ZOOM_MAX) / 100;
     const { w: cW, h: cH } = baseDimsRef.current;
-    const rawPanX = -(gridCenterX - cW / 2) * scale200;
-    const rawPanY = -(gridCenterY - cH / 2) * scale200;
+    const rawPanX = -(gridCenterX - cW / 2) * scaleMax;
+    const rawPanY = -(gridCenterY - cH / 2) * scaleMax;
     const { maxPanX, maxPanY } = computeMaxPan(ZOOM_MAX);
     const clamped = {
       x: Math.max(-maxPanX, Math.min(maxPanX, rawPanX)),
@@ -187,20 +187,24 @@ export default function PuzzleBoard({ canvasMapRef, pathMapRef, onAnimationEnd }
   // 完成動畫：先縮放置中（500ms），再掃光（1500ms），結束後通知 PlayRoute 顯示 overlay
   useEffect(() => {
     if (!isComplete) return;
-    setCompletionZooming(true);
-    centerAtZoomMax();
-    const zoomTimer = setTimeout(() => {
-      setCompletionZooming(false);
-      completionAnimStartRef.current = performance.now();
-      setIsAnimating(true);
-      playComplete();
-      sweepTimerRef.current = setTimeout(() => {
-        setIsAnimating(false);
-        onAnimationEnd?.();
-      }, COMPLETION_ANIM_DURATION_MS + 200);
-    }, ZOOM_IN_DURATION_MS);
+    let zoomTimer: ReturnType<typeof setTimeout> | null = null;
+    const initTimer = setTimeout(() => {
+      setCompletionZooming(true);
+      centerAtZoomMax();
+      zoomTimer = setTimeout(() => {
+        setCompletionZooming(false);
+        completionAnimStartRef.current = performance.now();
+        setIsAnimating(true);
+        playComplete();
+        sweepTimerRef.current = setTimeout(() => {
+          setIsAnimating(false);
+          onAnimationEnd?.();
+        }, COMPLETION_ANIM_DURATION_MS + 200);
+      }, ZOOM_IN_DURATION_MS);
+    }, 0);
     return () => {
-      clearTimeout(zoomTimer);
+      clearTimeout(initTimer);
+      if (zoomTimer !== null) clearTimeout(zoomTimer);
       if (sweepTimerRef.current) clearTimeout(sweepTimerRef.current);
     };
   }, [isComplete, onAnimationEnd, centerAtZoomMax]);
