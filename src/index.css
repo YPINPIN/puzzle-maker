@@ -29,9 +29,10 @@
   /* 狀態色 */
   --color-success:    #22A36A;
   --color-success-bg: #E3F6EC;
-  --color-warning:    #E89813;
-  --color-warning-bg: #FDF1D7;
-  --color-danger:     #D94B3B;
+  --color-warning:      #E89813;
+  --color-warning-bg:   #FDF1D7;
+  --color-warning-dark: #C25A00;
+  --color-danger:       #D94B3B;
   --color-danger-bg:  #FCE6E2;
 }
 

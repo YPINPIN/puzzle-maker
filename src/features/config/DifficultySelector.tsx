@@ -11,11 +11,18 @@ import PageFooter from '../../components/PageFooter';
 type GridPreset = { cols: number; rows: number; label: string };
 
 const DIFFICULTIES: { value: Difficulty; label: string; count: number; device: string }[] = [
-  { value: 'easy',   label: '簡單', count: 25,  device: '手機 / 平板 / 桌機' },
-  { value: 'normal', label: '普通', count: 50,  device: '平板 / 桌機' },
-  { value: 'hard',   label: '困難', count: 100, device: '建議平板或桌機' },
-  { value: 'expert', label: '專家', count: 150, device: '建議桌機' },
+  { value: 'easy', label: '簡單', count: 25, device: '手機 / 平板 / 桌機' },
+  { value: 'normal', label: '普通', count: 50, device: '平板 / 桌機' },
+  { value: 'hard', label: '困難', count: 100, device: '平板 / 桌機' },
+  { value: 'expert', label: '專家', count: 150, device: '桌機' },
 ];
+
+const DEVICE_TEXT_COLOR: Record<Difficulty, string> = {
+  easy:   '',
+  normal: 'text-warning',
+  hard:   'text-warning-dark',
+  expert: 'text-danger',
+};
 
 const GRID_PRESETS: Record<Difficulty, GridPreset[]> = {
   easy:   [
@@ -134,12 +141,17 @@ export default function DifficultySelector() {
         </div>
 
         {/* 裝置建議 */}
-        <p className="text-xs text-paper-500 text-center">
-          建議遊玩裝置：
-          <span className="font-semibold text-paper-600">
-            {DIFFICULTIES.find(d => d.value === selectedDifficulty)?.device}
-          </span>
-        </p>
+        {selectedDifficulty !== 'easy' && (
+          <p className="text-sm text-center">
+            {(selectedDifficulty === 'hard' || selectedDifficulty === 'expert') && (
+              <Icon name="ic-warning" size={14} className={`mr-1 ${DEVICE_TEXT_COLOR[selectedDifficulty]}`} />
+            )}
+            <span className="text-paper-600 font-bold">建議遊玩裝置：</span>
+            <span className={`font-bold ${DEVICE_TEXT_COLOR[selectedDifficulty]}`}>
+              {DIFFICULTIES.find(d => d.value === selectedDifficulty)?.device}
+            </span>
+          </p>
+        )}
 
         {/* 格數選擇 */}
         <div className="flex flex-col items-center gap-3 w-full max-w-sm">
