@@ -60,6 +60,19 @@ npx pwa-assets-generator --preset minimal-2023 public/favicon.svg
 
 ---
 
+## Google Search Console
+
+`index.html` 的 `<head>` 已加入所有權驗證 meta tag：
+
+```html
+<meta name="google-site-verification" content="3G53TSbRNhQECYH-w7dAu00MDAT7kNKpcOUqq5GMhKE" />
+```
+
+- 驗證方式：**HTML 標記（URL prefix）**，Property 為 `https://ypinpin.github.io/jigsaw-puzzle-maker/`
+- 不使用「網域」類型，因無法對 `github.io` 子路徑新增 DNS 記錄
+
+---
+
 ## 內建拼圖圖片
 
 放於 `public/presets/`，以 `${import.meta.env.BASE_URL}presets/<檔名>` 引用。
