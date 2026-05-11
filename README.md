@@ -11,7 +11,7 @@
 
 💻 **[線上 Demo](https://ypinpin.github.io/jigsaw-puzzle-maker/)**
 
-![拼圖樂 遊戲截圖](./screenshot.png)
+![拼圖樂 遊戲 Demo](./demo.gif)
 
 ---
 
