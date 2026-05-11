@@ -6,7 +6,7 @@ import type { AppDispatch, RootState } from '../../store';
 import { setPieces, startGame, setReferenceImage, setGameId, setConfigId } from '../../store/puzzleSlice';
 import { generatePieces } from '../../lib/pieceFactory';
 import { TOOLBAR_HEIGHT, MAX_CANVAS_WIDTH, getEffectiveDPR, ZOOM_BUTTON_AVOID_W, ZOOM_BUTTON_AVOID_H, GAME_BOTTOM_BAR_HEIGHT, SCATTER_EDGE_PAD_CSS } from '../../lib/constants';
-import { saveRecord } from '../../lib/records';
+import { saveRecord, isTutorialDone } from '../../lib/records';
 import { saveImage } from '../../lib/imageCache';
 
 type Props = {
@@ -35,6 +35,19 @@ export default function CropPreview({ canvasMapRef, pathMapRef }: Props) {
   const cropRef = useRef<CropRect>({ x: 0, y: 0, w: 0, h: 0 });
   const rafRef = useRef<number>(0);
   const isConfirmingRef = useRef(false);
+  // 教學 spotlight 目標：跟蹤圖片在 canvas 中的實際範圍
+  const imgOverlayRef = useRef<HTMLDivElement>(null);
+
+  function updateImgOverlay() {
+    const overlay = imgOverlayRef.current;
+    const img = imgRef.current;
+    if (!overlay || !img) return;
+    const { offsetX, offsetY, scale } = imgTransformRef.current;
+    overlay.style.left = `${offsetX}px`;
+    overlay.style.top = `${offsetY}px`;
+    overlay.style.width = `${img.width * scale}px`;
+    overlay.style.height = `${img.height * scale}px`;
+  }
 
   // 初始化圖片與裁切框（圖片 fit-to-screen，裁切框置中最大化）
   useEffect(() => {
@@ -63,6 +76,7 @@ export default function CropPreview({ canvasMapRef, pathMapRef }: Props) {
         offsetX: (w - img.width * scale) / 2,
         offsetY: (h - img.height * scale) / 2,
       };
+      updateImgOverlay();
 
       // 裁切框比例 = cols : rows，初始盡量大、置中
       const cropAspect = cols / rows;
@@ -107,6 +121,7 @@ export default function CropPreview({ canvasMapRef, pathMapRef }: Props) {
         offsetX: (w - img.width * scale) / 2,
         offsetY: (h - img.height * scale) / 2,
       };
+      updateImgOverlay();
     }
     resize();
     const ro = new ResizeObserver(resize);
@@ -367,16 +382,18 @@ export default function CropPreview({ canvasMapRef, pathMapRef }: Props) {
     dispatch(setReferenceImage(croppedImageDataUrl));
 
     const configId = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-    saveRecord({
-      id: configId,
-      createdAt: Date.now(),
-      difficulty,
-      cols,
-      rows,
-      isCompleted: false,
-      bestTimeMs: 0,
-    });
-    saveImage(configId, croppedImageDataUrl);
+    if (isTutorialDone()) {
+      saveRecord({
+        id: configId,
+        createdAt: Date.now(),
+        difficulty,
+        cols,
+        rows,
+        isCompleted: false,
+        bestTimeMs: 0,
+      });
+      saveImage(configId, croppedImageDataUrl);
+    }
     dispatch(setConfigId(configId));
     dispatch(setGameId(crypto.randomUUID()));
 
@@ -443,6 +460,8 @@ export default function CropPreview({ canvasMapRef, pathMapRef }: Props) {
       {/* 裁切畫布（佔滿剩餘高度） */}
       <div className="relative flex-1 overflow-hidden">
         <canvas ref={canvasRef} className="block w-full h-full touch-none cursor-grab active:cursor-grabbing" />
+        {/* 教學 spotlight 目標：跟蹤圖片實際顯示範圍 */}
+        <div ref={imgOverlayRef} data-tutorial="crop-image" style={{ position: 'absolute', pointerEvents: 'none' }} />
         {/* 操作提示 */}
         <div className="absolute top-3 left-1/2 -translate-x-1/2 text-brand-500/80 text-xs font-medium pointer-events-none whitespace-nowrap px-3 py-1 rounded-full" style={{ background: 'rgba(26,20,13,.6)', border: '1px solid rgba(244,165,43,.25)' }}>
           拖曳移動裁切框 · 滾輪或雙指縮放

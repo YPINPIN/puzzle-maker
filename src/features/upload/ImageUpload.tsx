@@ -89,7 +89,7 @@ export default function ImageUpload() {
       {/* Content */}
       <div className="flex-1 overflow-y-auto flex flex-col items-center p-6">
         <div className="flex-1 flex flex-col items-center justify-center w-full">
-          <div className="w-full max-w-md flex flex-col items-center gap-3">
+          <div className="w-full max-w-md flex flex-col items-center gap-3" data-tutorial="upload-area">
             <h1 className="text-2xl font-bold text-paper-900 tracking-tight">上傳圖片</h1>
             {pendingImageUrl ? (
               <div

@@ -5,6 +5,8 @@ import { usePreventForwardNav } from '../../lib/usePreventForwardNav';
 import { useBackgroundMusic } from '../game/useBackgroundMusic';
 import { playClick } from '../../lib/soundEngine';
 import { initImageCache } from '../../lib/imageCache';
+import { TutorialProvider } from '../tutorial/TutorialContext';
+import TutorialOverlay from '../tutorial/TutorialOverlay';
 
 export type AppLayoutOutletContext = {
   leaveHandlerRef: React.MutableRefObject<(() => void) | null>;
@@ -29,13 +31,16 @@ export default function AppLayout() {
   }, []);
 
   return (
-    <div className="flex flex-col w-screen overflow-hidden overscroll-none" style={{ height: '100dvh' }}>
-      <AppHeader leaveHandlerRef={leaveHandlerRef} />
-      <div className="flex-1 overflow-hidden min-h-0">
-        <Suspense fallback={null}>
-          <Outlet context={{ leaveHandlerRef } satisfies AppLayoutOutletContext} />
-        </Suspense>
+    <TutorialProvider>
+      <div className="flex flex-col w-screen overflow-hidden overscroll-none" style={{ height: '100dvh' }}>
+        <AppHeader leaveHandlerRef={leaveHandlerRef} />
+        <div className="flex-1 overflow-hidden min-h-0">
+          <Suspense fallback={null}>
+            <Outlet context={{ leaveHandlerRef } satisfies AppLayoutOutletContext} />
+          </Suspense>
+        </div>
+        <TutorialOverlay />
       </div>
-    </div>
+    </TutorialProvider>
   );
 }

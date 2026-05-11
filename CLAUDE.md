@@ -23,6 +23,14 @@ npm run compress-presets  # 將 public/presets/*.png 一次性壓縮轉換為 We
 - **vite-plugin-pwa**（Vite 8 尚未正式支援，根目錄 `.npmrc` 已設定 `legacy-peer-deps=true`，`npm install` / `npm ci` 無需另加 flag）：Service Worker 生成（Workbox `generateSW` 模式）與 manifest 注入；`devOptions.enabled: true` 讓 dev server 也能測試 SW
 - **本機儲存策略**：圖片（裁切後 JPEG base64）統一存於 **IndexedDB**（`puzzle-image-db`，`src/lib/imageCache.ts`），啟動時一次載入至記憶體供同步讀取；快捷設定、歷史紀錄、草稿等文字紀錄（合計 ~100 KB）仍存於 **localStorage**
 - **內建圖片格式**：`public/presets/` 存放 WebP 格式（`puzzle-1.webp` ~ `puzzle-8.webp`，每張 ~230–420 KB），由 `scripts/compress-presets.mjs`（`sharp`）從原始 PNG 一次性轉換；`PresetImagesModal` 引用 `.webp`，Service Worker 以 `StaleWhileRevalidate` 策略快取（再次造訪秒開）
+- **新手教學系統**（`src/features/tutorial/`）：僅對新使用者（`isNewUser()` 成立且無 `puzzle-tutorial-done` key）啟動，分 `home | upload | config | crop | play` 五個 phase；以 `data-tutorial` attribute 定位 DOM 元素，`box-shadow` 製造 Spotlight 遮罩；教學期間抑制快捷設定、圖片快取、草稿寫入，完成後一次性補存；既有使用者首次載入時自動補寫 `puzzle-tutorial-done` key 跳過教學（一次性遷移）
+
+## 靜態分析規範
+
+- **禁止使用 `eslint-disable` 系列注解**（`eslint-disable`、`eslint-disable-next-line`、`eslint-disable-line`）跳過任何 ESLint 規則，包含 `react-hooks/exhaustive-deps`、`@typescript-eslint/*` 等。
+- **禁止使用 `@ts-ignore` / `@ts-expect-error`** 抑制 TypeScript 型別錯誤。
+- `npm run lint` 必須零錯誤零 warning 才可提交；`npm run build`（含 TypeScript 型別檢查）必須零錯誤。
+- 若 lint 或型別有誤，**必須修正根因**，不得以注解繞過。
 
 ## TypeScript 設定
 
@@ -45,4 +53,5 @@ npm run compress-presets  # 將 public/presets/*.png 一次性壓縮轉換為 We
 | [docs/UI.md](docs/UI.md) | Header（暫停行為）、配色、Icon 元件、RWD、手機適配 |
 | [docs/AUDIO.md](docs/AUDIO.md) | SFX、程序化背景音樂、音量控制 |
 | [docs/COMPONENTS.md](docs/COMPONENTS.md) | 共用元件、工具函式（`src/lib/`）、分享代碼 |
+| [docs/TUTORIAL.md](docs/TUTORIAL.md) | 新手教學系統（phase 狀態機、Spotlight、步驟定義、資料抑制） |
 | [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | public 路徑規則、靜態圖示、PWA 設定、內建圖片 |

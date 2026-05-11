@@ -17,8 +17,10 @@
 | `PresetImagesModal` | `src/features/upload/PresetImagesModal.tsx` | 內建圖片選擇 Modal；8 張圖片定義於元件頂部常數（`PRESET_IMAGES`），引用 `public/presets/puzzle-N.webp`；各圖片以 `onLoad` 追蹤載入狀態，未載入時顯示 spinner；點選後以 `fetch → blob → canvas.toDataURL('image/jpeg', 0.92)` 轉換，結果快取於 `useRef<Map>` |
 | `RecordsModal` | `src/features/upload/RecordsModal.tsx` | 雙模式清單 Modal；`mode='quick'` 顯示快捷設定；`mode='history'` 顯示歷史紀錄固定 10 槽（空槽顯示虛線框）；縮圖以 `object-contain` 顯示完整圖片；各筆紀錄可刪除；quick 模式 Header 有「匯入代碼」按鈕，每筆卡片有「分享」按鈕 |
 | `ImagePreviewOverlay` | `src/features/game/ImagePreviewOverlay.tsx` | 遊戲中查看參考圖的全螢幕覆蓋層；由 `toggleImagePreview` action 控制 `showImagePreview` Redux 欄位；顯示 `referenceDataUrl`，點擊背景或 ✕ 鈕關閉 |
-| `AppLayout` | `src/features/layout/AppLayout.tsx` | 所有路由的共用 layout（`<Outlet />`）；掛載 `usePreventForwardNav`、`useBackgroundMusic`、全域按鈕 click 音效；啟動時呼叫 `initImageCache()`（冪等，將 IDB 圖片載入 `_mem`）；渲染 `AppHeader` |
-| `PlayRoute` | `src/features/game/PlayRoute.tsx` | `/play` 路由元件；以 `useBlocker` 攔截離開確認、Guard 無遊戲狀態時重導回首頁；整合 `PuzzleBoard`（lazy）與 `CompletionOverlay`（直接 import）；以 `overlayVisible` state 延遲顯示 CompletionOverlay，待 PuzzleBoard 的掃光動畫結束後再渲染 |
+| `AppLayout` | `src/features/layout/AppLayout.tsx` | 所有路由的共用 layout（`<Outlet />`）；掛載 `usePreventForwardNav`、`useBackgroundMusic`、全域按鈕 click 音效；啟動時呼叫 `initImageCache()`（冪等，將 IDB 圖片載入 `_mem`）；渲染 `AppHeader`；掛載 `TutorialProvider` 與 `TutorialOverlay` |
+| `PlayRoute` | `src/features/game/PlayRoute.tsx` | `/play` 路由元件；以 `useBlocker` 攔截離開確認、Guard 無遊戲狀態時重導回首頁；整合 `PuzzleBoard`（lazy）與 `CompletionOverlay`（直接 import）；以 `overlayVisible` state 延遲顯示 CompletionOverlay，待 PuzzleBoard 的掃光動畫結束後再渲染；以 `prevTutorialPhase` ref 偵測教學完成做初次存檔 |
+| `TutorialProvider` | `src/features/tutorial/TutorialContext.tsx` | 新手教學狀態機（`phase`、`homeStep`、`playStep`、`midStepDone`）；`phase` 由 `location.pathname` 在 render 期間直接推導（無 effect）；初始化時自動判斷新 / 舊使用者；僅匯出 `TutorialProvider` 元件 |
+| `TutorialOverlay` | `src/features/tutorial/TutorialOverlay.tsx` | Spotlight 遮罩 + 對話卡片渲染；以 `data-tutorial` attribute 定位 DOM 目標；`useLayoutEffect` + `window resize` + `MutationObserver` 同步 spotlight 位置；青綠色（teal）配色；`highlightText()` 渲染高亮短語；渲染 `titleIcon`（`IconName`）取代 emoji |
 
 ---
 
@@ -32,12 +34,14 @@
 | `imageUtils.ts` | `generateThumbnail(url, opts?)` | 200×200 置中縮圖生成，回傳 `Promise<string>`（JPEG data URL）；預設 `background='#F8F5F0'`、`quality=0.7`；目前無活躍呼叫端（thumbnail 已由圖片快取統一管理） |
 | `soundEngine.ts` | 音效與音樂 API | 音效 SFX + 程序化鋼琴背景音樂引擎；靜音與三種音量分類以 `localStorage` 持久化；詳見 [AUDIO.md](AUDIO.md) |
 | `constants.ts` | 遊戲常數與 `getEffectiveDPR()` | Canvas 尺寸、閾值、縮放常數；詳見 [CANVAS.md](CANVAS.md) |
-| `records.ts` | 快捷設定 API | 詳見 [RECORDS.md](RECORDS.md) |
+| `records.ts` | 快捷設定 API；`isTutorialDone()`、`isNewUser()` | 詳見 [RECORDS.md](RECORDS.md) |
 | `gameHistory.ts` | 歷史紀錄 API | 詳見 [RECORDS.md](RECORDS.md) |
 | `gameDraft.ts` | 草稿 API | 詳見 [RECORDS.md](RECORDS.md) |
 | `shareCode.ts` | `encodeShareCode`, `decodeShareCode`, `shareDataToRecord` | 詳見下方分享代碼系統 |
 | `usePhase.ts` | `usePhase()` | 從 React Router `pathname` 推導目前 `GamePhase`（`/` → `home`、`/upload` → `upload`、`/config` → `config`、`/crop` → `crop`、`/play` → `playing`）；供 `AppHeader` 等需要依 phase 切換 UI 的元件使用 |
 | `usePreventForwardNav.ts` | `usePreventForwardNav()` | 以 `useBlocker` 偵測瀏覽器前進導航（POP 且新 idx > 舊 idx），自動呼叫 `blocker.reset()` 阻止；掛載於 `AppLayout` |
+| `tutorial/tutorialContext.ts` | `TutorialPhase`、`TutorialContextValue`、`TutorialContext` | 教學系統 Context 物件與型別定義（純 TypeScript，無 React 元件，避免 fast-refresh 問題） |
+| `tutorial/useTutorial.ts` | `useTutorial()` | `useContext(TutorialContext)` hook；供所有需要讀取教學狀態的元件使用 |
 
 ---
 

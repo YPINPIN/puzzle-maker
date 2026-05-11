@@ -232,6 +232,7 @@ export default function HomePage({ canvasMapRef, pathMapRef }: Props) {
             subtitle="上傳圖片，從頭開始"
             onClick={handleNewPuzzle}
             variant="primary"
+            dataTutorial="home-new-puzzle"
           />
           <MenuCard
             icon={<IconSave />}
@@ -239,6 +240,7 @@ export default function HomePage({ canvasMapRef, pathMapRef }: Props) {
             subtitle="從上次中斷的地方繼續"
             onClick={() => setShowRecords('history')}
             variant="secondary"
+            dataTutorial="home-load-save"
           />
           <MenuCard
             icon={<IconQuick />}
@@ -246,6 +248,7 @@ export default function HomePage({ canvasMapRef, pathMapRef }: Props) {
             subtitle="從已儲存的設定立即開始"
             onClick={() => setShowRecords('quick')}
             variant="secondary"
+            dataTutorial="home-quick-start"
           />
 
         </div>
@@ -358,17 +361,19 @@ function DraftCard({ draft, onClick }: { draft: import('../../lib/gameDraft').Ga
 type CardVariant = 'primary' | 'secondary' | 'resume';
 
 function MenuCard({
-  icon, title, subtitle, onClick, variant,
+  icon, title, subtitle, onClick, variant, dataTutorial,
 }: {
   icon: React.ReactNode;
   title: string;
   subtitle: string;
   onClick: () => void;
   variant: CardVariant;
+  dataTutorial?: string;
 }) {
   return (
     <button
       onClick={onClick}
+      data-tutorial={dataTutorial}
       className={`w-full flex items-center gap-4 p-5 rounded-2xl border-2 text-left transition-all active:scale-[0.99] card-lift ${
         variant === 'primary'
           ? 'btn-primary border-brand-700'

@@ -175,7 +175,7 @@ export default function AppHeader({ leaveHandlerRef }: Props) {
 
           {/* 難度 + 格數 + 預覽提示開關 */}
           {isPlaying && cols > 0 && (
-            <div className="inline-flex items-center gap-2 flex-shrink-0">
+            <div className="inline-flex items-center gap-2 flex-shrink-0" data-tutorial="play-difficulty">
               <span
                 className="inline-flex items-center gap-1.5 text-xs font-bold rounded-full px-2.5 py-0.5 whitespace-nowrap"
                 style={{
@@ -209,7 +209,7 @@ export default function AppHeader({ leaveHandlerRef }: Props) {
           {/* 計時器（playing）+ 靜音按鈕（所有頁面） */}
           <div className="flex items-center gap-2">
             {isPlaying && (
-              <div className="timer-box whitespace-nowrap">
+              <div className="timer-box whitespace-nowrap" data-tutorial="play-timer">
                 <Icon name="ic-timer" size={16} style={{ color: '#F5B13F' }} />
                 <span className="translate-y-px">{formatTimer(displayElapsed)}</span>
               </div>
@@ -232,13 +232,14 @@ export default function AppHeader({ leaveHandlerRef }: Props) {
           {/* 遊戲控制按鈕（playing phase，完成後隱藏） */}
           {phase === 'playing' && !isComplete && (
             <div className="flex flex-wrap gap-2 flex-shrink-0">
-              <button onClick={() => dispatch(toggleImagePreview())} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-all hover:brightness-110" style={{ background: '#3A2F25', border: '1px solid #5A4B38', color: '#F4ECDE' }}>
+              <button data-tutorial="play-reference" onClick={() => dispatch(toggleImagePreview())} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-all hover:brightness-110" style={{ background: '#3A2F25', border: '1px solid #5A4B38', color: '#F4ECDE' }}>
                 <Icon name="ic-eye" size={16} /> 參考圖
               </button>
-              <button onClick={() => dispatch(isPaused ? resumeGame() : userPauseGame())} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-all hover:brightness-110" style={{ background: '#3A2F25', border: '1px solid #5A4B38', color: '#F4ECDE' }}>
-                <Icon name={isPaused ? 'ic-play' : 'ic-pause'} size={16} /> {isPaused ? '繼續' : '暫停'}
+              <button data-tutorial="play-pause" onClick={() => dispatch(userPauseGame())} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-all hover:brightness-110" style={{ background: '#3A2F25', border: '1px solid #5A4B38', color: '#F4ECDE' }}>
+                <Icon name="ic-pause" size={16} /> 暫停
               </button>
               <button
+                data-tutorial="play-save"
                 onClick={() => {
                   dispatch(pauseGame()); // reducer 有 guard：已暫停則 no-op
                   setShowSavePanel(true);
@@ -247,7 +248,7 @@ export default function AppHeader({ leaveHandlerRef }: Props) {
               >
                 <Icon name="ic-save" size={16} /> 保存並結束
               </button>
-              <button onClick={() => navigate('/')} className="btn-danger px-3 py-1.5 text-xs">
+              <button data-tutorial="play-end" onClick={() => navigate('/')} className="btn-danger px-3 py-1.5 text-xs">
                 結束
               </button>
             </div>

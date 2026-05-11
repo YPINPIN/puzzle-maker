@@ -42,13 +42,35 @@
 |------|------|
 | localStorage key | `puzzle-quick-settings` |
 | 上限 | 最多 10 筆 `PuzzleRecord` |
-| 主要 API | `getRecords()`, `saveRecord()`, `updateBestTime()` |
+| 主要 API | `getRecords()`, `saveRecord()`, `updateRecord()`, `deleteRecord()`, `isNewUser()`, `isTutorialDone()` |
 
 **欄位**：`id`（`configId`）、難度、格數、`isCompleted`、`bestTimeMs`
 
 **建立入口**有兩處：
-1. CropPreview 確認開始時
+1. CropPreview 確認開始時（教學期間抑制，完成後由 PlayRoute 補存）
 2. 透過分享代碼匯入時（`ShareCodeModal`）
+
+### isTutorialDone()
+
+```typescript
+const TUTORIAL_DONE_KEY = 'puzzle-tutorial-done';
+
+export function isTutorialDone(): boolean {
+  return !!localStorage.getItem(TUTORIAL_DONE_KEY);
+}
+```
+
+用於：① `useGameDraft.buildAndSave()` guard；② `CropPreview` saveRecord / saveImage guard；③ `PlayRoute` 教學完成後初次存檔觸發條件。
+
+### isNewUser()
+
+```typescript
+export function isNewUser(): boolean {
+  return getRecords().length === 0 && getGameHistory().length === 0 && getDraft() === null;
+}
+```
+
+`TutorialContext` 初始化時用此函式判斷是否為全新使用者（無任何存檔資料）。
 
 ---
 
@@ -98,6 +120,8 @@
 - back 攔截 / 「結束」按鈕觸發時也立即呼叫 `saveNow()`
 
 `useGameDraft` 回傳 `{ saveNow }` 供外部呼叫（`App.tsx` 在 back 攔截時使用）。
+
+**教學期間抑制**：`buildAndSave()` 最前端有 `if (!isTutorialDone()) return` guard，教學完成前所有存檔路徑均短路返回，不寫任何資料。教學完成（`play` → `inactive`）後，`PlayRoute` 立即呼叫 `saveNow()` 做初次草稿存檔。
 
 ### 清除時機
 

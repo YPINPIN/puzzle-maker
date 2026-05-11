@@ -2,6 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../../store';
 import { saveDraft, clearDraft } from '../../lib/gameDraft';
+import { isTutorialDone } from '../../lib/records';
 
 export function useGameDraft() {
   const state = useSelector((s: RootState) => s.puzzle);
@@ -12,6 +13,7 @@ export function useGameDraft() {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const buildAndSave = useCallback(() => {
+    if (!isTutorialDone()) return;
     const s = stateRef.current;
     if (s.isComplete || !s.gameId || !s.referenceDataUrl) return;
     const now = Date.now();

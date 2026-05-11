@@ -411,7 +411,7 @@ export default function PuzzleBoard({ canvasMapRef, pathMapRef, onAnimationEnd }
   return (
     <div className="flex flex-col w-full h-full">
       {/* 遊戲區域：深色桌面背景，佔滿剩餘高度 */}
-      <div ref={gameAreaRef} className="flex-1 relative overflow-hidden" style={{ background: 'radial-gradient(140% 100% at 50% 40%, #3A2F25 0%, #1A140D 55%, #0D0906 100%)' }}>
+      <div ref={gameAreaRef} data-tutorial="play-board" className="flex-1 relative overflow-hidden" style={{ background: 'radial-gradient(140% 100% at 50% 40%, #3A2F25 0%, #1A140D 55%, #0D0906 100%)' }}>
         {isResizing && (
           <div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none" style={{ background: 'rgba(13,9,6,.85)' }}>
             <span className="text-white text-lg font-semibold tracking-wide">調整版面中…</span>
@@ -469,7 +469,7 @@ export default function PuzzleBoard({ canvasMapRef, pathMapRef, onAnimationEnd }
               · 拖曳空白處平移
             </span>
           </div>
-          <div className="flex items-center gap-1.5 rounded-xl px-2 py-1" style={{ background: 'rgba(58,47,37,0.8)', border: '1px solid #5A4B38' }}>
+          <div data-tutorial="play-zoom-control" className="flex items-center gap-1.5 rounded-xl px-2 py-1" style={{ background: 'rgba(58,47,37,0.8)', border: '1px solid #5A4B38' }}>
             <button onClick={() => changeZoom(-ZOOM_STEP)} disabled={zoomPercent <= ZOOM_MIN} className="w-7 h-7 flex items-center justify-center rounded-lg text-brand-500 hover:bg-white/10 disabled:opacity-30 transition-colors">
               <Icon name="ic-zoom-out" size={18} />
             </button>

@@ -35,6 +35,30 @@
 
 ---
 
+## 新手教學流程
+
+> 詳細規格見 [TUTORIAL.md](TUTORIAL.md)。
+
+初次使用者（`isNewUser()` 成立）啟動後自動進入教學模式。教學 phase 由 `TutorialContext` 管理，與路由導航聯動：
+
+```
+home（homeStep 0–4）
+  ↓ navigate('/upload')
+upload（midStep）
+  ↓ PUSH /config
+config（midStep）
+  ↓ PUSH /crop
+crop（midStep）
+  ↓ PlayRoute mount
+play（playStep 0–9）
+  ↓ nextPlayStep() 達 PLAY_LAST_STEP
+inactive（教學完成，寫 localStorage key）
+```
+
+教學期間快捷設定、圖片快取、草稿均被抑制，完成後由 `PlayRoute` 一次性補存初始資料。
+
+---
+
 ## Guard 邏輯
 
 各路由元件在 hooks 之後、return JSX 之前加入 Guard，防止直接輸入 URL 或無效狀態下渲染：

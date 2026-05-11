@@ -4,9 +4,12 @@ import { useSelector, useDispatch } from 'react-redux';
 import type { RootState, AppDispatch } from '../../store';
 import { pauseGame, resumeGame, resetGame } from '../../store/puzzleSlice';
 import { useGameDraft } from './useGameDraft';
+import { saveRecord, isTutorialDone } from '../../lib/records';
+import { saveImage } from '../../lib/imageCache';
 import ConfirmDialog, { HiAccent } from '../../components/ConfirmDialog';
 import type { AppLayoutOutletContext } from '../layout/AppLayout';
 import CompletionOverlay from '../complete/CompletionOverlay';
+import { useTutorial } from '../tutorial/useTutorial';
 
 const PuzzleBoard = lazy(() => import('./PuzzleBoard'));
 
@@ -20,10 +23,39 @@ export default function PlayRoute({ canvasMapRef, pathMapRef }: Props) {
   const navigate    = useNavigate();
   const { saveNow } = useGameDraft();
   const isComplete  = useSelector((s: RootState) => s.puzzle.isComplete);
+  const startTime   = useSelector((s: RootState) => s.puzzle.startTime);
   const pieces      = useSelector((s: RootState) => s.puzzle.pieces);
+  const configId    = useSelector((s: RootState) => s.puzzle.configId);
+  const difficulty  = useSelector((s: RootState) => s.puzzle.difficulty);
+  const cols        = useSelector((s: RootState) => s.puzzle.cols);
+  const rows        = useSelector((s: RootState) => s.puzzle.rows);
+  const referenceDataUrl = useSelector((s: RootState) => s.puzzle.referenceDataUrl);
+
   const { leaveHandlerRef } = useOutletContext<AppLayoutOutletContext>();
   const [overlayVisible, setOverlayVisible] = useState(false);
   const handleAnimationEnd = useCallback(() => setOverlayVisible(true), []);
+
+  const { phase: tutorialPhase } = useTutorial();
+
+  // 教學整合：mount 時若教學進行中則暫停計時；play→inactive 時恢復並補存初始資料
+  const prevTutorialPhase = useRef<string | null>(null);
+  useEffect(() => {
+    if (prevTutorialPhase.current === null) {
+      // 首次執行（mount）：教學進行中則暫停計時
+      if (tutorialPhase === 'play' && startTime) dispatch(pauseGame());
+    } else if (prevTutorialPhase.current === 'play' && tutorialPhase === 'inactive') {
+      // 教學完成：恢復計時，並補存首次快捷設定與草稿
+      dispatch(resumeGame());
+      if (isTutorialDone()) {
+        if (configId && referenceDataUrl) {
+          saveRecord({ id: configId, createdAt: Date.now(), difficulty, cols, rows, isCompleted: false, bestTimeMs: 0 });
+          saveImage(configId, referenceDataUrl);
+        }
+        saveNow();
+      }
+    }
+    prevTutorialPhase.current = tutorialPhase;
+  }, [tutorialPhase, startTime, dispatch, saveNow, configId, difficulty, cols, rows, referenceDataUrl]);
 
   // ref 供 blocker callback（非 render 路徑）讀取；state 供 render guard 讀取
   const confirmedLeaveRef = useRef(false);
@@ -42,13 +74,17 @@ export default function PlayRoute({ canvasMapRef, pathMapRef }: Props) {
     }, [isComplete])
   );
 
-  // blocker 觸發時自動暫存 + 暫停
+  // blocker 觸發時自動暫存 + 暫停；教學進行中靜默攔截，不顯示離開 Dialog
   useEffect(() => {
     if (blocker.state === 'blocked') {
+      if (tutorialPhase === 'play') {
+        blocker.reset?.();
+        return;
+      }
       saveNow();
       dispatch(pauseGame());
     }
-  }, [blocker.state, saveNow, dispatch]);
+  }, [blocker, tutorialPhase, saveNow, dispatch]);
 
   // 向 AppHeader 暴露 leave handler（先設確認旗標再 navigate，讓 blocker 放行）
   useEffect(() => {
@@ -85,7 +121,7 @@ export default function PlayRoute({ canvasMapRef, pathMapRef }: Props) {
         <PuzzleBoard canvasMapRef={canvasMapRef} pathMapRef={pathMapRef} onAnimationEnd={handleAnimationEnd} />
       </Suspense>
       {overlayVisible && <CompletionOverlay onLeave={handleLeave} />}
-      {blocker.state === 'blocked' && (
+      {blocker.state === 'blocked' && tutorialPhase !== 'play' && (
         <ConfirmDialog
           title="確定要離開遊戲嗎？"
           message={<>目前進度已自動暫存，回到首頁後可從<HiAccent>「繼續上局」</HiAccent>恢復。</>}
