@@ -10,9 +10,9 @@ import PresetImagesModal from './PresetImagesModal';
 export default function ImageUpload() {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
-  const navType  = useNavigationType();
+  const navType = useNavigationType();
   const imageDataUrl = useSelector((s: RootState) => s.puzzle.imageDataUrl);
-  const isComplete   = useSelector((s: RootState) => s.puzzle.isComplete);
+  const isComplete = useSelector((s: RootState) => s.puzzle.isComplete);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const [isDragOver, setIsDragOver] = useState(false);
@@ -63,18 +63,15 @@ export default function ImageUpload() {
   }
 
   return (
-    <div
-      className="h-full flex flex-col"
-      style={{ background: 'var(--pg-warm)' }}
-    >
+    <div className="h-full flex flex-col" style={{ background: 'var(--pg-warm)' }}>
       {/* Top Bar */}
-      <div
-        className="px-4 py-3 backdrop-blur-sm flex-shrink-0"
-        style={{ background: 'linear-gradient(180deg, #251E15 0%, rgba(26,20,13,.9) 100%)', borderBottom: '1px solid #3A2F25' }}
-      >
+      <div className="px-4 py-3 backdrop-blur-sm flex-shrink-0" style={{ background: 'linear-gradient(180deg, #251E15 0%, rgba(26,20,13,.9) 100%)', borderBottom: '1px solid #3A2F25' }}>
         <div className="max-w-[1440px] mx-auto w-full flex items-center justify-between">
           <button
-            onClick={() => { dispatch(goToHome()); navigate(-1); }}
+            onClick={() => {
+              dispatch(goToHome());
+              navigate(-1);
+            }}
             className="inline-flex items-center gap-1.5 text-paper-400 text-sm font-bold px-4 py-2 rounded-lg hover:brightness-110 transition-all"
             style={{ background: '#3A2F25', border: '1px solid #5A4B38' }}
           >
@@ -82,11 +79,7 @@ export default function ImageUpload() {
             返回首頁
           </button>
           <div className="w-9" />
-          <button
-            onClick={handleConfirm}
-            disabled={!pendingImageUrl}
-            className="btn-primary text-sm px-5 py-2 disabled:opacity-40 disabled:cursor-not-allowed"
-          >
+          <button onClick={handleConfirm} disabled={!pendingImageUrl} className="btn-primary gap-1.5 text-sm px-5 py-2 disabled:opacity-40 disabled:cursor-not-allowed">
             <Icon name="ic-check" size={16} />
             確定圖片
           </button>
@@ -96,94 +89,79 @@ export default function ImageUpload() {
       {/* Content */}
       <div className="flex-1 overflow-y-auto flex flex-col items-center p-6">
         <div className="flex-1 flex flex-col items-center justify-center w-full">
-        <div className="w-full max-w-md flex flex-col items-center gap-3">
-          <h1 className="text-2xl font-black text-paper-900 tracking-tight">上傳圖片</h1>
-          {pendingImageUrl ? (
-            <div
-              className={`w-full max-w-64 sm:max-w-80 aspect-square rounded-3xl overflow-hidden cursor-pointer border-2 transition-all ${
-                isDragOver ? 'border-accent-500 scale-[1.01]' : 'border-brand-500/50 hover:border-brand-500'
-              }`}
-              style={{ boxShadow: 'inset 0 0 0 6px var(--color-paper-50), 0 0 0 3px var(--color-brand-50)' }}
-              onClick={() => inputRef.current?.click()}
-              onDrop={onDrop}
-              onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
-              onDragLeave={() => setIsDragOver(false)}
-            >
-              <div className="relative w-full h-full">
-                <img
-                  src={pendingImageUrl}
-                  alt="已選圖片"
-                  className="w-full h-full object-contain bg-paper-900"
-                />
-                <div
-                  className="absolute bottom-3 left-1/2 -translate-x-1/2 text-xs font-bold px-3 py-1.5 rounded-full whitespace-nowrap pointer-events-none"
-                  style={{ background: 'rgba(26,20,13,.75)', color: 'var(--color-paper-300)', border: '1px solid #5A4B38' }}
-                >
-                  點擊或拖放更換圖片
+          <div className="w-full max-w-md flex flex-col items-center gap-3">
+            <h1 className="text-2xl font-bold text-paper-900 tracking-tight">上傳圖片</h1>
+            {pendingImageUrl ? (
+              <div
+                className={`w-full max-w-64 sm:max-w-80 aspect-square rounded-3xl overflow-hidden cursor-pointer border-2 transition-all ${isDragOver ? 'border-accent-500 scale-[1.01]' : 'border-brand-500/50 hover:border-brand-500'}`}
+                style={{ boxShadow: 'inset 0 0 0 6px var(--color-paper-50), 0 0 0 3px var(--color-brand-50)' }}
+                onClick={() => inputRef.current?.click()}
+                onDrop={onDrop}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setIsDragOver(true);
+                }}
+                onDragLeave={() => setIsDragOver(false)}
+              >
+                <div className="relative w-full h-full">
+                  <img src={pendingImageUrl} alt="已選圖片" className="w-full h-full object-contain bg-paper-900" />
+                  <div className="absolute bottom-3 left-1/2 -translate-x-1/2 text-xs font-bold px-3 py-1.5 rounded-full whitespace-nowrap pointer-events-none" style={{ background: 'rgba(26,20,13,.75)', color: 'var(--color-paper-300)', border: '1px solid #5A4B38' }}>
+                    點擊或拖放更換圖片
+                  </div>
                 </div>
               </div>
-            </div>
-          ) : (
-            <div
-              className={`w-full max-w-64 sm:max-w-80 aspect-square border-2 border-dashed rounded-3xl flex flex-col items-center justify-center gap-1.5 cursor-pointer transition-all ${
-                isDragOver
-                  ? 'border-accent-500 bg-accent-500/10 scale-[1.01]'
-                  : 'border-brand-500/50 bg-paper-100 hover:border-brand-500 hover:bg-brand-50/50'
-              }`}
-              style={{ boxShadow: 'inset 0 0 0 6px var(--color-paper-50), 0 0 0 3px var(--color-brand-50)' }}
-              onClick={() => inputRef.current?.click()}
-              onDrop={onDrop}
-              onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
-              onDragLeave={() => setIsDragOver(false)}
-            >
+            ) : (
               <div
-                className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center mb-1"
-                style={{
-                  background: '#2A1F14',
-                  boxShadow: '0 6px 14px rgba(0,0,0,.3)',
-                  border: '1px solid #5A4B38',
+                className={`w-full max-w-64 sm:max-w-80 aspect-square border-2 border-dashed rounded-3xl flex flex-col items-center justify-center gap-1.5 cursor-pointer transition-all ${isDragOver ? 'border-accent-500 bg-accent-500/10 scale-[1.01]' : 'border-brand-500/50 bg-paper-100 hover:border-brand-500 hover:bg-brand-50/50'}`}
+                style={{ boxShadow: 'inset 0 0 0 6px var(--color-paper-50), 0 0 0 3px var(--color-brand-50)' }}
+                onClick={() => inputRef.current?.click()}
+                onDrop={onDrop}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setIsDragOver(true);
                 }}
-              ><span className="block w-6 h-6 sm:w-7 sm:h-7"><Icon name="brand-mark" size="100%" /></span></div>
-              <p className="text-paper-900 text-base font-extrabold text-center">把圖片拖到這裡</p>
-              <p className="text-paper-700 text-xs text-center">或 <span className="text-brand-600 font-bold cursor-pointer">點擊上傳</span> 你的照片</p>
-              <p className="text-paper-500 text-[11px] text-center mt-0.5">JPG · PNG · WEBP · 透明背景自動補白</p>
+                onDragLeave={() => setIsDragOver(false)}
+              >
+                <div
+                  className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center mb-1"
+                  style={{
+                    background: '#2A1F14',
+                    boxShadow: '0 6px 14px rgba(0,0,0,.3)',
+                    border: '1px solid #5A4B38',
+                  }}
+                >
+                  <span className="block w-6 h-6 sm:w-7 sm:h-7">
+                    <Icon name="brand-mark" size="100%" />
+                  </span>
+                </div>
+                <p className="text-paper-900 text-base font-bold text-center">把圖片拖到這裡</p>
+                <p className="text-paper-700 text-xs text-center">
+                  或 <span className="text-brand-600 font-bold cursor-pointer">點擊上傳</span> 你的照片
+                </p>
+                <p className="text-paper-500 text-[11px] text-center mt-0.5">JPG · PNG · WEBP · 透明背景自動補白</p>
+              </div>
+            )}
+            <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={onFileChange} />
+
+            {/* Divider */}
+            <div className="flex items-center gap-3 w-full">
+              <div className="flex-1 h-px bg-paper-300" />
+              <span className="text-xs text-paper-600 font-medium">或</span>
+              <div className="flex-1 h-px bg-paper-300" />
             </div>
-          )}
-          <input
-            ref={inputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={onFileChange}
-          />
 
-          {/* Divider */}
-          <div className="flex items-center gap-3 w-full">
-            <div className="flex-1 h-px bg-paper-300" />
-            <span className="text-xs text-paper-600 font-medium">或</span>
-            <div className="flex-1 h-px bg-paper-300" />
+            {/* Preset images button */}
+            <button onClick={() => setShowPresetModal(true)} className="btn-secondary w-full py-2 text-sm">
+              <Icon name="ic-image" size={16} />
+              選用內建圖片
+            </button>
           </div>
-
-          {/* Preset images button */}
-          <button
-            onClick={() => setShowPresetModal(true)}
-            className="btn-secondary w-full py-2 text-sm"
-          >
-            <Icon name="ic-image" size={16} />
-            選用內建圖片
-          </button>
-        </div>
         </div>
 
         <PageFooter />
       </div>
 
-      {showPresetModal && (
-        <PresetImagesModal
-          onClose={() => setShowPresetModal(false)}
-          onSelect={(dataUrl) => setPendingImageUrl(dataUrl)}
-        />
-      )}
+      {showPresetModal && <PresetImagesModal onClose={() => setShowPresetModal(false)} onSelect={(dataUrl) => setPendingImageUrl(dataUrl)} />}
     </div>
   );
 }

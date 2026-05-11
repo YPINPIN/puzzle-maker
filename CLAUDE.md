@@ -18,7 +18,7 @@ npm run compress-presets  # 將 public/presets/*.png 一次性壓縮轉換為 We
 - **Redux Toolkit**（`@reduxjs/toolkit` + `react-redux`）管理全局狀態，單一 `puzzleSlice`（`src/store/puzzleSlice.ts`）；不再有 `phase` 欄位，改以路由表示頁面狀態，僅保留 `isComplete: boolean` 代表完成狀態
 - **React Router v7**（`react-router`）：Hash Router 路由管理（`createHashRouter`），路由結構：`/` → `HomePage`、`/upload` → `ImageUpload`、`/config` → `DifficultySelector`、`/crop` → `CropPreview`、`/play` → `PlayRoute`；共用 layout 為 `AppLayout`（`src/features/layout/AppLayout.tsx`）
 - **Tailwind CSS v4**，透過 `@tailwindcss/vite` plugin 整合（無獨立設定檔）
-- CSS 入口為 `src/index.css`，以 `@import "tailwindcss"` 引入 Tailwind
+- CSS 入口為 `src/index.css`，以 `@import "tailwindcss"` 引入 Tailwind；`@theme` 以 `--font-sans` 覆寫全站字型（Nunito + Noto Sans TC，由 Google Fonts CDN 載入，Workbox 已設定離線快取規則）
 - **lz-string**：分享代碼壓縮用（`compressToBase64` / `decompressFromBase64`）
 - **vite-plugin-pwa**（Vite 8 尚未正式支援，根目錄 `.npmrc` 已設定 `legacy-peer-deps=true`，`npm install` / `npm ci` 無需另加 flag）：Service Worker 生成（Workbox `generateSW` 模式）與 manifest 注入；`devOptions.enabled: true` 讓 dev server 也能測試 SW
 - **本機儲存策略**：圖片（裁切後 JPEG base64）統一存於 **IndexedDB**（`puzzle-image-db`，`src/lib/imageCache.ts`），啟動時一次載入至記憶體供同步讀取；快捷設定、歷史紀錄、草稿等文字紀錄（合計 ~100 KB）仍存於 **localStorage**

@@ -424,7 +424,7 @@ export default function PuzzleBoard({ canvasMapRef, pathMapRef, onAnimationEnd }
             <div className="mb-3 text-brand-500" style={{ filter: 'drop-shadow(0 0 20px rgba(244,165,43,.5))' }}>
               <Icon name="ic-pause" size={80} />
             </div>
-            <p className="text-paper-100 text-xl sm:text-2xl font-black mb-5 tracking-wide">遊戲暫停</p>
+            <p className="text-paper-100 text-xl sm:text-2xl font-bold mb-5 tracking-wide">遊戲暫停</p>
             <button onClick={() => dispatch(resumeGame())} className="btn-primary px-6 sm:px-8 py-2.5 sm:py-3 text-sm sm:text-base">
               繼續遊戲
             </button>

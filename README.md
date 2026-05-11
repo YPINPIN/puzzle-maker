@@ -87,6 +87,7 @@
 - 可**安裝至主畫面**（Android / iOS / 桌面 Chrome），以 standalone 模式開啟
 - Service Worker 預快取 app shell，**離線仍可遊玩**已保存的拼圖進度
 - 內建圖片採 **StaleWhileRevalidate** 快取策略，首次載入後再次造訪秒開
+- Google Fonts 字型檔已加入 **Workbox Runtime Cache**，首次造訪後離線也能正常顯示字型
 
 ---
 
@@ -100,6 +101,7 @@
 | [Redux Toolkit](https://redux-toolkit.js.org/)       | 全域狀態管理   |
 | [React Router v7](https://reactrouter.com/)          | 客戶端路由     |
 | [Tailwind CSS v4](https://tailwindcss.com/)          | 樣式框架       |
+| [Google Fonts](https://fonts.google.com/)            | 字型（Nunito + Noto Sans TC） |
 | [lz-string](https://github.com/pieroxy/lz-string)    | 分享代碼壓縮   |
 | [vite-plugin-pwa](https://vite-pwa-org.netlify.app/) | PWA / 離線支援 |
 | [sharp](https://sharp.pixelplumbing.com/)            | 內建圖片 PNG → WebP 壓縮（devDependency） |

@@ -86,7 +86,7 @@ export default function ShareCodeModal(props: Props) {
               />
               <button
                 onClick={handleCopy}
-                className={`btn-primary py-2.5 text-sm transition-all ${copied ? 'opacity-80' : ''}`}
+                className={`btn-primary gap-1.5 py-2.5 text-sm transition-all ${copied ? 'opacity-80' : ''}`}
               >
                 <Icon name="ic-copy" size={16} />
                 {copied ? '已複製！' : '複製代碼'}
@@ -110,7 +110,7 @@ export default function ShareCodeModal(props: Props) {
                 <button
                   onClick={handleImport}
                   disabled={!inputCode.trim()}
-                  className="btn-primary flex-1 py-2.5 text-sm disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="btn-primary gap-1.5 flex-1 py-2.5 text-sm disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   <Icon name="ic-download" size={16} />
                   確認匯入

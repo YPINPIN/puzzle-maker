@@ -24,8 +24,8 @@ export default function CropPreview({ canvasMapRef, pathMapRef }: Props) {
   const cols = useSelector((s: RootState) => s.puzzle.cols);
   const rows = useSelector((s: RootState) => s.puzzle.rows);
   const difficulty = useSelector((s: RootState) => s.puzzle.difficulty);
-  const isComplete  = useSelector((s: RootState) => s.puzzle.isComplete);
-  const pieces      = useSelector((s: RootState) => s.puzzle.pieces);
+  const isComplete = useSelector((s: RootState) => s.puzzle.isComplete);
+  const pieces = useSelector((s: RootState) => s.puzzle.pieces);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imgRef = useRef<HTMLImageElement | null>(null);
@@ -119,9 +119,15 @@ export default function CropPreview({ canvasMapRef, pathMapRef }: Props) {
     function draw() {
       const canvas = canvasRef.current;
       const img = imgRef.current;
-      if (!canvas) { rafRef.current = requestAnimationFrame(draw); return; }
+      if (!canvas) {
+        rafRef.current = requestAnimationFrame(draw);
+        return;
+      }
       const ctx = canvas.getContext('2d');
-      if (!ctx) { rafRef.current = requestAnimationFrame(draw); return; }
+      if (!ctx) {
+        rafRef.current = requestAnimationFrame(draw);
+        return;
+      }
 
       const { offsetX, offsetY, scale } = imgTransformRef.current;
       const crop = cropRef.current;
@@ -132,7 +138,10 @@ export default function CropPreview({ canvasMapRef, pathMapRef }: Props) {
       ctx.fillStyle = '#1a1a1a';
       ctx.fillRect(0, 0, W, H);
 
-      if (!img) { rafRef.current = requestAnimationFrame(draw); return; }
+      if (!img) {
+        rafRef.current = requestAnimationFrame(draw);
+        return;
+      }
 
       // 繪製圖片（固定位置）
       ctx.drawImage(img, offsetX, offsetY, img.width * scale, img.height * scale);
@@ -160,10 +169,10 @@ export default function CropPreview({ canvasMapRef, pathMapRef }: Props) {
       ctx.lineWidth = 1;
       ctx.beginPath();
       for (let i = 1; i < 3; i++) {
-        ctx.moveTo(cx + cw * i / 3, cy);
-        ctx.lineTo(cx + cw * i / 3, cy + ch);
-        ctx.moveTo(cx, cy + ch * i / 3);
-        ctx.lineTo(cx + cw, cy + ch * i / 3);
+        ctx.moveTo(cx + (cw * i) / 3, cy);
+        ctx.lineTo(cx + (cw * i) / 3, cy + ch);
+        ctx.moveTo(cx, cy + (ch * i) / 3);
+        ctx.lineTo(cx + cw, cy + (ch * i) / 3);
       }
       ctx.stroke();
 
@@ -172,9 +181,9 @@ export default function CropPreview({ canvasMapRef, pathMapRef }: Props) {
       const handleW = 3;
       ctx.fillStyle = '#ffffff';
       const corners = [
-        { hx: cx,      hy: cy,      dx: 1,  dy: 1  },
-        { hx: cx + cw, hy: cy,      dx: -1, dy: 1  },
-        { hx: cx,      hy: cy + ch, dx: 1,  dy: -1 },
+        { hx: cx, hy: cy, dx: 1, dy: 1 },
+        { hx: cx + cw, hy: cy, dx: -1, dy: 1 },
+        { hx: cx, hy: cy + ch, dx: 1, dy: -1 },
         { hx: cx + cw, hy: cy + ch, dx: -1, dy: -1 },
       ];
       for (const { hx, hy, dx, dy } of corners) {
@@ -218,9 +227,7 @@ export default function CropPreview({ canvasMapRef, pathMapRef }: Props) {
     function getCropWBounds(img: HTMLImageElement, cropAspect: number) {
       const maxW = Math.min(img.width, img.height * cropAspect);
       const imgShortSide = Math.min(img.width, img.height);
-      const minW = cropAspect >= 1
-        ? (imgShortSide / 2) * cropAspect
-        : imgShortSide / 2;
+      const minW = cropAspect >= 1 ? (imgShortSide / 2) * cropAspect : imgShortSide / 2;
       return { minW, maxW };
     }
 
@@ -266,12 +273,9 @@ export default function CropPreview({ canvasMapRef, pathMapRef }: Props) {
         const newDist = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
         const cropAspect = cols / rows;
         const { minW, maxW } = getCropWBounds(img, cropAspect);
-        const newW = Math.min(maxW, Math.max(minW, pinch.cropW0 * newDist / pinch.dist0));
+        const newW = Math.min(maxW, Math.max(minW, (pinch.cropW0 * newDist) / pinch.dist0));
         const newH = newW * (rows / cols);
-        cropRef.current = clampCrop(
-          { w: newW, h: newH, x: pinch.centerX0 - newW / 2, y: pinch.centerY0 - newH / 2 },
-          img.width, img.height
-        );
+        cropRef.current = clampCrop({ w: newW, h: newH, x: pinch.centerX0 - newW / 2, y: pinch.centerY0 - newH / 2 }, img.width, img.height);
         return;
       }
 
@@ -286,10 +290,7 @@ export default function CropPreview({ canvasMapRef, pathMapRef }: Props) {
       lastY = e.clientY;
 
       const crop = cropRef.current;
-      cropRef.current = clampCrop(
-        { ...crop, x: crop.x + dx, y: crop.y + dy },
-        img.width, img.height
-      );
+      cropRef.current = clampCrop({ ...crop, x: crop.x + dx, y: crop.y + dy }, img.width, img.height);
     }
 
     function onPointerUp(e: PointerEvent) {
@@ -316,10 +317,7 @@ export default function CropPreview({ canvasMapRef, pathMapRef }: Props) {
 
       const centerX = crop.x + crop.w / 2;
       const centerY = crop.y + crop.h / 2;
-      cropRef.current = clampCrop(
-        { w: newW, h: newH, x: centerX - newW / 2, y: centerY - newH / 2 },
-        img.width, img.height
-      );
+      cropRef.current = clampCrop({ w: newW, h: newH, x: centerX - newW / 2, y: centerY - newH / 2 }, img.width, img.height);
     }
 
     canvas.addEventListener('pointerdown', onPointerDown);
@@ -343,13 +341,16 @@ export default function CropPreview({ canvasMapRef, pathMapRef }: Props) {
     isConfirmingRef.current = true;
 
     const img = imgRef.current;
-    if (!img) { isConfirmingRef.current = false; return; }
+    if (!img) {
+      isConfirmingRef.current = false;
+      return;
+    }
 
     const crop = cropRef.current;
     const cropRegion = {
-      x:      Math.max(0, Math.round(crop.x)),
-      y:      Math.max(0, Math.round(crop.y)),
-      width:  Math.min(img.width  - Math.round(crop.x), Math.round(crop.w)),
+      x: Math.max(0, Math.round(crop.x)),
+      y: Math.max(0, Math.round(crop.y)),
+      width: Math.min(img.width - Math.round(crop.x), Math.round(crop.w)),
       height: Math.min(img.height - Math.round(crop.y), Math.round(crop.h)),
     };
 
@@ -361,11 +362,7 @@ export default function CropPreview({ canvasMapRef, pathMapRef }: Props) {
     const replayCanvas = document.createElement('canvas');
     replayCanvas.width = replayW;
     replayCanvas.height = replayH;
-    replayCanvas.getContext('2d')!.drawImage(
-      img,
-      cropRegion.x, cropRegion.y, cropRegion.width, cropRegion.height,
-      0, 0, replayW, replayH,
-    );
+    replayCanvas.getContext('2d')!.drawImage(img, cropRegion.x, cropRegion.y, cropRegion.width, cropRegion.height, 0, 0, replayW, replayH);
     const croppedImageDataUrl = replayCanvas.toDataURL('image/jpeg', 0.75);
     dispatch(setReferenceImage(croppedImageDataUrl));
 
@@ -390,30 +387,26 @@ export default function CropPreview({ canvasMapRef, pathMapRef }: Props) {
     const canvasH = displayH * dpr;
 
     try {
-      const result = await generatePieces(
-        croppedImageDataUrl, cols, rows, canvasW, canvasH,
-        undefined,
-        undefined,
-        { w: ZOOM_BUTTON_AVOID_W * dpr, h: ZOOM_BUTTON_AVOID_H * dpr },
-        SCATTER_EDGE_PAD_CSS * dpr
-      );
+      const result = await generatePieces(croppedImageDataUrl, cols, rows, canvasW, canvasH, undefined, undefined, { w: ZOOM_BUTTON_AVOID_W * dpr, h: ZOOM_BUTTON_AVOID_H * dpr }, SCATTER_EDGE_PAD_CSS * dpr);
 
       canvasMapRef.current.clear();
       result.canvasMap.forEach((c, id) => canvasMapRef.current.set(id, c));
       pathMapRef.current.clear();
       result.pathMap.forEach((p, id) => pathMapRef.current.set(id, p));
 
-      dispatch(setPieces({
-        pieces: result.pieces,
-        rows: result.rows,
-        cols: result.cols,
-        boardW: canvasW,
-        boardH: canvasH,
-        pieceW: result.pieceW,
-        pieceH: result.pieceH,
-        puzzleOffsetX: result.puzzleOffsetX,
-        puzzleOffsetY: result.puzzleOffsetY,
-      }));
+      dispatch(
+        setPieces({
+          pieces: result.pieces,
+          rows: result.rows,
+          cols: result.cols,
+          boardW: canvasW,
+          boardH: canvasH,
+          pieceW: result.pieceW,
+          pieceH: result.pieceH,
+          puzzleOffsetX: result.puzzleOffsetX,
+          puzzleOffsetY: result.puzzleOffsetY,
+        }),
+      );
       dispatch(startGame());
       navigate('/play', { replace: true });
     } finally {
@@ -436,18 +429,11 @@ export default function CropPreview({ canvasMapRef, pathMapRef }: Props) {
         }}
       >
         <div className="max-w-[1440px] mx-auto w-full flex items-center justify-between">
-          <button
-            onClick={() => navigate(-1)}
-            className="inline-flex items-center gap-1.5 text-paper-400 text-sm font-bold px-4 py-2 rounded-lg hover:brightness-110 transition-all"
-            style={{ background: '#3A2F25', border: '1px solid #5A4B38' }}
-          >
+          <button onClick={() => navigate(-1)} className="inline-flex items-center gap-1.5 text-paper-400 text-sm font-bold px-4 py-2 rounded-lg hover:brightness-110 transition-all" style={{ background: '#3A2F25', border: '1px solid #5A4B38' }}>
             <Icon name="ic-arrow-left" size={16} />
             返回難度選擇
           </button>
-          <button
-            onClick={handleConfirm}
-            className="btn-primary text-sm px-5 py-2"
-          >
+          <button onClick={handleConfirm} className="btn-primary gap-1.5 text-sm px-5 py-2">
             <Icon name="ic-play" size={16} />
             開始拼圖
           </button>
@@ -456,15 +442,9 @@ export default function CropPreview({ canvasMapRef, pathMapRef }: Props) {
 
       {/* 裁切畫布（佔滿剩餘高度） */}
       <div className="relative flex-1 overflow-hidden">
-        <canvas
-          ref={canvasRef}
-          className="block w-full h-full touch-none cursor-grab active:cursor-grabbing"
-        />
+        <canvas ref={canvasRef} className="block w-full h-full touch-none cursor-grab active:cursor-grabbing" />
         {/* 操作提示 */}
-        <div
-          className="absolute top-3 left-1/2 -translate-x-1/2 text-brand-500/80 text-xs font-medium pointer-events-none whitespace-nowrap px-3 py-1 rounded-full"
-          style={{ background: 'rgba(26,20,13,.6)', border: '1px solid rgba(244,165,43,.25)' }}
-        >
+        <div className="absolute top-3 left-1/2 -translate-x-1/2 text-brand-500/80 text-xs font-medium pointer-events-none whitespace-nowrap px-3 py-1 rounded-full" style={{ background: 'rgba(26,20,13,.6)', border: '1px solid rgba(244,165,43,.25)' }}>
           拖曳移動裁切框 · 滾輪或雙指縮放
         </div>
       </div>

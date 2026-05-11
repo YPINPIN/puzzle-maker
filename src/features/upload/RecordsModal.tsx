@@ -144,7 +144,7 @@ export default function RecordsModal({ mode, onClose, onApply, onContinue, onSha
                       {getImage(r.id) && (
                         <button
                           onClick={() => handleApply(r)}
-                          className="btn-primary px-3 py-1.5 text-xs"
+                          className="btn-primary gap-1.5 px-3 py-1.5 text-xs"
                         >
                           <Icon name="ic-play" size={14} />
                           重新遊玩
@@ -232,7 +232,7 @@ export default function RecordsModal({ mode, onClose, onApply, onContinue, onSha
                         {!r.isCompleted && (
                           <button
                             onClick={() => handleContinue(r)}
-                            className="btn-primary px-3 py-1.5 text-xs"
+                            className="btn-primary gap-1.5 px-3 py-1.5 text-xs"
                           >
                             <Icon name="ic-play" size={14} />
                             繼續遊戲

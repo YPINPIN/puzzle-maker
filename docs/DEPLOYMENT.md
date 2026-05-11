@@ -53,6 +53,8 @@ npx pwa-assets-generator --preset minimal-2023 public/favicon.svg
 |--------|------|
 | `registerType: 'autoUpdate'` | SW 靜默更新，無需使用者介入 |
 | `globPatterns`（預快取） | 所有 JS/CSS/HTML/SVG/woff2，app shell 完整離線可用 |
+| Runtime cache（Google Fonts CSS） | StaleWhileRevalidate，cacheName `google-fonts-stylesheets`；urlPattern `/^https:\/\/fonts\.googleapis\.com/` |
+| Runtime cache（Google Fonts 字型檔） | CacheFirst，cacheName `google-fonts-webfonts`，最多 30 筆、過期 1 年，`cacheableResponse: { statuses: [0, 200] }`；urlPattern `/^https:\/\/fonts\.gstatic\.com/` |
 | Runtime cache（preset 圖片） | StaleWhileRevalidate 策略，cacheName `preset-images`，最多 8 筆、30 天；再次造訪立即從快取提供，背景更新 |
 | `devOptions.enabled: true` | 開發模式下也會注入 SW，可在 Chrome DevTools → Application 驗證 |
 

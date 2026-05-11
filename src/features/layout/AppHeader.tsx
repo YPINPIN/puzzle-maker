@@ -170,7 +170,7 @@ export default function AppHeader({ leaveHandlerRef }: Props) {
           {/* App 名稱 */}
           <span className="flex items-center gap-2">
             <Icon name="brand-mark" size={24} />
-            <span className={`text-base font-black tracking-wide text-paper-100${isPlaying ? ' max-sm:hidden' : ''}`}>拼圖樂</span>
+            <span className={`text-base font-bold tracking-wide text-paper-100${isPlaying ? ' max-sm:hidden' : ''}`}>拼圖樂</span>
           </span>
 
           {/* 難度 + 格數 + 預覽提示開關 */}
@@ -243,7 +243,7 @@ export default function AppHeader({ leaveHandlerRef }: Props) {
                   dispatch(pauseGame()); // reducer 有 guard：已暫停則 no-op
                   setShowSavePanel(true);
                 }}
-                className="btn-primary px-3 py-1.5 text-xs"
+                className="btn-primary gap-1.5 px-3 py-1.5 text-xs"
               >
                 <Icon name="ic-save" size={16} /> 保存並結束
               </button>

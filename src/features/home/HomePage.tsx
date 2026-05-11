@@ -330,7 +330,7 @@ function DraftCard({ draft, onClick }: { draft: import('../../lib/gameDraft').Ga
         <img src={getImage(draft.configId) ?? ''} alt="" className="w-full h-full object-contain" />
       </div>
       <div className="flex flex-col justify-between flex-1 min-w-0 gap-0.5">
-        <p className="text-sm font-extrabold text-accent-500">繼續上局</p>
+        <p className="text-sm font-bold text-accent-500">繼續上局</p>
         <div className="flex items-center gap-2 flex-wrap">
           <span className="inline-flex items-center gap-1 text-xs text-paper-600">
             <Icon name={CREST[draft.difficulty] ?? 'crest-easy'} size={13} />
@@ -387,7 +387,7 @@ function MenuCard({
         {icon}
       </div>
       <div>
-        <p className="font-extrabold text-base text-paper-900">
+        <p className="font-bold text-base text-paper-900">
           {title}
         </p>
         <p className={`text-sm mt-0.5 font-medium ${

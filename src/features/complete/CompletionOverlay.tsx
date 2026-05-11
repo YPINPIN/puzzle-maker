@@ -17,7 +17,8 @@ export default function CompletionOverlay({ onLeave }: Props) {
   const navigate = useNavigate();
   const navigateToHome = useCallback(() => {
     const idx = (window.history.state as { idx?: number } | null)?.idx ?? 0;
-    if (idx > 0) navigate(-idx); else navigate('/');
+    if (idx > 0) navigate(-idx);
+    else navigate('/');
   }, [navigate]);
   const elapsedMs = useSelector((s: RootState) => s.puzzle.elapsedMs);
   const referenceDataUrl = useSelector((s: RootState) => s.puzzle.referenceDataUrl);
@@ -37,9 +38,7 @@ export default function CompletionOverlay({ onLeave }: Props) {
   const cols = useSelector((s: RootState) => s.puzzle.cols);
   const rows = useSelector((s: RootState) => s.puzzle.rows);
 
-  const [hasHistoryRecord] = useState(() =>
-    Boolean(gameId && getGameHistory().some((r) => r.id === gameId))
-  );
+  const [hasHistoryRecord] = useState(() => Boolean(gameId && getGameHistory().some((r) => r.id === gameId)));
   const [showSavePanel, setShowSavePanel] = useState(false);
   const savedStateRef = useRef({ pieces, groups, pieceGroup, nextGroupId, boardW, boardH, pieceW, pieceH, puzzleOffsetX, puzzleOffsetY });
   useLayoutEffect(() => {
@@ -51,10 +50,7 @@ export default function CompletionOverlay({ onLeave }: Props) {
     if (!configId || !elapsedMs) return;
     const existing = getRecords().find((r) => r.id === configId);
     if (!existing) return;
-    const bestTimeMs =
-      existing.isCompleted && existing.bestTimeMs > 0 && existing.bestTimeMs < elapsedMs
-        ? existing.bestTimeMs
-        : elapsedMs;
+    const bestTimeMs = existing.isCompleted && existing.bestTimeMs > 0 && existing.bestTimeMs < elapsedMs ? existing.bestTimeMs : elapsedMs;
     updateRecord(configId, { isCompleted: true, bestTimeMs });
   }, [configId, elapsedMs]);
 
@@ -119,10 +115,7 @@ export default function CompletionOverlay({ onLeave }: Props) {
 
   return (
     <>
-      <div
-        className="fixed inset-0 z-50 flex items-center justify-center p-4"
-        style={{ background: 'rgba(13,9,6,.85)' }}
-      >
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(13,9,6,.85)' }}>
         <div
           role="dialog"
           aria-modal="true"
@@ -134,29 +127,26 @@ export default function CompletionOverlay({ onLeave }: Props) {
             maxHeight: 'calc(100vh - 2rem)',
           }}
         >
-
-          {referenceDataUrl && (
-            <img
-              src={referenceDataUrl}
-              alt="完成的拼圖"
-              className="max-w-full max-h-48 rounded-xl object-contain"
-              style={{ boxShadow: '0 0 0 2px #F4A52B, 0 8px 24px rgba(0,0,0,.2)' }}
-            />
-          )}
-          <h1 id="completion-title" className="text-3xl font-black text-paper-900 tracking-tight">拼圖完成！</h1>
-          <div
-            className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 font-mono font-bold"
-            style={{ background: 'var(--color-paper-100)', color: 'var(--color-brand-700)', border: '1px solid #F4A52B' }}
-          >
+          {referenceDataUrl && <img src={referenceDataUrl} alt="完成的拼圖" className="max-w-full max-h-48 rounded-xl object-contain" style={{ boxShadow: '0 0 0 2px #F4A52B, 0 8px 24px rgba(0,0,0,.2)' }} />}
+          <h1 id="completion-title" className="text-3xl font-bold text-paper-900 tracking-tight">
+            拼圖完成！
+          </h1>
+          <div className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 font-mono font-bold" style={{ background: 'var(--color-paper-100)', color: 'var(--color-brand-700)', border: '1px solid #F4A52B' }}>
             <Icon name="ic-timer" size={16} />
             <span className="leading-none translate-y-px">用時 {formatDuration(elapsedMs)}</span>
           </div>
 
           {hasHistoryRecord ? (
             <div className="flex flex-col items-center gap-3 w-full">
-              <p className="text-xs font-bold" style={{ color: 'var(--color-success)' }}>★ 已自動保存至歷史紀錄</p>
+              <p className="text-xs font-bold" style={{ color: 'var(--color-success)' }}>
+                ★ 已自動保存至歷史紀錄
+              </p>
               <button
-                onClick={() => { onLeave?.(); dispatch(resetGame()); navigateToHome(); }}
+                onClick={() => {
+                  onLeave?.();
+                  dispatch(resetGame());
+                  navigateToHome();
+                }}
                 className="btn-primary w-full text-lg px-8 py-3"
               >
                 再玩一次
@@ -165,14 +155,15 @@ export default function CompletionOverlay({ onLeave }: Props) {
           ) : (
             <div className="flex flex-col items-center gap-3 w-full">
               <p className="text-xs text-paper-600 text-center">離開將不保存遊戲紀錄</p>
-              <button
-                onClick={() => setShowSavePanel(true)}
-                className="btn-primary w-full text-lg px-8 py-3"
-              >
+              <button onClick={() => setShowSavePanel(true)} className="btn-primary w-full text-lg px-8 py-3">
                 保存紀錄
               </button>
               <button
-                onClick={() => { onLeave?.(); dispatch(resetGame()); navigateToHome(); }}
+                onClick={() => {
+                  onLeave?.();
+                  dispatch(resetGame());
+                  navigateToHome();
+                }}
                 className="btn-secondary w-full text-lg px-8 py-3"
               >
                 離開
@@ -182,13 +173,7 @@ export default function CompletionOverlay({ onLeave }: Props) {
         </div>
       </div>
 
-      {showSavePanel && (
-        <SavePanel
-          gameId={null}
-          onSave={handleSaveToSlot}
-          onClose={() => setShowSavePanel(false)}
-        />
-      )}
+      {showSavePanel && <SavePanel gameId={null} onSave={handleSaveToSlot} onClose={() => setShowSavePanel(false)} />}
     </>
   );
 }
