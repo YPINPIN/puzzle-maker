@@ -50,4 +50,4 @@ elapsed = (isPaused ? pausedAt : Date.now()) - startTime - pauseOffset
 
 `AppHeader` 以 `setInterval(500ms)` 定期更新本地 `tick` state 觸發 re-render；`displayElapsed` 於 render 期間呼叫 `computeElapsed()` 直接計算（純粹計算，不存入 state）。
 
-暫停／恢復時 Redux 觸發 re-render 即自動更新顯示值。完成時的精確時間由 `usePointerDrag` 在觸發 `setComplete` 前計算並傳入。
+暫停／恢復時 Redux 觸發 re-render 即自動更新顯示值。完成時（`isComplete = true`）：`setInterval` 停止更新；`computeElapsed()` 直接回傳 `elapsedMs`（由 `usePointerDrag` 在觸發 `setComplete` 前精確計算），確保計時器凍結於完成瞬間的精確用時。

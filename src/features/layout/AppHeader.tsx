@@ -20,7 +20,7 @@ export default function AppHeader({ leaveHandlerRef }: Props) {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const phase = usePhase();
-  const { isComplete, difficulty, cols, rows, startTime, isPaused, pausedAt, pauseOffset, gameId, configId, referenceDataUrl, pieces, groups, pieceGroup, nextGroupId, boardW, boardH, pieceW, pieceH, puzzleOffsetX, puzzleOffsetY, showPreviewHint } = useSelector((s: RootState) => s.puzzle, shallowEqual);
+  const { isComplete, elapsedMs, difficulty, cols, rows, startTime, isPaused, pausedAt, pauseOffset, gameId, configId, referenceDataUrl, pieces, groups, pieceGroup, nextGroupId, boardW, boardH, pieceW, pieceH, puzzleOffsetX, puzzleOffsetY, showPreviewHint } = useSelector((s: RootState) => s.puzzle, shallowEqual);
 
   const [, setTick] = useState(0);
   const [showSavePanel, setShowSavePanel] = useState(false);
@@ -79,15 +79,16 @@ export default function AppHeader({ leaveHandlerRef }: Props) {
 
   const computeElapsed = useCallback(() => {
     if (!startTime) return 0;
+    if (isComplete) return elapsedMs;
     const base = isPaused ? (pausedAt ?? Date.now()) : Date.now();
     return Math.max(0, base - startTime - pauseOffset);
-  }, [startTime, isPaused, pausedAt, pauseOffset]);
+  }, [startTime, isComplete, elapsedMs, isPaused, pausedAt, pauseOffset]);
 
   useEffect(() => {
-    if (!startTime || isPaused) return;
+    if (!startTime || isPaused || isComplete) return;
     const id = setInterval(() => setTick((n) => n + 1), 500);
     return () => clearInterval(id);
-  }, [startTime, isPaused]);
+  }, [startTime, isPaused, isComplete]);
 
   const displayElapsed = computeElapsed();
 
@@ -229,8 +230,8 @@ export default function AppHeader({ leaveHandlerRef }: Props) {
             </button>
           </div>
 
-          {/* 遊戲控制按鈕（playing phase，完成後隱藏） */}
-          {phase === 'playing' && !isComplete && (
+          {/* 遊戲控制按鈕（playing phase） */}
+          {phase === 'playing' && (
             <div className="flex flex-wrap gap-2 flex-shrink-0">
               <button data-tutorial="play-reference" onClick={() => dispatch(toggleImagePreview())} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-all hover:brightness-110" style={{ background: '#3A2F25', border: '1px solid #5A4B38', color: '#F4ECDE' }}>
                 <Icon name="ic-eye" size={16} /> 參考圖

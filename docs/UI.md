@@ -10,7 +10,7 @@
 - **難度徽章**（`crest-*` icon + `DIFFICULTY_LABEL`・格數）+ **燈泡按鈕**（`ic-lightbulb`，`data-tutorial="play-lightbulb"`）：切換格線內淡淡預覽圖顯示（`togglePreviewHint`）；啟用時按鈕以琥珀色填色 + 邊框高亮；偏好值隨遊戲存檔一同儲存（`InProgressGameState.showPreviewHint`），不使用 localStorage
   - 小螢幕適配（`< 640px`）：crest icon 加 `max-sm:hidden` 隱藏（省 22px），燈泡按鈕縮為 `w-6 h-6`（省 4px），確保計時器不換行至第二列
 - 計時器（`data-tutorial="play-timer"`）、音量按鈕
-- 操作按鈕（查看參考圖 `data-tutorial="play-reference"`、暫停 `data-tutorial="play-pause"`、保存並結束 `data-tutorial="play-save"`、結束 `data-tutorial="play-end"`）
+- 操作按鈕（查看參考圖 `data-tutorial="play-reference"`、暫停 `data-tutorial="play-pause"`、保存並結束 `data-tutorial="play-save"`、結束 `data-tutorial="play-end"`）；**完成後仍保持渲染**（無 `!isComplete` 條件），縮放＋掃光動畫期間由 `PuzzleBoard` 的 `fixed inset-0 z-30` 透明封鎖層攔截點擊；`CompletionOverlay`（`fixed inset-0 z-50`）出現後視覺覆蓋整個 viewport 包含 Header
 
 Header 使用 `flex-wrap`，`min-h-[64px]`（= `TOOLBAR_HEIGHT`），窄螢幕上按鈕可能換行導致實際高度 > 64px。因此 `PuzzleBoard.getContainerDims()` 從 `gameAreaRef.current.clientHeight` 讀取真實容器高度，而非 `window.innerHeight - 64`；掛載後若兩者差距 > 4px，`needsInitialRegenRef` 會觸發自動重算。
 
